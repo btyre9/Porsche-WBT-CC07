@@ -332,7 +332,11 @@
           var audioTime = getAudioTime();
           virtualTime = audioTime > 0 ? audioTime : virtualTime + delta / 1000;
           objectives.forEach(function (el, i) {
-            if (!voFired[i] && virtualTime >= voTimes[i]) {
+            // Only run VO-synced highlighting when a real cue time (> 0) exists.
+            // Placeholder 0.0 cues would otherwise fire on the first frame and the
+            // overwrite:true tweens would cancel the delayed entrance animation,
+            // leaving the objectives invisible.
+            if (!voFired[i] && voTimes[i] > 0 && virtualTime >= voTimes[i]) {
               voFired[i] = true;
               activateObjective(i);
             }
