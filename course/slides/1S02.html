@@ -1,87 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1920">
-  <title>What You'll Learn</title>
-  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
-  <link rel="stylesheet" href="../assets/css/slide-base.css">
-  <link rel="stylesheet" href="../assets/css/animations.css">
-  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Objectives</title>
+
   <style>
-    .obj-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--pds-space-2xl);
+    @font-face {
+      font-family: 'Porsche Next TT';
+      src: url('../assets/fonts/porsche-next-tt.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Porsche Next TT';
+      src: url('../assets/fonts/porsche-next-tt-bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    :root {
+      --pds-font-size-display: 56px;
+      --pds-font-size-lg:      22px;
+      --pds-font-size-md:      18px;
+      --pds-font-size-sm:      16px;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Porsche Next TT', Arial, Helvetica, sans-serif;
+    }
+
+    .anim-fade {
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .anim-fade.is-visible { opacity: 1; }
+
+    .anim-slide-up {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .anim-slide-up.is-visible { opacity: 1; transform: translateY(0); }
+
+    .anim-scale-up { opacity: 0; transform: scale(0.88); }
+
+    .slide-root::before {
+      content: "";
+      position: absolute;
+      inset: -100%;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      transform: rotate(45deg);
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Full-bleed 16:9 background. Subject is composed on the RIGHT (see image
+       prompt); the LEFT is a PDS v4.1.0 frosted-glass panel behind the text.
+       NOTE: we can't use CSS backdrop-filter here — slides are transform-scaled,
+       which disables backdrop-filter in Chromium — so we blur a duplicate image
+       layer masked to the left, then tint it with PDS `frosted-strong`. */
+    .slide-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .slide-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
       height: 100%;
-      align-items: center;
-      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+      object-fit: cover;
+      object-position: var(--img-pos, center);
     }
-    .obj-header {
-      display: flex;
-      flex-direction: column;
-      gap: var(--pds-space-lg);
+    .slide-image .img-base { transform: scale(var(--img-scale, 1)); }
+    /* Blurred copy of the image, faded in from the left → frosted-glass look.
+       blur(32px) = PDS v4.1.0 `blurFrosted` token; 1.12 overscan hides the wider
+       blur edge. (PDS pattern: .bg-frosted + .backdrop-blur-frosted; backdrop-filter
+       is unavailable under the slide's transform, so we blur a duplicate layer.) */
+    .slide-image .img-frost {
+      filter: blur(32px);
+      transform: scale(calc(var(--img-scale, 1) * 1.12));
+      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 36%, transparent 70%);
+              mask-image: linear-gradient(to right, #000 0%, #000 36%, transparent 70%);
     }
-    .obj-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: var(--pds-space-md);
+    /* PDS v4.1.0 frosted-strong tint (dark: rgba(14,14,18,0.82)) for text contrast,
+       faded to clear so the right-side subject stays crisp and visible. */
+    .slide-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(
+        to right,
+        rgba(14, 14, 18, 0.82) 30%,
+        rgba(14, 14, 18, 0.45) 58%,
+        rgba(14, 14, 18, 0.00) 78%
+      );
     }
-    .obj-item {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--pds-space-md);
-      padding: var(--pds-space-md) var(--pds-space-lg);
-      background: var(--pds-bg-surface);
-      border: 1px solid var(--pds-border);
-      border-radius: var(--pds-radius-lg);
-      box-shadow: var(--pds-shadow-card);
+
+    /* Movable blur/frost vignette (Image-Vignette field + dashboard Vignette tool).
+       Inlined here because this template is self-contained (no slide-base.css link);
+       the same block lives in course/assets/css/slide-base.css for linked templates. */
+    .img-vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
     }
-    .obj-number {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      background: rgba(213, 0, 28, 0.12);
-      border: 1px solid rgba(213, 0, 28, 0.25);
-      border-radius: var(--pds-radius-md);
-      font-family: var(--pds-font-family);
-      font-size: var(--pds-font-size-xs);
-      font-weight: var(--pds-font-weight-bold);
-      color: var(--pds-accent);
-      flex-shrink: 0;
+    .img-vignette__blur {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: var(--img-pos, center);
+      transform: scale(var(--img-scale, 1));
+      filter: blur(var(--vig-blur, 32px));
     }
-    .obj-text {
-      font-family: var(--pds-font-family);
-      font-size: var(--pds-font-size-md);
-      font-weight: var(--pds-font-weight-regular);
-      line-height: var(--pds-line-height);
-      color: var(--pds-text-secondary);
-      padding-top: 6px;
+    .img-vignette[data-vig-mode="spot"] .img-vignette__blur {
+      -webkit-mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), #000 calc(100% - var(--vig-feather)), transparent 100%);
+              mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), #000 calc(100% - var(--vig-feather)), transparent 100%);
+    }
+    .img-vignette[data-vig-mode="spot"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), rgba(14,14,18,var(--vig-tint)) calc(100% - var(--vig-feather)), transparent 100%);
+    }
+    .img-vignette[data-vig-mode="focus"] .img-vignette__blur {
+      -webkit-mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), #000 100%);
+              mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), #000 100%);
+    }
+    .img-vignette[data-vig-mode="focus"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), rgba(14,14,18,var(--vig-tint)) 100%);
     }
   </style>
 </head>
+
 <body>
+  <div class="slide-root" data-slide-id="1S02"
+    style="width: 1920px; height: 920px; position: relative; background: radial-gradient(1400px 700px at 10% -10%, #343a48 0%, transparent 60%), linear-gradient(140deg, #111317 0%, #1e2128 48%, #2a2f39 100%); overflow: hidden">
 
-<div class="slide" data-slide-id="1S02">
-
-  <div class="obj-layout">
-
-    <!-- Left: heading -->
-    <div class="obj-header">
-      <span class="pds-eyebrow anim-fade-up">Digital Communication Excellence</span>
-      <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.1s;"></div>
-      <h2 class="pds-heading-display anim-fade-up" style="--anim-delay: 0.2s;">By the end of this module, you will be able to do five things.</h2>
-      <p class="pds-body anim-fade-up" style="--anim-delay: 0.3s; max-width: 480px;">
-        By the end of this module, you will be able to:
-      </p>
+    <div class="anim-fade slide-image" id="slide-image">
+      <img class="img-base" data-img-adjust src="../assets/images/1S02.webp" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
+      <img class="img-frost" aria-hidden="true" src="../assets/images/1S02.webp" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
     </div>
+    <div class="slide-overlay" aria-hidden="true"></div>
 
-    <!-- Right: objectives list -->
-    <ul class="obj-list stagger-children" id="objectives-list">
-              <div class="anim-scale-up" id="obj-1S02-01"
+    <div style="width: 1320px; height: 920px; left: 0; top: 0; position: absolute; z-index: 2">
+
+      <div class="anim-fade" id="red-accent"
+        style="width: 120px; height: 8px; left: 120px; top: 62px; position: absolute; background: #D5001C"></div>
+
+      <div class="anim-slide-up" id="slide-title"
+        style="width: 1140px; left: 120px; top: 84px; position: absolute; color: white; font-size: var(--pds-font-size-display); font-weight: 700; line-height: 66px;">
+        What You'll Learn</div>
+
+      <div class="anim-fade" id="intro-text"
+        style="width: 1100px; left: 120px; top: 184px; position: absolute; color: white; font-size: var(--pds-font-size-md); font-weight: 400; line-height: 28px;">
+        By the end of this module, you will be able to do five things.</div>
+
+      <div style="width: 1100px; left: 120px; top: 242px; position: absolute; display: flex; flex-direction: column; gap: 26px;">
+                <div class="anim-scale-up" id="obj-1S02-01"
           style="display: flex; align-items: flex-start; gap: 20px; color: white;">
           <span style="flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #D5001C; font-size: 18px; font-weight: 700; color: #D5001C;">01</span>
           <span style="font-size: 22px; line-height: 32px; font-weight: 400;">Create effective video updates that inform customers and increase service approval rates</span>
@@ -89,7 +182,7 @@
         <div class="anim-scale-up" id="obj-1S02-02"
           style="display: flex; align-items: flex-start; gap: 20px; color: white;">
           <span style="flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #D5001C; font-size: 18px; font-weight: 700; color: #D5001C;">02</span>
-          <span style="font-size: 22px; line-height: 32px; font-weight: 400;">Use text messaging professionally and appropriately with Porsha customers</span>
+          <span style="font-size: 22px; line-height: 32px; font-weight: 400;">Use text messaging professionally and appropriately with Porsche customers</span>
         </div>
         <div class="anim-scale-up" id="obj-1S02-03"
           style="display: flex; align-items: flex-start; gap: 20px; color: white;">
@@ -106,91 +199,174 @@
           <span style="flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #D5001C; font-size: 18px; font-weight: 700; color: #D5001C;">05</span>
           <span style="font-size: 22px; line-height: 32px; font-weight: 400;">Avoid common digital communication mistakes that damage professionalism</span>
         </div>
-    </ul>
+      </div>
 
+    </div>
   </div>
 
-</div>
-
-<script src="../assets/vendor/gsap/gsap.min.js"></script>
-<script src="../assets/vendor/porsche-components.js"></script>
-<script>
-/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
-var SandboxRuntime = (function () {
-  var CR = (function () {
-    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
-    catch (_) { return null; }
-  })();
-
-  function makeFakeVO() {
-    var listeners = {};
-    var obj = {
-      currentTime: 0,
-      _wasPlaying: false,
-      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
-      removeEventListener: function (e, f) {
-        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
-      },
-      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
-      play: function () { return Promise.resolve(); }
-    };
-    (function poll() {
-      requestAnimationFrame(function () {
-        if (CR) {
-          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
-          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
-          if (!obj._wasPlaying && p) obj._wasPlaying = true;
-          if (obj._wasPlaying && !p && obj.currentTime > 0) {
-            obj._wasPlaying = false;
-            obj._fire('ended');
-          }
-          obj._fire('timeupdate');
-        }
-        poll();
-      });
-    })();
-    return obj;
-  }
-
-  function makeInteraction() {
-    return {
-      src: '',
-      play: function () {
-        if (CR && CR.playInteractionAudio) {
-          CR.playInteractionAudio({ src: this.src });
-        } else {
-          var a = new Audio(this.src);
-          a.play().catch(function () {});
-        }
-        return Promise.resolve();
+  <script>
+    (function () {
+      var slide = document.querySelector('[data-slide-id]');
+      function scaleSlide() {
+        var s = Math.min(window.innerWidth / 1920, window.innerHeight / 920);
+        slide.style.transform       = 'scale(' + s + ')';
+        slide.style.transformOrigin = 'top left';
+        slide.style.marginLeft      = ((window.innerWidth  - 1920 * s) / 2) + 'px';
+        slide.style.marginTop       = ((window.innerHeight -  920 * s) / 2) + 'px';
       }
-    };
+      window.addEventListener('resize', scaleSlide);
+      scaleSlide();
+    })();
+  </script>
+
+  <script src="../assets/vendor/gsap/gsap.min.js"></script>
+  <script src="../assets/vendor/slide-pause.js"></script>
+
+  <script>
+(function () {
+  var _tHandlers = [];
+  var _eHandlers = [];
+  var _lastTime = -1;
+  var _wasPlaying = false;
+  var _endedFired = false;
+
+  function getCR() {
+    try { return window.parent && window.parent.CourseRuntime; } catch (_) { return null; }
   }
 
-  window.addEventListener('message', function (e) {
-    if (!e.data || e.data.type !== 'player-play-state') return;
-    var s = document.querySelector('.slide');
-    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
-  });
+  var fakeInteractionAudio = {
+    src: '',
+    play: function () {
+      var cr = getCR();
+      if (cr && this.src) cr.playInteractionAudio({ src: this.src });
+      return Promise.resolve();
+    },
+    pause: function () {}
+  };
 
-  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+  var fakeAudio = {
+    get currentTime() { var cr = getCR(); return cr ? (cr.getAudioCurrentTime() || 0) : 0; },
+    get duration()    { var cr = getCR(); return cr && cr.getAudioDuration ? (cr.getAudioDuration() || 0) : 0; },
+    addEventListener: function (type, fn) {
+      if (type === 'timeupdate') _tHandlers.push(fn);
+      else if (type === 'ended') _eHandlers.push(fn);
+    },
+    removeEventListener: function () {}
+  };
+
+  window.SandboxRuntime = {
+    voAudio: fakeAudio,
+    interactionAudio: fakeInteractionAudio,
+    init: function () {},
+    playInteractionClip: function (id) { var cr = getCR(); if (cr) cr.playInteractionClip(id); }
+  };
+
+  function poll() {
+    var cr = getCR();
+    if (cr) {
+      var t = cr.getAudioCurrentTime ? cr.getAudioCurrentTime() : 0;
+      var playing = cr.isAudioPlaying ? cr.isAudioPlaying() : false;
+      if (t !== _lastTime) {
+        _lastTime = t;
+        var e = { target: fakeAudio, type: 'timeupdate' };
+        for (var i = 0; i < _tHandlers.length; i++) { try { _tHandlers[i](e); } catch (_e) {} }
+      }
+      if (_wasPlaying && !playing && !_endedFired && _eHandlers.length) {
+        var dur = cr.getAudioDuration ? cr.getAudioDuration() : 0;
+        if (dur > 0 && t >= dur - 0.5) {
+          _endedFired = true;
+          var ee = { target: fakeAudio, type: 'ended' };
+          for (var j = 0; j < _eHandlers.length; j++) { try { _eHandlers[j](ee); } catch (_e) {} }
+        }
+      }
+      _wasPlaying = playing;
+      if (!playing && t === 0) _endedFired = false;
+    }
+    requestAnimationFrame(poll);
+  }
+  requestAnimationFrame(poll);
 })();
+  </script>
 
-/* ── Slide logic ─────────────────────────────────────────────────────────── */
-(function () {
-  // Entrance animations
-  document.querySelectorAll('.anim-fade-up, .anim-bar-grow').forEach(function (el) {
-    el.classList.add('is-visible');
-  });
+  <script>
+    (function () {
+      var headerAccent = document.getElementById('red-accent');
+      var headerTitle  = document.getElementById('slide-title');
+      var introText    = document.getElementById('intro-text');
+      var slideImage   = document.getElementById('slide-image');
+      var objectives   = ['obj-1S02-01', 'obj-1S02-02', 'obj-1S02-03', 'obj-1S02-04', 'obj-1S02-05']
+                           .map(function (id) { return document.getElementById(id); });
 
-  // Stagger the objectives list after a short delay
-  setTimeout(function () {
-    var list = document.getElementById('objectives-list');
-    if (list) list.classList.add('is-visible');
-  }, 300);
+      if (headerAccent) setTimeout(function () { headerAccent.classList.add('is-visible'); }, 0);
+      if (headerTitle)  setTimeout(function () { headerTitle.classList.add('is-visible'); }, 180);
+      if (introText)    setTimeout(function () { introText.classList.add('is-visible'); }, 350);
+      if (slideImage)   setTimeout(function () { slideImage.classList.add('is-visible'); }, 600);
 
-})();
-</script>
+      gsap.set(objectives, { opacity: 0, scale: 0.88, transformOrigin: 'left center' });
+      gsap.to(objectives, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.55,
+        ease: 'back.out(1.4)',
+        stagger: 0.28,
+        delay: 0.65
+      });
 
+      var voTimes = [0.00, 0.00, 0.00, 0.00, 0.00];
+      var voFired = voTimes.map(function () { return false; });
+      var activeIdx = -1;
+
+      function activateObjective(idx) {
+        if (activeIdx >= 0 && objectives[activeIdx]) {
+          gsap.to(objectives[activeIdx], { scale: 1, duration: 0.5, ease: 'power2.out', overwrite: true });
+        }
+        objectives.forEach(function (el, i) {
+          if (i > idx && el) {
+            gsap.to(el, { filter: 'brightness(0.5)', duration: 0.5, ease: 'power2.out', overwrite: true });
+          }
+        });
+        if (objectives[idx]) {
+          gsap.to(objectives[idx], { scale: 1.06, filter: 'brightness(1.35)', duration: 0.45, ease: 'power2.out', overwrite: true });
+        }
+        activeIdx = idx;
+      }
+
+      function getAudioTime() {
+        try {
+          if (window.parent && window.parent.CourseRuntime) {
+            var ct = window.parent.CourseRuntime.getAudioCurrentTime();
+            if (Number.isFinite(ct) && ct > 0) return ct;
+          }
+        } catch (_) {}
+        if (window.SandboxRuntime && window.SandboxRuntime.voAudio) {
+          var sat = window.SandboxRuntime.voAudio.currentTime;
+          if (Number.isFinite(sat) && sat > 0) return sat;
+        }
+        return 0;
+      }
+
+      var virtualTime = 0;
+      var lastTick = Date.now();
+
+      function tick() {
+        var now   = Date.now();
+        var delta = now - lastTick;
+        lastTick  = now;
+        if (!document.documentElement.classList.contains('slide-paused')) {
+          var audioTime = getAudioTime();
+          virtualTime = audioTime > 0 ? audioTime : virtualTime + delta / 1000;
+          objectives.forEach(function (el, i) {
+            if (!voFired[i] && virtualTime >= voTimes[i]) {
+              voFired[i] = true;
+              activateObjective(i);
+            }
+          });
+        }
+        requestAnimationFrame(tick);
+      }
+      tick();
+    })();
+  </script>
 </body>
+
 </html>

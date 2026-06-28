@@ -68,14 +68,16 @@ const UNIFORMS = [
   'under gray bib-style mechanic overalls with black adjustable shoulder straps, a dark-gray bib front, ' +
   'gray main fabric, black reinforced utility panels at the hips and thighs, black knee and lower-leg ' +
   'reinforcement, and dark side cargo pockets; a structured premium professional workwear fit in durable ' +
-  'matte clean fabric, with black safety shoes.',
+  'matte clean fabric, with black safety shoes. On the upper chest of the bib front, a single Porsche ' +
+  'wordmark — the word PORSCHE in Porsche Racing Red (#D5001C) on a black rectangular patch — crisp and ' +
+  'correctly spelled.',
   'Technician wardrobe — Uniform B (all-gray, no overalls): a plain gray short-sleeve crew-neck t-shirt ' +
   'with matching gray work trousers (or gray work shorts) in the same durable matte fabric, with subtle ' +
   'black side cargo-pocket detailing and a thin dark belt; a clean, modern, tailored premium workwear ' +
-  'fit with black safety shoes.',
+  'fit with black safety shoes. This uniform carries no wordmark or logo of any kind.',
 ];
 const UNIFORM_CLEAN =
-  'Keep the uniform completely clean and logo-free — render no wordmark, crest, shield, badge, name badge, ' +
+  'Aside from the branding noted for the chosen uniform, render no other crest, shield, badge, name badge, ' +
   'sponsor patch, embroidery, number, or readable lettering on the clothing. It must read as modern premium ' +
   'dealership technician workwear, not racing, military, construction, or generic coveralls.';
 
@@ -120,15 +122,23 @@ const DEFAULT_FRAMING = { aspect: '16:9', note: 'Clear single subject with moder
 // Hard brand/accuracy constraints injected into every prompt. Source of truth is
 // the PROMPT-INJECT block in IMAGE-GEN-RULES.md; this is the fallback if absent.
 const DEFAULT_INJECT =
-  'HARD CONSTRAINTS — Render NO text, lettering, numbers, captions, watermarks, signage, or UI ' +
-  'anywhere in the image. Render NO Porsche crest, shield, or coat-of-arms emblem, and NO badges, ' +
-  'model lettering, or logos of any kind on vehicles, walls, signage, or clothing — leave those ' +
-  'surfaces clean (approved logos are added later as overlays). ACCURACY — If a Porsche vehicle ' +
-  'appears, its proportions, body panels, panel gaps, lighting signature, wheels, brakes, and part ' +
-  'placement must be accurate to a real current production model; never invent trim, badges, or ' +
-  'bodywork. If a dealership, showroom, service reception, or workshop appears, it must look like a ' +
-  'real, correctly-equipped current Porsche facility. People wear clean, appropriate workwear and PPE. ' +
-  'Photorealistic, physically plausible, professional editorial quality.';
+  'HARD CONSTRAINTS — Render NO incidental or random text, captions, watermarks, UI, or invented signage ' +
+  'anywhere in the image; the ONLY lettering allowed is correct Porsche brand marking as described here, ' +
+  'spelled exactly "Porsche" (never "Porsha"). VEHICLE BADGING — Any Porsche vehicle MUST carry its correct ' +
+  'factory badging: the PORSCHE wordmark and the correct model lettering (e.g. 911, Taycan, Macan, Cayenne, ' +
+  'Panamera) in their correct factory positions (typically across the rear), correctly spelled and accurately ' +
+  'shaped, sized, and placed; and WHEN THE FRONT of the vehicle is shown, the round Porsche crest on the ' +
+  'nose/hood, accurately sized and placed. Never invent, misspell, or garble a badge, crest, or model name. ' +
+  'UNIFORM BADGING — a technician in the bib-overall uniform wears a single PORSCHE wordmark in Porsche Racing ' +
+  'Red on a black rectangular chest patch; a technician in the all-gray uniform wears no logo. A single ' +
+  'Porsche wordmark may also appear once on a background wall. Render no other logos, sponsor patches, ' +
+  'numbers, or non-Porsche marks. ACCURACY — If a Porsche vehicle appears, its proportions, body panels, ' +
+  'panel gaps, lighting signature, wheels, brakes, badging, and part placement must be accurate to a real ' +
+  'current production model; never invent trim or bodywork. If a dealership, showroom, service reception, or ' +
+  'workshop appears, it must look like a real, correctly-equipped current Porsche facility. ANY vehicle lift, ' +
+  'lift post, or overhead service column is BLACK (never red, yellow, or blue); retractable hose/cable reels ' +
+  'may be red. People wear clean, appropriate workwear and PPE. Photorealistic, physically plausible, ' +
+  'professional editorial quality.';
 
 function loadInject() {
   const p = path.join('IMAGE-GEN-RULES.md');

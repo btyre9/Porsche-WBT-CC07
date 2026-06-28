@@ -10,23 +10,34 @@ Edit the block to change what the models are told.
 > instructionally wrong. When in doubt, use a **licensed real photograph**
 > (VM Media) instead of a generated image.
 
-## 1. Logos & badging — strict
-- **Never** use the Porsche **crest / shield / coat-of-arms** in training imagery.
-- The **only** permitted logo is the **wordmark**, in **white or black** only.
-- **A single Porsche wordmark MAY appear on a background wall** — at most **one per
-  image** — where it fits naturally in the environment. Keep it to the background;
-  if a generator garbles it, clean it up or composite the approved wordmark over it.
-- Otherwise generate images **logo-free**: render **no** wordmark, crest, badge,
-  emblem, or model lettering on **vehicles, clothing, or signage**. Approved logos
-  on those surfaces are composited later as overlays (the template carries the
-  official wordmark SVG).
-- No badges, emblems, model lettering, or dealer signage rendered in-image
-  (beyond the one allowed background wall wordmark) — leave those surfaces clean.
+## 1. Logos & badging
+
+Spelling is **always “Porsche”** — never “Porsha” or any phonetic form (that phonetic
+exists only in the voiceover pronunciation map for TTS, never in imagery or on-screen text).
+
+- **Vehicles carry their correct factory Porsche badging.** Render the **PORSCHE
+  wordmark** and the correct **model lettering** (e.g. `911`, `Taycan`, `Macan`,
+  `Cayenne`, `Panamera`) in their correct factory positions — typically across the
+  rear — spelled correctly and shaped, proportioned, and placed exactly as on the
+  real current production model.
+- **When the FRONT of a vehicle is shown, render the round Porsche crest** on the
+  nose/hood, **accurately sized and placed** to match the real model. It must be the
+  correct current Porsche crest — never a garbled or invented emblem.
+- **Uniforms:** the **bib-overall** uniform (Uniform A) carries the **PORSCHE
+  wordmark in Porsche Racing Red on a black rectangular chest patch**. The
+  **all-gray** uniform (Uniform B) carries **no logo**. (See the uniform spec below.)
+- A single Porsche **wordmark** may also appear once on a **background wall** where
+  it fits naturally in the environment.
+- Do **not** invent, misspell, or garble any badge, crest, or lettering, and add **no**
+  non-Porsche logos, sponsor patches, or numbers. If a generator garbles a badge or
+  crest, fix it or composite the correct approved mark (the template carries the
+  official wordmark/crest assets).
 
 ## 2. Vehicle accuracy
 - If a Porsche vehicle appears, proportions, stance, body panels, panel gaps,
-  lighting signature, wheels/brakes, and **part placement must match a real,
-  current model**. No invented trim, fictional bodywork, or wrong-side controls.
+  lighting signature, wheels/brakes, **badging/crest**, and **part placement must
+  match a real, current model**. No invented trim, fictional bodywork, wrong-side
+  controls, or misspelled/garbled badges.
 - Do not fabricate technical detail. If a slide teaches a **specific part,
   system, or procedure**, prefer a **licensed real photo** — AI cannot be
   trusted for exact component geometry/placement.
@@ -59,8 +70,9 @@ Industrial but immaculate — no clutter, oil stains, or invented equipment.
 
 ## 4. People
 - Advisors in **appropriate, clean workwear and PPE**, professional
-  and authentic; diverse and inclusive. No fictional uniforms, name badges, or
-  logo'd clothing rendered by AI.
+  and authentic; diverse and inclusive. No fictional uniforms or name badges; the
+  only permitted clothing logo is the approved PORSCHE chest wordmark on the
+  bib-overall technician uniform (Uniform A).
 
 ## Technician uniform wardrobe specification
 
@@ -82,11 +94,14 @@ with matching gray work trousers **or** gray work shorts, in the same durable ma
 fabric, with subtle black side cargo-pocket detailing and a thin dark belt. Clean,
 modern, tailored premium workwear fit. Black safety shoes.
 
-**Branding treatment (both uniforms).** Keep the uniform completely clean and
-logo-free. Render no wordmark, crest, shield, coat-of-arms, “Service” text, name
-badge, sleeve markings, sponsor patches, embroidery, symbols, numbers, or readable
-lettering on the clothing. (A blank area on the chest/bib may be left so an approved
-wordmark can be composited later.)
+**Branding treatment (differs by uniform).**
+- **Uniform A (bib overalls):** on the upper chest of the bib front, render a single
+  **Porsche wordmark — the word PORSCHE in Porsche Racing Red (#D5001C) on a black
+  rectangular patch** — crisp, correctly spelled, and naturally placed. Render **no
+  other** crest, name badge, sleeve marking, sponsor patch, embroidery, symbol,
+  number, or readable lettering anywhere else on the uniform.
+- **Uniform B (all-gray, no overalls):** **no wordmark or logo at all.** Keep it
+  completely clean — no crest, name badge, patch, number, or readable lettering.
 
 Apply the chosen uniform to the **technician** while keeping the requested subject,
 pose, ethnicity, age, body type, expression, scene, lighting, and composition from
@@ -125,5 +140,5 @@ premium everyday attire.
 ---
 
 <!-- PROMPT-INJECT-START -->
-HARD CONSTRAINTS — Render NO text, lettering, numbers, captions, watermarks, or UI anywhere in the image. Render NO Porsche crest, shield, or coat-of-arms emblem anywhere. A SINGLE Porsche wordmark (the word PORSCHE, plain white or black) MAY appear ONCE on a background wall where it fits naturally — at most one per image; render NO other logos, badges, model lettering, or wordmarks on vehicles, clothing, signage, or anywhere else (those are added later as overlays). ACCURACY — If a Porsche vehicle appears, its proportions, body panels, panel gaps, lighting signature, wheels, brakes, and part placement must be accurate to a real current production model; never invent trim, badges, or bodywork. If a dealership, showroom, service reception, or workshop appears, it must look like a real, correctly-equipped current Porsche facility: bright and spotless, large-format light-gray tile floors, white walls, slim round brushed-metal columns, recessed/linear lighting, vehicles spaced apart. ANY vehicle lift, lift post, or overhead service column is BLACK (never red, yellow, or blue); retractable hose/cable reels may be red. People wear clean, appropriate workwear and PPE; any Porsche technician wears one of the two approved technician uniforms, and any Porsche service advisor wears the advisor business attire, exactly as described in the prompt. Photorealistic, physically plausible, professional editorial quality.
+HARD CONSTRAINTS — Render NO incidental or random text, captions, watermarks, UI, or invented signage anywhere in the image; the ONLY lettering allowed is correct Porsche brand marking as described here, spelled exactly "Porsche" (never "Porsha"). VEHICLE BADGING — Any Porsche vehicle MUST carry its correct factory badging: the PORSCHE wordmark and the correct model lettering (e.g. 911, Taycan, Macan, Cayenne, Panamera) in their correct factory positions (typically across the rear), correctly spelled and accurately shaped, sized, and placed as on the real current production model; and WHEN THE FRONT of the vehicle is shown, the round Porsche crest on the nose/hood, accurately sized and placed. Never invent, misspell, or garble a badge, crest, or model name. UNIFORM BADGING — A technician in the bib-overall uniform wears a single PORSCHE wordmark in Porsche Racing Red on a black rectangular chest patch; a technician in the all-gray uniform wears no logo. A single Porsche wordmark may also appear once on a background wall. Render no other logos, sponsor patches, numbers, or non-Porsche marks. ACCURACY — If a Porsche vehicle appears, its proportions, body panels, panel gaps, lighting signature, wheels, brakes, badging, and part placement must be accurate to a real current production model; never invent trim or bodywork. If a dealership, showroom, service reception, or workshop appears, it must look like a real, correctly-equipped current Porsche facility: bright and spotless, large-format light-gray tile floors, white walls, slim round brushed-metal columns, recessed/linear lighting, vehicles spaced apart. ANY vehicle lift, lift post, or overhead service column is BLACK (never red, yellow, or blue); retractable hose/cable reels may be red. People wear clean, appropriate workwear and PPE; a Porsche technician wears one of the two approved technician uniforms and any service advisor wears the advisor business attire, exactly as described in the prompt. Photorealistic, physically plausible, professional editorial quality.
 <!-- PROMPT-INJECT-END -->
