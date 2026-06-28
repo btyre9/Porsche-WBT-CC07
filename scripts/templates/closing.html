@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .slide {
+      display: flex;
+      overflow: hidden;
+      background: #0a0a0d;
+    }
+
+    .closing-layout {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 640px;
+      width: 1920px;
+      height: 920px;
+      background: #0a0a0d;
+    }
+
+    .closing-text {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 80px 80px 64px 120px;
+    }
+
+    .closing-accent {
+      width: 120px;
+      height: 8px;
+      background: var(--pds-accent);
+      margin-bottom: 26px;
+    }
+
+    .closing-headline {
+      max-width: 920px;
+      margin: 0 0 28px 0;
+      font-family: var(--pds-font-family);
+      font-size: 56px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1.05;
+      color: var(--pds-text-primary);
+    }
+
+    .closing-body {
+      max-width: 840px;
+      margin: 0 0 40px 0;
+      font-family: var(--pds-font-family);
+      font-size: 22px;
+      line-height: 1.5;
+      color: rgba(251, 252, 255, 0.74);
+    }
+
+    .closing-callout {
+      max-width: 760px;
+      margin: 0 0 30px 0;
+      padding-left: 22px;
+      border-left: 4px solid var(--pds-accent);
+      font-family: var(--pds-font-family);
+      font-size: 24px;
+      font-weight: var(--pds-font-weight-semibold);
+      line-height: 1.35;
+      color: var(--pds-text-primary);
+    }
+
+    .up-next {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 760px;
+      margin-top: auto;
+      padding: 18px 24px;
+      background: rgba(251, 252, 255, 0.05);
+      border: 1px solid rgba(251, 252, 255, 0.12);
+    }
+
+    .up-next__icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(213, 0, 28, 0.14);
+      border: 1px solid rgba(213, 0, 28, 0.30);
+      font-size: 16px;
+      color: var(--pds-accent);
+    }
+
+    .up-next__label {
+      display: block;
+      margin-bottom: 4px;
+      font-family: var(--pds-font-family);
+      font-size: 11px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--pds-accent);
+    }
+
+    .up-next__body {
+      margin: 0;
+      font-family: var(--pds-font-family);
+      font-size: 15px;
+      line-height: 1.42;
+      color: var(--pds-text-secondary);
+    }
+
+    /* Full-screen background image — covers the whole slide; text overlays it. */
+    .closing-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .img-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: repeating-linear-gradient(-45deg, #0e0e12 0px, #0e0e12 24px, #141418 24px, #141418 48px);
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 0.03em;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .closing-image img {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .closing-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(10, 10, 13, 0.10) 0%, rgba(10, 10, 13, 0.55) 100%),
+        linear-gradient(90deg, rgba(10, 10, 13, 0.82) 0%, rgba(10, 10, 13, 0.40) 35%, transparent 62%);
+    }
+
+    .anim-block {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .anim-block.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}">
+  <div class="closing-layout">
+
+    <div class="closing-text">
+      <div class="closing-accent anim-block" id="el-accent"></div>
+      <h2 class="closing-headline anim-block" id="el-headline">{{SLIDE_TITLE}}</h2>
+      <p class="closing-body anim-block" id="el-body">{{ON_SCREEN_TEXT}}</p>
+      {{CLOSING_CALLOUT_HTML}}
+      <div class="up-next anim-block" id="el-next">
+        <div class="up-next__icon" aria-hidden="true">&#8594;</div>
+        <div>
+          <span class="up-next__label">Up Next</span>
+          <p class="up-next__body">In the next section, you'll complete a short assessment to confirm your understanding.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="closing-image anim-block" id="el-image">
+      <div class="img-placeholder" aria-hidden="true">{{IMAGE_PATH}}</div>
+      <img data-img-adjust src="{{IMAGE_PATH}}" alt="" draggable="false" style="--img-pos:{{IMG_POS}};--img-scale:{{IMG_SCALE}};" onerror="this.style.display='none'">
+    </div>
+
+  </div>
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+(function () {
+  var ids = ['el-accent', 'el-headline', 'el-body', 'el-callout', 'el-next', 'el-image'];
+  var delays = [0, 160, 280, 390, 520, 240];
+
+  ids.forEach(function (id, i) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    setTimeout(function () { el.classList.add('is-visible'); }, delays[i]);
+  });
+
+  SandboxRuntime.voAudio.addEventListener('ended', function () {
+    SandboxRuntime.interactionAudio.src = '../assets/audio/vo/Click_Start_Quiz.mp3';
+    SandboxRuntime.interactionAudio.play();
+  });
+})();
+</script>
+
+</body>
+</html>

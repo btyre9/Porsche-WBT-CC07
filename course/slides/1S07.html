@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>What Goes Into the Script</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .bullets-image-panel {
+      height: 100%;
+      border-radius: var(--pds-radius-xl);
+      overflow: hidden;
+      box-shadow: var(--pds-shadow-card);
+    }
+    .bullets-image-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    /* Narrow the text column so the image gets more width. */
+    .slide__split { --col-text: 46%; }
+    /* Full-height image — fills from the text column to the slide's top, bottom,
+       and right edges (grows into the negative margins), squared corners. */
+    .slide__split--media {
+      flex: 1 1 auto;
+      height: var(--slide-height);
+      margin-top: calc(-1 * var(--pds-slide-pad-y));
+      margin-bottom: calc(-1 * var(--pds-slide-pad-y));
+      margin-right: calc(-1 * var(--pds-slide-pad-x));
+      border-radius: 0;
+    }
+    .slide__split--media img { border-radius: 0; }
+    /* Bullet list */
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-md);
+    }
+    .bullet-item {
+      display: flex;
+      gap: var(--pds-space-md);
+      align-items: flex-start;
+    }
+    .bullet-bar {
+      width: 3px;
+      min-height: 100%;
+      background: var(--pds-accent);
+      border-radius: 2px;
+      flex-shrink: 0;
+      align-self: stretch;
+      opacity: 0.7;
+    }
+    .bullet-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .bullet-header {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-md);
+      font-weight: var(--pds-font-weight-semibold);
+      color: var(--pds-text-primary);
+      line-height: var(--pds-line-height-tight);
+    }
+    .bullet-body {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-regular);
+      color: var(--pds-text-secondary);
+      line-height: var(--pds-line-height-loose);
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="1S07">
+
+  <div class="slide__split">
+
+    <!-- Left: text + bullet list -->
+    <div class="slide__split--text">
+      <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.1s;"></div>
+      <h2 class="pds-heading-display anim-fade-right" style="--anim-delay: 0.2s;">What Goes Into the Script</h2>
+      <p class="pds-body anim-fade-right" style="--anim-delay: 0.3s;">Strong video updates follow a five-part recipe. Practice it until it is automatic.</p>
+
+      <ul class="bullet-list stagger-children" id="bullet-list" style="--anim-delay: 0.4s; margin-top: var(--pds-space-sm);">
+        <li class="bullet-item">
+          <div class="bullet-bar"></div>
+          <div class="bullet-content">
+            <span class="bullet-header">Practice once before you record — do not shoot from the hip on complex topics</span>
+          </div>
+        </li>
+
+        <li class="bullet-item">
+          <div class="bullet-bar"></div>
+          <div class="bullet-content">
+            <span class="bullet-header">State the customer's name and your name at the start</span>
+          </div>
+        </li>
+
+        <li class="bullet-item">
+          <div class="bullet-bar"></div>
+          <div class="bullet-content">
+            <span class="bullet-header">Identify the vehicle and the service you are performing</span>
+          </div>
+        </li>
+
+        <li class="bullet-item">
+          <div class="bullet-bar"></div>
+          <div class="bullet-content">
+            <span class="bullet-header">Show what you are explaining — point the camera at the actual part</span>
+          </div>
+        </li>
+
+        <li class="bullet-item">
+          <div class="bullet-bar"></div>
+          <div class="bullet-content">
+            <span class="bullet-header">End with a clear next step — when you will call, what you need them to do</span>
+          </div>
+        </li>
+      </ul>
+      <div class="pds-callout anim-fade-right" style="--anim-delay:0.45s;"><strong>The Pattern</strong><span>A video without a clear next step is just a status report — give the customer something to act on.</span></div>
+    </div>
+
+    <!-- Right: full-height image (bleeds to the top, bottom, and right edges) -->
+    <div class="slide__split--media anim-fade-left" style="--anim-delay: 0.25s;">
+      <img data-img-adjust src="../assets/images/placeholders/man-panemera.jpg" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Slide logic ─────────────────────────────────────────────────────────── */
+(function () {
+  document.querySelectorAll('.anim-fade-right, .anim-fade-left, .anim-bar-grow').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+  // Stagger in bullet list after header elements
+  setTimeout(function () {
+    var list = document.getElementById('bullet-list');
+    if (list) list.classList.add('is-visible');
+  }, 400);
+
+})();
+</script>
+
+</body>
+</html>

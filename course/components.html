@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Porsche Components — Playground</title>
+  <link rel="stylesheet" href="assets/css/pds-tokens.css">
+  <script src="assets/vendor/gsap/gsap.min.js" defer></script>
+  <script src="assets/vendor/porsche-components.js" defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--pds-bg-base);
+      color: var(--pds-text-primary);
+      font-family: 'Porsche Next TT', 'Arial Narrow', Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .pg-header {
+      background: var(--pds-bg-surface);
+      border-bottom: 1px solid var(--pds-border);
+      padding: 20px 48px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .pg-header-bar {
+      width: 4px; height: 22px;
+      background: var(--pds-accent);
+      border-radius: 2px; flex-shrink: 0;
+    }
+    .pg-header-title {
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .pg-header-version {
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--pds-text-muted); margin-left: auto;
+    }
+
+    /* ── Nav ── */
+    .pg-nav {
+      background: rgba(33,34,37,0.6);
+      border-bottom: 1px solid var(--pds-border);
+      padding: 0 48px;
+      display: flex; overflow-x: auto;
+      position: sticky; top: 62px; z-index: 99;
+    }
+    .pg-nav a {
+      padding: 12px 18px;
+      font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.05em; color: var(--pds-text-muted);
+      text-decoration: none; white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .pg-nav a:hover { color: var(--pds-text-primary); border-bottom-color: var(--pds-accent); }
+
+    /* ── Main ── */
+    .pg-main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 56px 48px;
+      display: flex; flex-direction: column; gap: 80px;
+    }
+
+    /* ── Section ── */
+    .pg-section { display: flex; flex-direction: column; gap: 24px; }
+    .pg-section-header {
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--pds-border);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .pg-section-tag {
+      font-size: 1.35rem; font-weight: 700;
+      font-family: 'Courier New', monospace;
+    }
+    .pg-section-desc {
+      font-size: 0.875rem; color: var(--pds-text-muted); line-height: 1.6;
+    }
+
+    /* ── Split: demo left | code right ── */
+    .pg-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    /* Wider demo for components that need space */
+    .pg-split--wide-demo  { grid-template-columns: 3fr 2fr; }
+    /* Wider code for simple components with many examples */
+    .pg-split--wide-code  { grid-template-columns: 2fr 3fr; }
+
+    .pg-split-demo {
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .pg-split-code {
+      position: sticky;
+      top: 116px; /* header (62px) + nav (44px) + 10px gap */
+    }
+
+    /* ── Demo helpers ── */
+    .pg-demo-row {
+      display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;
+    }
+    .pg-demo-cell {
+      flex: 1; min-width: 220px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .pg-demo-label {
+      font-size: 0.67rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--pds-text-muted);
+    }
+
+    /* ── Code block ── */
+    .pg-code {
+      background: #13141A;
+      border: 1px solid var(--pds-border);
+      border-left: 3px solid var(--pds-contrast-low);
+      border-radius: 0 var(--pds-radius-md) var(--pds-radius-md) 0;
+      padding: 20px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.76rem;
+      color: var(--pds-contrast-high);
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ── Control buttons ── */
+    .pg-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pg-btn {
+      padding: 7px 16px;
+      background: var(--pds-bg-surface);
+      border: 1px solid var(--pds-border-strong);
+      border-radius: var(--pds-radius-sm);
+      color: var(--pds-text-secondary);
+      font-family: 'Porsche Next TT', 'Arial Narrow', Arial, sans-serif;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em;
+      cursor: pointer; transition: background 0.2s, color 0.2s;
+    }
+    .pg-btn:hover { background: var(--pds-bg-surface-hover); color: var(--pds-text-primary); }
+    .pg-btn--accent { background: var(--pds-accent); border-color: var(--pds-accent); color: #fff; }
+    .pg-btn--accent:hover { background: var(--pds-accent-hover); }
+
+    /* ── Card grid ── */
+    .pg-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    /* ── PDS Grid demo ── */
+
+    /* Slide canvas simulation: 1920×920 aspect ratio */
+    .pg-slide-canvas {
+      width: 100%;
+      aspect-ratio: 1920 / 920;
+      background: var(--pds-bg-base);
+      border-radius: var(--pds-radius-md);
+      border: 1px solid var(--pds-border);
+      /* Proportional padding matching the actual slide safe zones:
+         horizontal = 80/1920 = 4.17%,  vertical = 60/920 = 6.52% */
+      padding: 6.52% 4.17%;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .pg-slide-canvas--short {
+      aspect-ratio: 1920 / 460; /* half-height — for pattern demos */
+    }
+
+    /* 12-column grid inside the canvas */
+    .pg-grid-vis {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 6px;           /* visually proportional to the 36px actual gap */
+      height: 100%;
+      align-content: center;
+      row-gap: 8px;
+    }
+
+    /* Single column cell — the numbered reference markers */
+    .pg-gc {
+      background: rgba(213, 0, 28, 0.10);
+      border: 1px solid rgba(213, 0, 28, 0.25);
+      border-radius: 2px;
+      height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem; font-weight: 700;
+      color: rgba(213, 0, 28, 0.55);
+    }
+
+    /* Named span cells */
+    .pg-gs {
+      border-radius: 4px;
+      height: 44px;
+      display: flex; align-items: center; padding: 0 14px;
+      font-family: 'Porsche Next TT', 'Arial Narrow', Arial, sans-serif;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .pg-gs--narrow   { background: rgba(213,0,28,0.14);  color: #FC4040; border: 1px solid rgba(213,0,28,0.30); }
+    .pg-gs--basic    { background: rgba(23,139,255,0.12); color: #178BFF; border: 1px solid rgba(23,139,255,0.25); }
+    .pg-gs--extended { background: rgba(9,208,135,0.10);  color: #09D087; border: 1px solid rgba(9,208,135,0.22); }
+    .pg-gs--wide     { background: rgba(247,203,71,0.10); color: #F7CB47; border: 1px solid rgba(247,203,71,0.22); }
+    .pg-gs--empty    { /* placeholder to fill remaining columns */ }
+
+    /* Pattern cards — small canvas + label */
+    .pg-pattern-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .pg-pattern-card { display: flex; flex-direction: column; gap: 10px; }
+    .pg-pattern-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--pds-text-muted);
+    }
+
+    /* Content/media blocks inside pattern demos */
+    .pg-pb-text {
+      background: rgba(251,252,255,0.06);
+      border: 1px solid rgba(251,252,255,0.10);
+      border-radius: 4px; height: 100%; min-height: 80px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--pds-text-muted);
+    }
+    .pg-pb-media {
+      background: rgba(251,252,255,0.03);
+      border: 1px dashed rgba(251,252,255,0.15);
+      border-radius: 4px; height: 100%; min-height: 80px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: rgba(251,252,255,0.2);
+    }
+
+    .pg-grid-sub-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--pds-text-muted);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--pds-border);
+    }
+  </style>
+</head>
+<body>
+
+<header class="pg-header">
+  <div class="pg-header-bar"></div>
+  <span class="pg-header-title">Porsche Components</span>
+  <span class="pg-header-version">v0.5.0 — Playground</span>
+</header>
+
+<nav class="pg-nav">
+  <a href="#grid">PDS Grid</a>
+  <a href="#stat-counter">pc-stat-counter</a>
+  <a href="#card">pc-card</a>
+  <a href="#objective-list">pc-objective-list</a>
+  <a href="#tab-panel">pc-tab-panel</a>
+  <a href="#pull-quote">pc-pull-quote</a>
+  <a href="#bar-chart">pc-bar-chart</a>
+  <a href="#callout">pc-callout</a>
+</nav>
+
+<main class="pg-main">
+
+  <!-- ══════════════════════════════════════════════════════
+       PDS Grid System
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="grid">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">PDS Grid System</div>
+      <div class="pg-section-desc">
+        12-column grid adapted from PDS modern grid utilities
+        (<code style="font-size:0.8em;color:var(--pds-contrast-high)">packages/utilities/projects/utilities/src/js/grid/</code>).
+        Gap: <strong>spacingFluidMd</strong> = <code style="font-size:0.8em;color:var(--pds-contrast-high)">clamp(16px, 1.25vw + 12px, 36px)</code> → 36px at 1920px.
+        Safe zones: 80px each side → matches <code style="font-size:0.8em;color:var(--pds-contrast-high)">--pds-slide-pad-x</code>.
+      </div>
+    </div>
+
+    <!-- ── Column reference ── -->
+    <div class="pg-grid-sub-label">Column reference — 12 columns within 80px safe zones</div>
+    <div class="pg-slide-canvas">
+      <div class="pg-grid-vis" style="align-content:center;">
+        <div class="pg-gc">1</div>
+        <div class="pg-gc">2</div>
+        <div class="pg-gc">3</div>
+        <div class="pg-gc">4</div>
+        <div class="pg-gc">5</div>
+        <div class="pg-gc">6</div>
+        <div class="pg-gc">7</div>
+        <div class="pg-gc">8</div>
+        <div class="pg-gc">9</div>
+        <div class="pg-gc">10</div>
+        <div class="pg-gc">11</div>
+        <div class="pg-gc">12</div>
+      </div>
+    </div>
+
+    <!-- ── Named areas ── -->
+    <div class="pg-grid-sub-label">Named areas — PDS gridNarrow / gridBasic / gridExtended / gridWide</div>
+    <div class="pg-slide-canvas">
+      <div class="pg-grid-vis">
+        <!-- narrow: span 6 (50%) -->
+        <div class="pg-gs pg-gs--narrow" style="grid-column:span 6">col-narrow — 6 cols (50%)</div>
+        <div class="pg-gs pg-gs--empty"  style="grid-column:span 6"></div>
+        <!-- basic: span 8 (67%) -->
+        <div class="pg-gs pg-gs--basic"  style="grid-column:span 8">col-basic — 8 cols (67%)</div>
+        <div class="pg-gs pg-gs--empty"  style="grid-column:span 4"></div>
+        <!-- extended: span 10 (83%) -->
+        <div class="pg-gs pg-gs--extended" style="grid-column:span 10">col-extended — 10 cols (83%)</div>
+        <div class="pg-gs pg-gs--empty"    style="grid-column:span 2"></div>
+        <!-- wide: span 12 (100%) -->
+        <div class="pg-gs pg-gs--wide" style="grid-column:span 12">col-wide / col-full — 12 cols (100%)</div>
+      </div>
+    </div>
+
+    <!-- ── Common slide patterns ── -->
+    <div class="pg-grid-sub-label">Common slide patterns</div>
+    <div class="pg-pattern-grid">
+
+      <!-- 7+5: content + media -->
+      <div class="pg-pattern-card">
+        <div class="pg-pattern-label">Content + Media &nbsp;·&nbsp; col-7 + col-5</div>
+        <div class="pg-slide-canvas pg-slide-canvas--short">
+          <div class="pg-grid-vis" style="align-items:stretch;">
+            <div class="pg-pb-text"  style="grid-column:span 7">Text content · col-7</div>
+            <div class="pg-pb-media" style="grid-column:span 5">Image · col-5</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6+6: balanced half/half -->
+      <div class="pg-pattern-card">
+        <div class="pg-pattern-label">Balanced Half &nbsp;·&nbsp; col-6 + col-6</div>
+        <div class="pg-slide-canvas pg-slide-canvas--short">
+          <div class="pg-grid-vis" style="align-items:stretch;">
+            <div class="pg-pb-text"  style="grid-column:span 6">Left · col-6</div>
+            <div class="pg-pb-text"  style="grid-column:span 6">Right · col-6</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4+4+4: three cards -->
+      <div class="pg-pattern-card">
+        <div class="pg-pattern-label">Three Cards &nbsp;·&nbsp; col-4 + col-4 + col-4</div>
+        <div class="pg-slide-canvas pg-slide-canvas--short">
+          <div class="pg-grid-vis" style="align-items:stretch;">
+            <div class="pg-pb-text" style="grid-column:span 4">Card 1 · col-4</div>
+            <div class="pg-pb-text" style="grid-column:span 4">Card 2 · col-4</div>
+            <div class="pg-pb-text" style="grid-column:span 4">Card 3 · col-4</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8+4: text-heavy + sidebar -->
+      <div class="pg-pattern-card">
+        <div class="pg-pattern-label">Text-heavy + Sidebar &nbsp;·&nbsp; col-8 + col-4</div>
+        <div class="pg-slide-canvas pg-slide-canvas--short">
+          <div class="pg-grid-vis" style="align-items:stretch;">
+            <div class="pg-pb-text"  style="grid-column:span 8">Main content · col-8</div>
+            <div class="pg-pb-text"  style="grid-column:span 4">Sidebar · col-4</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Code reference ── -->
+    <div class="pg-split pg-split--wide-code">
+      <div class="pg-split-demo" style="font-size:0.85rem; color:var(--pds-text-secondary); line-height:1.7;">
+        <p>Use <code style="color:var(--pds-contrast-high)">.slide__grid</code> inside <code style="color:var(--pds-contrast-high)">.slide__content</code>. Column classes span from 1 to 12. Named aliases follow PDS area language.</p>
+        <br>
+        <p style="color:var(--pds-text-muted)">At 1920×920px: column ≈ 113.7px, gap = 36px. Combined: 12×113.7 + 11×36 = 1760px = full content width.</p>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;!-- Inside .slide__content --&gt;
+&lt;div class="slide__grid slide__grid--middle"&gt;
+
+  &lt;!-- content + media split --&gt;
+  &lt;div class="col-7"&gt; … &lt;/div&gt;
+  &lt;div class="col-5"&gt; … &lt;/div&gt;
+
+&lt;/div&gt;
+
+// Numeric spans
+// .col-1 through .col-12
+
+// Named spans (PDS language)
+// .col-narrow    → span 6  (50%)
+// .col-basic     → span 8  (67%)
+// .col-extended  → span 10 (83%)
+// .col-wide      → span 12 (100%)
+
+// Fraction spans
+// .col-one-third     → span 4
+// .col-one-half      → span 6
+// .col-two-thirds    → span 8
+// .col-three-fifths  → span 7
+// .col-two-fifths    → span 5
+
+// Alignment modifiers on .slide__grid
+// .slide__grid--middle   align-items: center
+// .slide__grid--top      align-items: start
+// .slide__grid--stretch  align-items: stretch
+
+// Self-alignment per column
+// .row-start / .row-center / .row-end</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-stat-counter
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="stat-counter">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-stat-counter&gt;</div>
+      <div class="pg-section-desc">Animated number counter with accent fill bar. Triggers on scroll into view. GSAP or rAF fallback.</div>
+    </div>
+    <div class="pg-split">
+      <div class="pg-split-demo">
+        <div class="pg-demo-row">
+          <div class="pg-demo-cell">
+            <div class="pg-demo-label">Default — percentage</div>
+            <pc-stat-counter value="94" label="Customer Satisfaction"></pc-stat-counter>
+          </div>
+          <div class="pg-demo-cell">
+            <div class="pg-demo-label">Custom suffix + max</div>
+            <pc-stat-counter value="630" suffix="K+" label="Avg. Household Income" max="1000" duration="2.5"></pc-stat-counter>
+          </div>
+        </div>
+        <div class="pg-demo-row">
+          <div class="pg-demo-cell">
+            <div class="pg-demo-label">No suffix</div>
+            <pc-stat-counter value="34" suffix="" label="Service Quality (CSI)"></pc-stat-counter>
+          </div>
+          <div class="pg-demo-cell">
+            <div class="pg-demo-label">Decimal</div>
+            <pc-stat-counter value="9.8" label="J.D. Power Rating" max="10"></pc-stat-counter>
+          </div>
+        </div>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-stat-counter
+  value="94"
+  label="Customer Satisfaction"&gt;
+&lt;/pc-stat-counter&gt;
+
+&lt;pc-stat-counter
+  value="630"
+  suffix="K+"
+  label="Avg. Household Income"
+  max="1000"
+  duration="2.5"&gt;
+&lt;/pc-stat-counter&gt;
+
+&lt;pc-stat-counter
+  value="34"
+  suffix=""
+  label="Service Quality (CSI)"&gt;
+&lt;/pc-stat-counter&gt;
+
+// Attributes
+// value     target number          required
+// label     text below number      optional
+// suffix    appended to number     default: "%"
+// max       denominator for bar    default: 100
+// duration  animation seconds      default: 2
+// delay     seconds before start   default: 0</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-card
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="card">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-card&gt;</div>
+      <div class="pg-section-desc">Interactive explore card. Three states: locked (shimmer), unlocked (clickable), revealed. Used in card-explore slide layouts.</div>
+    </div>
+    <div class="pg-split pg-split--wide-demo">
+      <div class="pg-split-demo">
+        <div class="pg-btn-row">
+          <button class="pg-btn pg-btn--accent" onclick="unlockCards()">Unlock all</button>
+          <button class="pg-btn" onclick="revealCards()">Reveal all</button>
+          <button class="pg-btn" onclick="resetCards()">Reset</button>
+        </div>
+        <div class="pg-card-grid">
+          <pc-card id="demo-card-1"
+            label="Design &amp; Function"
+            body="Every Porsche is engineered to be as beautiful as it is functional — form and performance are inseparable.">
+          </pc-card>
+          <pc-card id="demo-card-2"
+            label="Exclusivity &amp; Likeability"
+            body="Porsche is rare enough to feel special, yet accessible enough to be genuinely loved by a wide community.">
+          </pc-card>
+          <pc-card id="demo-card-3"
+            label="Pioneering Spirit &amp; Tradition"
+            body="The 911 has evolved for 60 years while remaining unmistakably itself — innovation built on a solid foundation.">
+          </pc-card>
+        </div>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-card
+  label="Design &amp; Function"
+  body="Every Porsche is engineered
+        to be as beautiful as it is
+        functional."&gt;
+&lt;/pc-card&gt;
+
+// Attributes
+// label   card title text    required
+// body    revealed content   required
+// icon    path to icon img   optional
+
+// JS API
+card.unlock()    // enable clicking
+card.reveal()    // show body content
+card.lock()      // reset to shimmer
+card.isRevealed  // boolean
+
+// Events
+card.addEventListener(
+  'pc-card-revealed',
+  () =&gt; checkAllVisited()
+);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-objective-list
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="objective-list">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-objective-list&gt;</div>
+      <div class="pg-section-desc">Numbered learning objectives. Reveal one at a time in sync with VO, or all at once with stagger.</div>
+    </div>
+    <div class="pg-split pg-split--wide-demo">
+      <div class="pg-split-demo">
+        <div class="pg-btn-row">
+          <button class="pg-btn pg-btn--accent" onclick="objNext()">Reveal next</button>
+          <button class="pg-btn" onclick="objAll()">Reveal all</button>
+          <button class="pg-btn" onclick="objReset()">Reset</button>
+        </div>
+        <pc-objective-list id="demo-obj"
+          items="Describe the demographic and psychographic profile of Porsche customers|Understand why customers make emotion-based purchasing decisions|Identify what makes Porsche unique among all premium automotive brands|Recognize how CSI metrics connect directly to your daily technical work|Determine which aspects of the customer experience you directly influence">
+        </pc-objective-list>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-objective-list
+  items="First objective|
+         Second objective|
+         Third objective"&gt;
+&lt;/pc-objective-list&gt;
+
+// Pipe-separate items in the
+// items attribute.
+
+// JS API
+list.revealNext()
+// Reveals next hidden item.
+// Returns true if more remain.
+
+list.revealAll()
+// Reveals all with 150ms stagger.
+
+list.reset()
+// Hides all items.
+
+// Properties
+list.revealedCount  // number
+list.totalCount     // number
+
+// Events
+list.addEventListener(
+  'pc-objectives-complete',
+  () =&gt; unlockNext()
+);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-tab-panel
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="tab-panel">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-tab-panel&gt; + &lt;pc-tab&gt;</div>
+      <div class="pg-section-desc">Tabbed content with visit tracking. Red dot marks visited tabs. Fires pc-tab-all-visited when every tab has been opened at least once.</div>
+    </div>
+    <div class="pg-split pg-split--wide-demo">
+      <div class="pg-split-demo">
+        <pc-tab-panel id="demo-tabs">
+          <pc-tab label="Design &amp; Function">
+            Every Porsche balances aesthetic beauty with engineering precision. The shape of a Porsche is never arbitrary — every curve serves airflow, every surface reduces drag while maintaining the unmistakable silhouette.
+          </pc-tab>
+          <pc-tab label="Exclusivity &amp; Likeability">
+            Porsche occupies a rare position: exclusive enough to feel special, yet genuinely liked by people who may never own one. It's aspirational without being alienating.
+          </pc-tab>
+          <pc-tab label="Performance &amp; Sustainability">
+            The Taycan proved Porsche could lead in electric performance without abandoning driving dynamics. Sustainability isn't a compromise — it's the next engineering challenge Porsche has chosen to master.
+          </pc-tab>
+          <pc-tab label="Pioneering Spirit &amp; Tradition">
+            The 911 has been in continuous production since 1963, evolving with every generation while remaining instantly recognizable. Tradition here means a living legacy, not stagnation.
+          </pc-tab>
+        </pc-tab-panel>
+        <div id="tab-status" style="font-size:0.72rem;color:var(--pds-text-muted);letter-spacing:0.05em;text-transform:uppercase;">0 of 4 tabs visited</div>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-tab-panel&gt;
+  &lt;pc-tab label="Tab One"&gt;
+    Content for tab one...
+  &lt;/pc-tab&gt;
+  &lt;pc-tab
+    label="Tab Two"
+    vo="SLD-CC02-007-CLICK-Tab.mp3"&gt;
+    Content for tab two...
+  &lt;/pc-tab&gt;
+&lt;/pc-tab-panel&gt;
+
+// JS API
+panel.openTab(index)
+panel.getVisitedCount()
+panel.allVisited  // boolean
+
+// Events
+panel.addEventListener(
+  'pc-tab-change',
+  e =&gt; playAudio(e.detail.vo)
+);
+
+panel.addEventListener(
+  'pc-tab-all-visited',
+  () =&gt; unlockNext()
+);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-pull-quote
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="pull-quote">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-pull-quote&gt;</div>
+      <div class="pg-section-desc">Full-width blockquote with decorative quote mark, red left bar, and attribution line. For dedicated quote slide layouts.</div>
+    </div>
+    <div class="pg-split">
+      <div class="pg-split-demo">
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">With attribution + source</div>
+          <pc-pull-quote
+            text="A Porsche is not just transportation; it is a complete engagement in everything good about transportation."
+            attribution="Ferry Porsche"
+            source="Porsche Founder">
+          </pc-pull-quote>
+        </div>
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">Quote only</div>
+          <pc-pull-quote
+            text="Porsche service has to be different because Porsche is different.">
+          </pc-pull-quote>
+        </div>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-pull-quote
+  text="A Porsche is not just
+        transportation..."
+  attribution="Ferry Porsche"
+  source="Porsche Founder"&gt;
+&lt;/pc-pull-quote&gt;
+
+// Attributes
+// text          quote text     required
+// attribution   speaker name   optional
+// source        role/title     optional
+
+// Note: for inline quotes within
+// slide content, use pc-callout
+// with variant="quote" instead.</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-bar-chart
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="bar-chart">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-bar-chart&gt; + &lt;pc-bar&gt;</div>
+      <div class="pg-section-desc">Animated horizontal bar chart. Bars stagger in on scroll. One bar can be highlighted in accent red to emphasize a key metric.</div>
+    </div>
+    <div class="pg-split">
+      <div class="pg-split-demo">
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">With highlight — CSI dimensions</div>
+          <pc-bar-chart unit="%" max="40" duration="1.5">
+            <pc-bar label="Service Quality"    value="34" highlight></pc-bar>
+            <pc-bar label="Service Advisor"    value="22"></pc-bar>
+            <pc-bar label="Service Initiation" value="18"></pc-bar>
+            <pc-bar label="Vehicle Pick Up"    value="15"></pc-bar>
+            <pc-bar label="Service Facility"   value="11"></pc-bar>
+          </pc-bar-chart>
+        </div>
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">No highlight — equal weight</div>
+          <pc-bar-chart unit="%" max="100" duration="1.2">
+            <pc-bar label="First-Time Owners" value="58"></pc-bar>
+            <pc-bar label="Enthusiasts"       value="42"></pc-bar>
+          </pc-bar-chart>
+        </div>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-bar-chart unit="%" max="40"&gt;
+  &lt;pc-bar
+    label="Service Quality"
+    value="34"
+    highlight&gt;
+  &lt;/pc-bar&gt;
+  &lt;pc-bar
+    label="Service Advisor"
+    value="22"&gt;
+  &lt;/pc-bar&gt;
+&lt;/pc-bar-chart&gt;
+
+// Attributes on &lt;pc-bar-chart&gt;
+// unit      value suffix      default: "%"
+// max       100% bar width    default: 100
+// duration  seconds/bar       default: 1.5
+// delay     start delay (s)   default: 0
+
+// Attributes on &lt;pc-bar&gt;
+// label     row label         required
+// value     numeric value     required
+// highlight accent red bar    boolean
+
+// Events
+chart.addEventListener(
+  'pc-bars-complete',
+  () =&gt; console.log('done')
+);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       pc-callout
+  ══════════════════════════════════════════════════════ -->
+  <section class="pg-section" id="callout">
+    <div class="pg-section-header">
+      <div class="pg-section-tag">&lt;pc-callout&gt;</div>
+      <div class="pg-section-desc">Inline highlight box for quotes, key insights, and callouts within slide content. Supports rich inner HTML.</div>
+    </div>
+    <div class="pg-split">
+      <div class="pg-split-demo">
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">accent (default)</div>
+          <pc-callout label="Key Insight" variant="accent">
+            Porsche customers are buying <strong>brand experience</strong>, not just a vehicle type.
+          </pc-callout>
+        </div>
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">quote</div>
+          <pc-callout label="Hans Klauser, Porsche AG" variant="quote">
+            Porsche service has to be different because Porsche is different.
+          </pc-callout>
+        </div>
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">neutral</div>
+          <pc-callout label="What This Means" variant="neutral">
+            Your technical communication quality directly impacts the <strong>34% of CSI</strong> that you control.
+          </pc-callout>
+        </div>
+        <div class="pg-demo-cell">
+          <div class="pg-demo-label">info</div>
+          <pc-callout variant="info">
+            Porsche has ranked #1 in J.D. Power Customer Appeal for <strong>10+ consecutive years</strong>.
+          </pc-callout>
+        </div>
+      </div>
+      <div class="pg-split-code">
+        <pre class="pg-code">&lt;pc-callout
+  label="Key Insight"
+  variant="accent"&gt;
+  Content with &lt;strong&gt;bold&lt;/strong&gt;
+  supported.
+&lt;/pc-callout&gt;
+
+// Attributes
+// label     heading text    optional
+// variant   visual style    default: "accent"
+
+// variant options:
+// "accent"
+//   ! icon, PDS error-soft bg (#3A0F0F)
+//   → key takeaways, important notes
+
+// "info"
+//   i icon, PDS info-soft bg (#04294E)
+//   → facts, data, statistics
+
+// "neutral"
+//   — icon, dark surface bg
+//   → "what this means" notes
+
+// "quote"
+//   " icon, dark surface bg, italic
+//   → attributed quotes
+
+// Inner HTML is preserved —
+// place content directly inside.</pre>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  /* pc-card controls */
+  var CARD_IDS = ['demo-card-1', 'demo-card-2', 'demo-card-3'];
+  function unlockCards() {
+    CARD_IDS.forEach(function(id) {
+      var c = document.getElementById(id);
+      if (c && !c.isRevealed) c.unlock();
+    });
+  }
+  function revealCards() {
+    CARD_IDS.forEach(function(id) {
+      var c = document.getElementById(id);
+      if (c) c.reveal();
+    });
+  }
+  function resetCards() {
+    CARD_IDS.forEach(function(id) {
+      var c = document.getElementById(id);
+      if (c) c.lock();
+    });
+  }
+
+  /* pc-objective-list controls */
+  function objNext()  { var l = document.getElementById('demo-obj'); if (l) l.revealNext(); }
+  function objAll()   { var l = document.getElementById('demo-obj'); if (l) l.revealAll(); }
+  function objReset() { var l = document.getElementById('demo-obj'); if (l) l.reset(); }
+
+  /* pc-tab-panel visit tracking */
+  var tabPanel = document.getElementById('demo-tabs');
+  if (tabPanel) {
+    tabPanel.addEventListener('pc-tab-change', function () {
+      var el = document.getElementById('tab-status');
+      if (el) el.textContent = tabPanel.getVisitedCount() + ' of ' + tabPanel._tabs.length + ' tabs visited';
+    });
+    tabPanel.addEventListener('pc-tab-all-visited', function () {
+      var el = document.getElementById('tab-status');
+      if (el) {
+        el.textContent = 'All tabs visited — Next would unlock';
+        el.style.color = 'var(--pds-success)';
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

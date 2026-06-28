@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .split-media-panel {
+      width: 100%;
+      height: 620px;
+      overflow: hidden;
+      border-radius: var(--pds-radius-xl);
+      box-shadow: var(--pds-shadow-card);
+    }
+    .split-media-panel img,
+    .split-media-panel video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}">
+
+  <div class="slide__split">
+
+    <!-- Left: text -->
+    <div class="slide__split--text">
+      <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.1s;"></div>
+      <h2 class="pds-heading-display anim-fade-right" style="--anim-delay: 0.2s;">{{SLIDE_TITLE}}</h2>
+      {{BODY_CONTENT_HTML}}
+      {{CALLOUT_HTML}}
+    </div>
+
+    <!-- Right: image/video -->
+    <div class="slide__split--media anim-fade-left" style="--anim-delay: 0.25s; height: 620px;">
+      <img data-img-adjust src="{{IMAGE_PATH}}" alt="" style="--img-pos:{{IMG_POS}};--img-scale:{{IMG_SCALE}};" onerror="this.style.display='none'">
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Slide logic ─────────────────────────────────────────────────────────── */
+(function () {
+  document.querySelectorAll('.anim-fade-right, .anim-fade-left, .anim-bar-grow').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+})();
+</script>
+
+</body>
+</html>

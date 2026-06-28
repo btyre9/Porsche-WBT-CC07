@@ -1,0 +1,198 @@
+/*
+ * animations.css
+ * Named animation presets for WBT slides.
+ * Import AFTER pds-tokens.css and slide-base.css.
+ *
+ * CSS-only animations are defined here.
+ * GSAP animations (counters, complex sequences) live in porsche-components.js.
+ *
+ * Usage pattern:
+ *   Elements start hidden via a "from" class, e.g. .anim-fade-up
+ *   Add class .is-visible (or .is-entered) to trigger the animation.
+ *   The slide generator adds the trigger class via a small inline script
+ *   timed to the VO audio cues.
+ *
+ * Stagger:
+ *   Add --anim-delay CSS variable to each child for staggered entrances.
+ *   e.g. style="--anim-delay: 0.24s"
+ *   The slide generator calculates and injects these automatically.
+ */
+
+/* ─────────────────────────────────────────────
+   BASE — shared animation properties
+───────────────────────────────────────────── */
+
+[class*="anim-"] {
+  animation-fill-mode: both;
+  animation-timing-function: var(--ease-out);
+  animation-delay: var(--anim-delay, 0s);
+}
+
+/* ─────────────────────────────────────────────
+   FADE UP  (most common entrance)
+   Slides in from slightly below with a fade.
+───────────────────────────────────────────── */
+
+.anim-fade-up {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+.anim-fade-up.is-visible {
+  animation: fadeUp var(--dur-enter) var(--ease-out) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ─────────────────────────────────────────────
+   FADE IN  (no movement — for overlays, text)
+───────────────────────────────────────────── */
+
+.anim-fade-in {
+  opacity: 0;
+}
+
+.anim-fade-in.is-visible {
+  animation: fadeIn var(--dur-enter) var(--ease-out) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────
+   FADE LEFT  (slides in from the right)
+   Use for text column in split layouts.
+───────────────────────────────────────────── */
+
+.anim-fade-left {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
+.anim-fade-left.is-visible {
+  animation: fadeLeft var(--dur-enter) var(--ease-out) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(40px);  }
+  to   { opacity: 1; transform: translateX(0);      }
+}
+
+/* ─────────────────────────────────────────────
+   FADE RIGHT  (slides in from the left)
+   Use for image/media column in split layouts.
+───────────────────────────────────────────── */
+
+.anim-fade-right {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+.anim-fade-right.is-visible {
+  animation: fadeRight var(--dur-enter) var(--ease-out) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@keyframes fadeRight {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0);      }
+}
+
+/* ─────────────────────────────────────────────
+   SCALE IN  (scales up from slightly small)
+   Use for hero images, card reveals.
+───────────────────────────────────────────── */
+
+.anim-scale-in {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+.anim-scale-in.is-visible {
+  animation: scaleIn var(--dur-enter) var(--ease-spring) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+/* ─────────────────────────────────────────────
+   STAGGER CARDS  (parent triggers children)
+   Apply .stagger-children to the grid/list container.
+   Each direct child gets a calculated --anim-delay.
+───────────────────────────────────────────── */
+
+.stagger-children > * {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.stagger-children.is-visible > * {
+  animation: fadeUp var(--dur-enter) var(--ease-out) both;
+}
+
+.stagger-children.is-visible > *:nth-child(1)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 0);  }
+.stagger-children.is-visible > *:nth-child(2)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 1);  }
+.stagger-children.is-visible > *:nth-child(3)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 2);  }
+.stagger-children.is-visible > *:nth-child(4)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 3);  }
+.stagger-children.is-visible > *:nth-child(5)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 4);  }
+.stagger-children.is-visible > *:nth-child(6)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 5);  }
+.stagger-children.is-visible > *:nth-child(7)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 6);  }
+.stagger-children.is-visible > *:nth-child(8)  { animation-delay: calc(var(--anim-delay, 0s) + var(--stagger-step) * 7);  }
+
+/* ─────────────────────────────────────────────
+   ACCENT BAR GROW  (bar extends left→right)
+   Apply to .pds-accent-bar
+───────────────────────────────────────────── */
+
+.anim-bar-grow {
+  width: 0 !important;
+}
+
+.anim-bar-grow.is-visible {
+  animation: barGrow var(--dur-slow) var(--ease-out) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@keyframes barGrow {
+  from { width: 0 !important; }
+  to   { width: var(--accent-bar-width) !important; }
+}
+
+/* ─────────────────────────────────────────────
+   PULSE CHIP  (attention pulse on interactive elements)
+   Use on the "click to explore" chip/button.
+───────────────────────────────────────────── */
+
+.anim-pulse {
+  animation: pulseChip 2.2s ease-in-out infinite;
+}
+
+@keyframes pulseChip {
+  0%   { box-shadow: 0 0 0 0    rgba(213,0,28, 0.50); }
+  50%  { box-shadow: 0 0 0 10px rgba(213,0,28, 0);    }
+  100% { box-shadow: 0 0 0 0    rgba(213,0,28, 0);    }
+}
+
+/* ─────────────────────────────────────────────
+   PLAYER PAUSE STATE
+   When the player sends 'player-play-state: paused',
+   the slide adds .is-paused to .slide.
+   All CSS animations stop.
+───────────────────────────────────────────── */
+
+.slide.is-paused *,
+.slide.is-paused *::before,
+.slide.is-paused *::after {
+  animation-play-state: paused !important;
+}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>Digital Communication Excellence</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    /* ── PDS v4.1.0 frosted-glass left panel ──────────────────────────────
+       Subject is composed on the RIGHT (see image prompt); the LEFT is frosted
+       behind the headline. backdrop-filter can't be used — the slide is
+       transform-scaled, which disables it in Chromium — so we blur a duplicate
+       image layer. blur(32px) = the PDS `blurFrosted` token. */
+    .slide__bg .hero-img-frost {
+      filter: blur(32px);
+      transform: scale(calc(var(--img-scale, 1) * 1.12));
+      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 36%, transparent 70%);
+              mask-image: linear-gradient(to right, #000 0%, #000 36%, transparent 70%);
+    }
+    /* PDS `frosted-strong` tint (dark: rgba(14,14,18,0.82)) faded to clear so the
+       right-side subject stays crisp. Overrides only this template's overlay. */
+    .pds-overlay.hero-frost-tint {
+      background: linear-gradient(
+        to right,
+        rgba(14, 14, 18, 0.82) 30%,
+        rgba(14, 14, 18, 0.45) 58%,
+        rgba(14, 14, 18, 0.00) 78%
+      );
+    }
+
+    /* Title block sits slightly above center on the left side of the slide. */
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-lg);
+      max-width: 820px;
+      text-align: left;
+      transform: translateY(-34px);
+    }
+    .hero-accent {
+      width: 132px;
+      height: 8px;
+      background: var(--pds-accent);
+      margin-bottom: 2px;
+      flex-shrink: 0;
+    }
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--pds-space-md);
+      margin-top: var(--pds-space-sm);
+    }
+    .hero-meta-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--pds-accent);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="1S01">
+
+  <!-- Background — full-bleed image; subject composed on the RIGHT, frosted on the LEFT -->
+  <div class="slide__bg">
+    <img class="hero-img-base" data-img-adjust src="../assets/images/1S01.webp" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
+    <img class="hero-img-frost" aria-hidden="true" src="../assets/images/1S01.webp" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
+    <div class="pds-overlay hero-frost-tint"></div>
+  </div>
+
+  <!-- Content — slightly above center, anchored to the left half -->
+  <div class="slide__content" style="justify-content: center;">
+    <div class="hero-content">
+      <div class="hero-accent anim-fade-up" style="--anim-delay: 0.15s;" aria-hidden="true"></div>
+      <h1 class="pds-heading-hero anim-fade-up" style="--anim-delay: 0.25s;">Digital Communication Excellence</h1>
+      <div class="hero-meta anim-fade-up" style="--anim-delay: 0.40s;">
+        <span class="pds-caption">Your customers are not waiting at the service drive anymore.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Slide logic ─────────────────────────────────────────────────────────── */
+(function () {
+  // Trigger entrance animations
+  document.querySelectorAll('.anim-fade-up').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+})();
+</script>
+
+</body>
+</html>

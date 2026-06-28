@@ -1,0 +1,14 @@
+{
+  "name": "vmmedia-tool",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Human-in-the-loop helper to browse the Porsche VM Media (Domino) portal and catalog images for WBT slides.",
+  "type": "commonjs",
+  "scripts": {
+    "capture": "node capture.js",
+    "postinstall": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

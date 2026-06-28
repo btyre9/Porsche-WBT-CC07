@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .score-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+      gap: var(--pds-space-xl);
+      text-align: center;
+    }
+    .score-card {
+      width: 640px;
+      padding: var(--pds-space-2xl);
+      background: var(--pds-bg-surface);
+      border: 1px solid var(--pds-border);
+      border-radius: var(--pds-radius-xl);
+      box-shadow: var(--pds-shadow-card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--pds-space-lg);
+    }
+    .score-pct {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-stat);
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1;
+    }
+    .score-pct--pass { color: var(--pds-success); }
+    .score-pct--fail { color: var(--pds-error); }
+    .score-detail {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-md);
+      color: var(--pds-text-secondary);
+    }
+    .score-message {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-lg);
+      font-weight: var(--pds-font-weight-semibold);
+      color: var(--pds-text-primary);
+      line-height: var(--pds-line-height);
+      max-width: 480px;
+    }
+    .score-actions {
+      display: flex;
+      gap: var(--pds-space-md);
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: var(--pds-space-sm);
+    }
+    .score-btn {
+      padding: 12px 28px;
+      border-radius: var(--pds-radius-pill);
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-semibold);
+      cursor: pointer;
+      transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+    }
+    .score-btn--primary {
+      background: var(--pds-accent);
+      color: var(--pds-brand-white);
+      border: 2px solid var(--pds-accent);
+    }
+    .score-btn--primary:hover { background: var(--pds-accent-hover); border-color: var(--pds-accent-hover); }
+    .score-btn--outline {
+      background: transparent;
+      color: var(--pds-accent);
+      border: 2px solid var(--pds-accent);
+    }
+    .score-btn--outline:hover { background: var(--pds-accent); color: var(--pds-brand-white); }
+    .score-btn--ghost {
+      background: transparent;
+      color: var(--pds-text-secondary);
+      border: 2px solid var(--pds-border);
+    }
+    .score-btn--ghost:hover { border-color: var(--pds-text-secondary); color: var(--pds-text-primary); }
+    .recorded-note {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      color: var(--pds-text-secondary);
+      text-align: center;
+      line-height: 1.5;
+    }
+    /* Show correct panel based on .is-pass / .is-fail on .score-layout */
+    .score-panel { display: none; }
+    .score-layout.is-pass .score-panel--pass { display: contents; }
+    .score-layout.is-fail .score-panel--fail { display: contents; }
+</style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}">
+
+  <div class="score-layout" id="score-layout">
+
+    <div class="score-card anim-scale-in">
+
+      <div class="pds-accent-bar"></div>
+
+      <div class="score-pct" id="score-pct">—%</div>
+      <div class="score-detail" id="score-detail">Loading results…</div>
+
+      <!-- PASS panel -->
+      <div class="score-panel score-panel--pass" style="display:contents;">
+        <p class="score-message" id="pass-message">
+          Congratulations! You have passed this module.
+        </p>
+        <p class="recorded-note">
+          Your score has been recorded.<br>You may close this browser window.
+        </p>
+        <div class="score-actions">
+          <button class="score-btn score-btn--ghost" id="review-btn-pass" type="button">
+            ↩ Review Module
+          </button>
+          <button class="score-btn score-btn--primary" onclick="window.print()">
+            ↓ Go to Certificate
+          </button>
+        </div>
+      </div>
+
+      <!-- FAIL panel -->
+      <div class="score-panel score-panel--fail" style="display:contents;">
+        <p class="score-message" id="fail-message">
+          Practice makes perfect! Review the module and try the Final Quiz again when you're ready.
+        </p>
+        <p class="recorded-note">
+          Your score has been recorded.<br>You may close this browser window.
+        </p>
+        <div class="score-actions">
+          <button class="score-btn score-btn--outline" id="review-btn-fail" type="button">
+            ↩ Review Module
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Score logic ─────────────────────────────────────────────────────────── */
+(function () {
+  var PASS_THRESHOLD = 80;
+
+  document.querySelectorAll('.anim-scale-in').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+  function showResults(results) {
+    var pct = results.total > 0
+      ? Math.round((results.correct / results.total) * 100)
+      : 0;
+    var passed = pct >= PASS_THRESHOLD;
+
+    var layout   = document.getElementById('score-layout');
+    var pctEl    = document.getElementById('score-pct');
+    var detailEl = document.getElementById('score-detail');
+
+    pctEl.textContent = pct + '%';
+    pctEl.classList.add(passed ? 'score-pct--pass' : 'score-pct--fail');
+    detailEl.textContent = results.correct + ' of ' + results.total + ' correct';
+    layout.classList.add(passed ? 'is-pass' : 'is-fail');
+
+    // Play appropriate audio
+    if (passed) {
+      SandboxRuntime.interactionAudio.src = '../assets/audio/vo/Congratulations.mp3';
+    } else {
+      SandboxRuntime.interactionAudio.src = '../assets/audio/vo/FailResponse.mp3';
+    }
+    SandboxRuntime.interactionAudio.play();
+
+    // Report to SCORM
+    try {
+      if (window.parent && window.parent.CourseRuntime && window.parent.CourseRuntime.submitFinalQuiz) {
+        window.parent.CourseRuntime.submitFinalQuiz(pct);
+      }
+    } catch (_) {}
+  }
+
+  // Read results from player
+  try {
+    var CR = window.parent && window.parent.CourseRuntime;
+    if (CR && CR.getFinalResults) {
+      showResults(CR.getFinalResults());
+    } else {
+      // Local file fallback: show 0
+      showResults({ correct: 0, answered: 0, total: 1 });
+    }
+  } catch (_) {
+    showResults({ correct: 0, answered: 0, total: 1 });
+  }
+
+  // Review Module buttons (pass + fail) — opens the TOC menu with all slides accessible
+  function onReviewModule() {
+    window.parent.postMessage({ type: 'sandbox-review-module' }, '*');
+  }
+  var reviewBtnPass = document.getElementById('review-btn-pass');
+  if (reviewBtnPass) reviewBtnPass.addEventListener('click', onReviewModule);
+  var reviewBtnFail = document.getElementById('review-btn-fail');
+  if (reviewBtnFail) reviewBtnFail.addEventListener('click', onReviewModule);
+})();
+</script>
+
+</body>
+</html>

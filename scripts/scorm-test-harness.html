@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SCORM 1.2 Test Harness — Porsche WBT</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; background: #1b1d20; color: #e7e9ec; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Top bar ─────────────────────────────────────────────── */
+  .bar {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px;
+    background: #25282c;
+    border-bottom: 1px solid #34383d;
+  }
+  .bar h1 { font-size: 14px; font-weight: 700; letter-spacing: .02em; color: #fff; white-space: nowrap; }
+  .bar .tag { font-size: 11px; font-weight: 600; color: #0a0; background: rgba(9,208,135,.12); border: 1px solid rgba(9,208,135,.4); color: #2ee6a6; padding: 2px 8px; border-radius: 10px; }
+  .bar .spacer { flex: 1; }
+  .bar button {
+    font: inherit; font-size: 12px; font-weight: 600;
+    color: #e7e9ec; background: #34383d; border: 1px solid #44494f;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .bar button:hover { background: #3e4348; border-color: #565c63; }
+  .bar button.danger { color: #ff8b8b; border-color: #5a3b3b; }
+  .bar button.danger:hover { background: #4a2e2e; }
+
+  /* ── Status chips ────────────────────────────────────────── */
+  .chips { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; background: #1f2225; border-bottom: 1px solid #34383d; }
+  .chip { display: flex; flex-direction: column; gap: 2px; min-width: 92px; background: #25282c; border: 1px solid #34383d; border-radius: 6px; padding: 6px 11px; }
+  .chip .k { font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: #8a9099; }
+  .chip .v { font-size: 13px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .chip .v.good { color: #2ee6a6; }
+  .chip .v.bad { color: #ff8b8b; }
+  .chip .v.warn { color: #f2c14e; }
+
+  /* ── Main split ──────────────────────────────────────────── */
+  .main { flex: 1; display: flex; min-height: 0; }
+  .stage { flex: 1; min-width: 0; background: #000; position: relative; }
+  .stage iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+  .panel { width: 460px; flex-shrink: 0; display: flex; flex-direction: column; background: #1b1d20; border-left: 1px solid #34383d; }
+  .panel-head { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: #25282c; border-bottom: 1px solid #34383d; }
+  .panel-head h2 { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #b8bdc4; }
+  .panel-head .spacer { flex: 1; }
+  .panel-head label { font-size: 11px; color: #8a9099; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+  .panel-head button { font: inherit; font-size: 11px; color: #b8bdc4; background: transparent; border: 1px solid #44494f; padding: 3px 9px; border-radius: 5px; cursor: pointer; }
+  .panel-head button:hover { background: #34383d; }
+
+  .log { flex: 1; overflow-y: auto; padding: 6px 0; font-family: 'Cascadia Code', Consolas, 'Courier New', monospace; font-size: 11.5px; line-height: 1.45; }
+  .log .row { display: flex; gap: 8px; padding: 2px 14px; border-bottom: 1px solid #232629; }
+  .log .row:hover { background: #232629; }
+  .log .t { color: #5f666e; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .log .op { flex-shrink: 0; font-weight: 700; width: 64px; }
+  .log .msg { color: #c7ccd2; word-break: break-word; flex: 1; }
+  .log .msg .key { color: #7fb2ff; }
+  .log .msg .val { color: #2ee6a6; }
+  .log .msg .ret { color: #8a9099; }
+  .op.init, .op.finish { color: #f2c14e; }
+  .op.set { color: #7fb2ff; }
+  .op.get { color: #9aa1a9; }
+  .op.commit { color: #c08bff; }
+  .op.err { color: #ff8b8b; }
+  .row.is-err .msg { color: #ff8b8b; }
+
+  .empty { color: #5f666e; font-style: italic; padding: 16px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1>SCORM Test Harness</h1>
+  <span class="tag">SCORM 1.2</span>
+  <span class="spacer"></span>
+  <button id="btn-reload">↻ Reload course</button>
+  <button id="btn-reset" class="danger">⟲ Reset registration</button>
+</div>
+
+<div class="chips" id="chips">
+  <div class="chip"><span class="k">Lesson Status</span><span class="v" id="c-status">—</span></div>
+  <div class="chip"><span class="k">Score (raw)</span><span class="v" id="c-score">—</span></div>
+  <div class="chip"><span class="k">Mastery</span><span class="v" id="c-mastery">—</span></div>
+  <div class="chip"><span class="k">Bookmark</span><span class="v" id="c-loc">—</span></div>
+  <div class="chip"><span class="k">Entry</span><span class="v" id="c-entry">—</span></div>
+  <div class="chip"><span class="k">Session Time</span><span class="v" id="c-stime">—</span></div>
+  <div class="chip"><span class="k">Total Time</span><span class="v" id="c-ttime">—</span></div>
+  <div class="chip"><span class="k">API Calls</span><span class="v" id="c-calls">0</span></div>
+</div>
+
+<div class="main">
+  <div class="stage"><iframe id="course" title="Course player"></iframe></div>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>API Call Log</h2>
+      <span class="spacer"></span>
+      <label><input type="checkbox" id="hide-get" /> Hide GetValue</label>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div class="log" id="log"><div class="empty">Waiting for the course to call LMSInitialize…</div></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   SCORM 1.2 LMS runtime simulator.
+   Exposes window.API (the object the content's runtime.js scans for).
+   Persists the writable CMI elements to localStorage so resume/bookmark
+   behaviour can be tested across reloads.
+   ════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'scorm-harness:' + location.pathname; // one registration per harness URL
+  var MASTERY   = '80';                                  // from imsmanifest.xml <masteryscore>
+
+  // ── CMI data model (flat key/value, SCORM 1.2) ────────────────────
+  var cmi = {};
+  var initialized = false;
+  var terminated  = false;
+  var lastError   = '0';
+  var callCount   = 0;
+
+  // Read-only elements: LMSSetValue must fail with error 403.
+  var READ_ONLY = {
+    'cmi.core.student_id': 1, 'cmi.core.student_name': 1,
+    'cmi.core.credit': 1, 'cmi.core.entry': 1, 'cmi.core.lesson_mode': 1,
+    'cmi.core.total_time': 1, 'cmi.core.score.children': 1,
+    'cmi.core._children': 1, 'cmi.student_data.mastery_score': 1,
+    'cmi.launch_data': 1, 'cmi._version': 1
+  };
+  // Write-only: LMSGetValue must fail with error 404 (here 405-ish; 1.2 uses 404? no — 1.2: 404 not used; we return "" + 403).
+  var WRITE_ONLY = { 'cmi.core.session_time': 1, 'cmi.core.exit': 1 };
+
+  var ERROR_STRINGS = {
+    '0': 'No error', '101': 'General exception', '201': 'Invalid argument error',
+    '202': 'Element cannot have children', '203': 'Element not an array - cannot have count',
+    '301': 'Not initialized', '401': 'Not implemented error',
+    '403': 'Element is read only', '404': 'Element is write only', '405': 'Incorrect data type'
+  };
+
+  // ── Timespan helpers (CMITimespan "HHHH:MM:SS.SS") ────────────────
+  function tsToSec(ts) {
+    if (!ts) return 0;
+    var p = String(ts).split(':');
+    if (p.length !== 3) return 0;
+    return (parseInt(p[0], 10) || 0) * 3600 + (parseInt(p[1], 10) || 0) * 60 + (parseFloat(p[2]) || 0);
+  }
+  function secToTs(s) {
+    var h = Math.floor(s / 3600); s -= h * 3600;
+    var m = Math.floor(s / 60);   s -= m * 60;
+    return pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s.toFixed(2), 5);
+  }
+  function pad(n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; }
+
+  // ── Persistence ───────────────────────────────────────────────────
+  function loadSaved() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); }
+    catch (_) { return null; }
+  }
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        lesson_status:   cmi['cmi.core.lesson_status'],
+        lesson_location: cmi['cmi.core.lesson_location'],
+        score_raw:       cmi['cmi.core.score.raw'],
+        score_min:       cmi['cmi.core.score.min'],
+        score_max:       cmi['cmi.core.score.max'],
+        total_time:      cmi['cmi.core.total_time'],
+        suspend_data:    cmi['cmi.suspend_data']
+      }));
+    } catch (_) {}
+  }
+
+  // ── Seed the data model on construction ───────────────────────────
+  function seed() {
+    var saved = loadSaved();
+    var resuming = !!(saved && (saved.lesson_location || saved.suspend_data || saved.lesson_status === 'incomplete'));
+
+    cmi = {
+      'cmi._version': '3.4',
+      'cmi.core.student_id': 'porsche-tester-001',
+      'cmi.core.student_name': 'Tester, Porsche',
+      'cmi.core.lesson_location': resuming ? (saved.lesson_location || '') : '',
+      'cmi.core.credit': 'credit',
+      'cmi.core.lesson_status': resuming ? (saved.lesson_status || 'incomplete') : 'not attempted',
+      'cmi.core.entry': resuming ? 'resume' : 'ab-initio',
+      'cmi.core.score.raw': resuming ? (saved.score_raw || '') : '',
+      'cmi.core.score.min': resuming ? (saved.score_min || '') : '',
+      'cmi.core.score.max': resuming ? (saved.score_max || '') : '',
+      'cmi.core.total_time': resuming ? (saved.total_time || '0000:00:00.00') : '0000:00:00.00',
+      'cmi.core.lesson_mode': 'normal',
+      'cmi.core.exit': '',
+      'cmi.core.session_time': '0000:00:00.00',
+      'cmi.suspend_data': resuming ? (saved.suspend_data || '') : '',
+      'cmi.launch_data': '',
+      'cmi.student_data.mastery_score': MASTERY,
+      'cmi.core.score.children': 'raw,min,max',
+      'cmi.core._children': 'student_id,student_name,lesson_location,credit,lesson_status,entry,score,total_time,lesson_mode,exit,session_time'
+    };
+  }
+
+  // ── The SCORM 1.2 API object ──────────────────────────────────────
+  var API = {
+    LMSInitialize: function (s) {
+      callCount++;
+      if (initialized) { lastError = '101'; log('init', 'LMSInitialize("") — already initialized', '"false"', true); render(); return 'false'; }
+      initialized = true; terminated = false; lastError = '0';
+      log('init', 'LMSInitialize("")', '"true"');
+      render();
+      return 'true';
+    },
+    LMSFinish: function (s) {
+      callCount++;
+      if (!initialized) { lastError = '301'; log('finish', 'LMSFinish("") — not initialized', '"false"', true); render(); return 'false'; }
+      accumulateTime();
+      persist();
+      initialized = false; terminated = true; lastError = '0';
+      log('finish', 'LMSFinish("")', '"true"');
+      render();
+      return 'true';
+    },
+    LMSGetValue: function (key) {
+      callCount++;
+      if (!initialized) { lastError = '301'; log('err', 'LMSGetValue("' + key + '") — not initialized', '""', true); render(); return ''; }
+      if (WRITE_ONLY[key]) { lastError = '404'; log('err', 'LMSGetValue("' + key + '") — write only', '""', true); render(); return ''; }
+      var v = (key in cmi) ? cmi[key] : '';
+      lastError = '0';
+      log('get', fmtKey(key), '"' + v + '"');
+      render();
+      return String(v);
+    },
+    LMSSetValue: function (key, value) {
+      callCount++;
+      if (!initialized) { lastError = '301'; log('err', 'LMSSetValue("' + key + '", "' + value + '") — not initialized', '"false"', true); render(); return 'false'; }
+      if (READ_ONLY[key]) { lastError = '403'; log('err', 'LMSSetValue("' + key + '") — read only', '"false"', true); render(); return 'false'; }
+      cmi[key] = String(value);
+      lastError = '0';
+      log('set', fmtKey(key) + ' = <span class="val">"' + esc(value) + '"</span>', '"true"');
+      render();
+      return 'true';
+    },
+    LMSCommit: function (s) {
+      callCount++;
+      if (!initialized) { lastError = '301'; log('err', 'LMSCommit("") — not initialized', '"false"', true); render(); return 'false'; }
+      persist();
+      lastError = '0';
+      log('commit', 'LMSCommit("")', '"true"');
+      render();
+      return 'true';
+    },
+    LMSGetLastError:    function () { return lastError; },
+    LMSGetErrorString:  function (code) { return ERROR_STRINGS[String(code)] || ''; },
+    LMSGetDiagnostic:   function (code) { return ERROR_STRINGS[String(code)] || String(code); }
+  };
+
+  function accumulateTime() {
+    var sess = tsToSec(cmi['cmi.core.session_time']);
+    if (sess > 0) cmi['cmi.core.total_time'] = secToTs(tsToSec(cmi['cmi.core.total_time']) + sess);
+  }
+
+  // ── Logging + rendering ───────────────────────────────────────────
+  var logEl = document.getElementById('log');
+  var entries = [];
+  function nowStamp() {
+    var d = new Date();
+    return pad(d.getHours(), 2) + ':' + pad(d.getMinutes(), 2) + ':' + pad(d.getSeconds(), 2);
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function fmtKey(k) { return '<span class="key">' + esc(k) + '</span>'; }
+
+  function log(op, msg, ret, isErr) {
+    entries.push({ t: nowStamp(), op: op, msg: msg, ret: ret || '', err: !!isErr });
+    var first = logEl.querySelector('.empty');
+    if (first) logEl.innerHTML = '';
+    var hideGet = document.getElementById('hide-get').checked;
+    if (op === 'get' && hideGet) return;
+    appendRow(entries[entries.length - 1]);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  var OP_LABEL = { init: 'INIT', finish: 'FINISH', set: 'SET', get: 'GET', commit: 'COMMIT', err: 'ERROR' };
+  function appendRow(e) {
+    var row = document.createElement('div');
+    row.className = 'row' + (e.err ? ' is-err' : '');
+    row.innerHTML = '<span class="t">' + e.t + '</span>'
+      + '<span class="op ' + e.op + '">' + (OP_LABEL[e.op] || e.op) + '</span>'
+      + '<span class="msg">' + e.msg + (e.ret ? ' <span class="ret">→ ' + esc(e.ret) + '</span>' : '') + '</span>';
+    logEl.appendChild(row);
+  }
+  function rebuildLog() {
+    var hideGet = document.getElementById('hide-get').checked;
+    logEl.innerHTML = '';
+    var shown = entries.filter(function (e) { return !(e.op === 'get' && hideGet); });
+    if (!shown.length) { logEl.innerHTML = '<div class="empty">No calls to show.</div>'; return; }
+    shown.forEach(appendRow);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setChip(id, val, cls) {
+    var el = document.getElementById(id);
+    el.textContent = (val === '' || val == null) ? '—' : val;
+    el.className = 'v' + (cls ? ' ' + cls : '');
+  }
+  function render() {
+    var status = cmi['cmi.core.lesson_status'] || '—';
+    var sc = status === 'passed' || status === 'completed' ? 'good'
+           : status === 'failed' ? 'bad'
+           : status === 'incomplete' ? 'warn' : '';
+    setChip('c-status', status, sc);
+    var raw = cmi['cmi.core.score.raw'];
+    setChip('c-score', raw === '' ? '—' : raw, raw === '' ? '' : (Number(raw) >= Number(MASTERY) ? 'good' : 'bad'));
+    setChip('c-mastery', MASTERY);
+    setChip('c-loc', cmi['cmi.core.lesson_location']);
+    setChip('c-entry', cmi['cmi.core.entry']);
+    setChip('c-stime', cmi['cmi.core.session_time']);
+    setChip('c-ttime', cmi['cmi.core.total_time']);
+    setChip('c-calls', callCount);
+  }
+
+  // ── Wire up + boot ────────────────────────────────────────────────
+  window.API = API;            // SCORM 1.2 — content's _scanChain() finds this
+  seed();
+  render();
+
+  var iframe = document.getElementById('course');
+  // Load the dev player shell (/index.html) — the runnable entry the dashboard
+  // server (root = course/) serves. It runs the same runtime.js + SCORM calls as
+  // the packaged player/index.html and finds window.API via the parent-window walk.
+  function loadCourse() { iframe.src = '/index.html?harness=' + Date.now(); }
+
+  document.getElementById('btn-reload').addEventListener('click', function () {
+    initialized = false; terminated = false;
+    loadCourse();
+  });
+  document.getElementById('btn-reset').addEventListener('click', function () {
+    try { localStorage.removeItem(STORE_KEY); } catch (_) {}
+    entries = []; callCount = 0; initialized = false; terminated = false; lastError = '0';
+    seed(); rebuildLog(); render();
+    log('init', '— registration reset —', '');
+    loadCourse();
+  });
+  document.getElementById('btn-clear').addEventListener('click', function () { entries = []; rebuildLog(); });
+  document.getElementById('hide-get').addEventListener('change', rebuildLog);
+
+  loadCourse();
+})();
+</script>
+</body>
+</html>

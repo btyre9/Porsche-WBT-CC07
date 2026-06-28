@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>Your Three Digital Channels</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .card-section {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+      gap: var(--pds-space-lg);
+    }
+    .card-header {
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-md);
+    }
+    .card-grid {
+      display: flex;
+      gap: var(--pds-space-lg);
+      flex: 1;
+      align-items: stretch;
+    }
+    .tile-row {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+    }
+    .tile {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 0;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(14px);
+      transition:
+        flex-grow 0.6s cubic-bezier(0, 0, 0.2, 1),
+        opacity 0.55s ease,
+        transform 0.55s ease,
+        filter 0.4s ease;
+    }
+    .tile.is-visible { opacity: 1; transform: none; }
+    .tile-row:hover .tile { flex-grow: 0.85; }
+    .tile-row:hover .tile:hover,
+    .tile.is-active { flex-grow: 1.3; }
+    .tile-poster {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: var(--img-pos, center);
+      transform: scale(var(--img-scale, 1));
+      transition: transform 1.2s cubic-bezier(0, 0, 0.2, 1);
+    }
+    /* Hover/active zoom multiplies on top of the saved framing scale. */
+    .tile:hover .tile-poster,
+    .tile.is-active .tile-poster { transform: scale(calc(var(--img-scale, 1) * 1.05)); }
+    .tile-dim {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    .tile.is-active .tile-dim { opacity: 1; }
+    .tile::before,
+    .tile::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .tile::before {
+      top: 0;
+      height: 38%;
+      background: linear-gradient(180deg, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.60) 30%, rgba(0,0,0,0.28) 65%, rgba(0,0,0,0) 100%);
+    }
+    .tile::after {
+      bottom: 0;
+      height: 62%;
+      background: linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.78) 22%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.20) 78%, rgba(0,0,0,0) 100%);
+    }
+    .DesktopCarRangeTile__clickableArea__403b1 {
+      position: absolute;
+      inset: 0;
+      z-index: 11;
+      display: block;
+      text-decoration: none;
+    }
+    .tile-signature {
+      position: absolute;
+      top: 40px;
+      left: 0;
+      right: 0;
+      z-index: 6;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .tile-signature__mark {
+      font-size: 14px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #fff;
+      opacity: 0.8;
+    }
+    .tile-signature__divider {
+      width: 28px;
+      height: 2px;
+      background: var(--pds-accent);
+      margin-left: 14px;
+      align-self: center;
+    }
+    .tile-content {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      bottom: 36px;
+      z-index: 13;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      color: #fff;
+      pointer-events: none;
+    }
+    .tile-title {
+      font-size: 38px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1.08;
+      margin: 0;
+      color: #fff;
+    }
+    .tile-bullets {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.55s cubic-bezier(0, 0, 0.2, 1), opacity 0.35s ease;
+    }
+    .tile.is-active .tile-bullets {
+      max-height: 420px;
+      opacity: 1;
+    }
+    .tile-bullets li {
+      display: flex;
+      gap: 10px;
+      font-size: var(--pds-font-size-md);
+      line-height: 1.45;
+      color: rgba(255,255,255,0.88);
+    }
+    .tile-bullets li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--pds-accent);
+      margin-top: 9px;
+    }
+    .tile-cta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .tile:hover:not(.is-active) .tile-cta-row {
+      opacity: 1;
+      transform: none;
+    }
+    .tile.is-active .tile-cta-row {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .tile-cta {
+      font-size: var(--pds-font-size-xs);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .tile-cta__arrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 50%;
+      color: #fff;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
+    }
+    .tile:hover .tile-cta__arrow,
+    .tile.is-active .tile-cta__arrow {
+      background: var(--pds-accent);
+      border-color: var(--pds-accent);
+      transform: translateX(3px);
+    }
+    .tile.visited .tile-signature__mark::after {
+      content: ' ✓';
+      color: var(--pds-success, #09D087);
+      margin-left: 6px;
+    }
+    .tile.visited {
+      box-shadow: inset 0 0 0 1.5px rgba(9, 208, 135, 0.55);
+    }
+    /* Legacy card selectors retained only for older hand-built slides. */
+    .explore-card {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-md);
+      padding: var(--pds-space-xl);
+      background: var(--pds-bg-surface);
+      border: 1px solid var(--pds-border);
+      border-radius: var(--pds-radius-xl);
+      box-shadow: var(--pds-shadow-card);
+      cursor: pointer;
+      transition:
+        background  var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out),
+        box-shadow  var(--dur-fast) var(--ease-out),
+        transform   var(--dur-fast) var(--ease-out);
+      overflow: hidden;
+    }
+    .explore-card:hover:not(.is-locked) {
+      background: var(--pds-bg-surface-hover);
+      border-color: var(--pds-border-strong);
+      box-shadow: var(--pds-shadow-card), var(--pds-shadow-glow);
+      transform: translateY(-2px);
+    }
+    .explore-card.is-visited {
+      border-color: var(--pds-accent);
+    }
+    .explore-card.is-visited .card-chip {
+      background: rgba(213, 0, 28, 0.20);
+      color: var(--pds-accent);
+    }
+    .card-number {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-2xl);
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1;
+      color: rgba(213, 0, 28, 0.20);
+    }
+    .card-media {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      margin: 0 0 var(--pds-space-sm);
+      border-radius: var(--pds-radius-lg);
+      overflow: hidden;
+      background: #16161a;
+    }
+    .card-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    .card-title {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-xl);
+      font-weight: var(--pds-font-weight-semibold);
+      line-height: var(--pds-line-height-tight);
+      color: var(--pds-text-primary);
+    }
+    .card-body {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-md);
+      line-height: var(--pds-line-height-loose);
+      color: var(--pds-text-secondary);
+      flex: 1;
+    }
+    .card-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      margin-top: auto;
+      padding: 6px 14px;
+      border-radius: var(--pds-radius-pill);
+      background: var(--pds-bg-overlay);
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-xs);
+      font-weight: var(--pds-font-weight-semibold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--pds-text-muted);
+      transition: background var(--dur-fast), color var(--dur-fast);
+    }
+    /* Shimmer on unlocked unvisited cards */
+    .explore-card:not(.is-locked):not(.is-visited).is-shimmer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 30%,
+        rgba(255,255,255,0.06) 50%,
+        rgba(255,255,255,0) 70%
+      );
+      background-size: 400%;
+      animation: shimmer 2.8s infinite linear;
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="1S05">
+
+  <div class="card-section">
+
+    <!-- Header -->
+    <div class="card-header">
+      <div class="pds-accent-bar anim-bar-grow" style="--anim-delay:0.1s;"></div>
+      <h2 class="pds-heading-display anim-fade-up" style="--anim-delay:0.15s;">Your Three Digital Channels</h2>
+      <p class="pds-body anim-fade-up" style="--anim-delay:0.2s;">Your Three Digital Channels</p>
+    </div>
+
+    <!-- Cards grid — locked until INTRO VO ends -->
+    <div class="tile-row intro-locked" id="card-grid">
+          <article class="tile anim-block" data-card="Video" id="card-Video" role="button" tabindex="0" aria-label="Explore Video — The Engagement Channel">
+      <img class="tile-poster" src="../assets/images/placeholders/Taycan-Turbo-S-Celestial-Jade.jpg" alt="" aria-hidden="true" style="--img-pos:center;--img-scale:1;">
+      <div class="tile-dim" aria-hidden="true"></div>
+      <div class="tile-signature">
+        <span class="tile-signature__mark">01 &middot; Engage</span>
+        <span class="tile-signature__divider" aria-hidden="true"></span>
+      </div>
+      <div class="tile-content">
+        <h2 class="tile-title">Video — The Engagement Channel</h2>
+        <ul class="tile-bullets">
+          <li>Highly personal — they see you and the car</li>
+          <li>Visual evidence of findings</li>
+          <li>Drives a 27% lift in approved work</li>
+        </ul>
+        <div class="tile-cta-row">
+          <span class="tile-cta">Explore</span>
+          <span class="tile-cta__arrow" aria-hidden="true">&rarr;</span>
+        </div>
+      </div>
+      <a aria-hidden="true" tabindex="-1" class="DesktopCarRangeTile__clickableArea__403b1" href="#video" target="_self"></a>
+    </article>
+    <article class="tile anim-block" data-card="Text" id="card-Text" role="button" tabindex="0" aria-label="Explore Text — The Convenience Channel">
+      <img class="tile-poster" src="../assets/images/placeholders/MissionX-45.jpg" alt="" aria-hidden="true" style="--img-pos:center;--img-scale:1;">
+      <div class="tile-dim" aria-hidden="true"></div>
+      <div class="tile-signature">
+        <span class="tile-signature__mark">02 &middot; Confirm</span>
+        <span class="tile-signature__divider" aria-hidden="true"></span>
+      </div>
+      <div class="tile-content">
+        <h2 class="tile-title">Text — The Convenience Channel</h2>
+        <ul class="tile-bullets">
+          <li>77% of customers prefer text updates</li>
+          <li>Best for short, factual messages</li>
+          <li>Never for bad news or complex topics</li>
+        </ul>
+        <div class="tile-cta-row">
+          <span class="tile-cta">Explore</span>
+          <span class="tile-cta__arrow" aria-hidden="true">&rarr;</span>
+        </div>
+      </div>
+      <a aria-hidden="true" tabindex="-1" class="DesktopCarRangeTile__clickableArea__403b1" href="#text" target="_self"></a>
+    </article>
+    <article class="tile anim-block" data-card="Email" id="card-Email" role="button" tabindex="0" aria-label="Explore Email — The Record Channel">
+      <img class="tile-poster" src="../assets/images/placeholders/MissionX-45.jpg" alt="" aria-hidden="true" style="--img-pos:center;--img-scale:1;">
+      <div class="tile-dim" aria-hidden="true"></div>
+      <div class="tile-signature">
+        <span class="tile-signature__mark">03 &middot; Document</span>
+        <span class="tile-signature__divider" aria-hidden="true"></span>
+      </div>
+      <div class="tile-content">
+        <h2 class="tile-title">Email — The Record Channel</h2>
+        <ul class="tile-bullets">
+          <li>Best for documentation and attachments</li>
+          <li>Customer can reference later</li>
+          <li>Wrong channel for urgent matters</li>
+        </ul>
+        <div class="tile-cta-row">
+          <span class="tile-cta">Explore</span>
+          <span class="tile-cta__arrow" aria-hidden="true">&rarr;</span>
+        </div>
+      </div>
+      <a aria-hidden="true" tabindex="-1" class="DesktopCarRangeTile__clickableArea__403b1" href="#email" target="_self"></a>
+    </article>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Card interaction logic ──────────────────────────────────────────────── */
+(function () {
+  // Lock Next until all cards visited
+  window.parent.postMessage({ type: 'sandbox-lock-next' }, '*');
+
+  // Audio map: label → path  (injected by generator)
+  var CARD_AUDIO = {
+  'Video': '../assets/audio/vo/1S05-CLICK-Video.mp3',
+  'Text': '../assets/audio/vo/1S05-CLICK-Text.mp3',
+  'Email': '../assets/audio/vo/1S05-CLICK-Email.mp3'
+};
+  var TOTAL_CARDS = 3;
+  var visited = new Set();
+  var cardsUnlocked = false;
+
+  // Entrance animations
+  document.querySelectorAll('.anim-fade-up, .anim-bar-grow').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+  function unlockCards() {
+    if (cardsUnlocked) return;
+    cardsUnlocked = true;
+    var grid = document.getElementById('card-grid');
+    if (grid) {
+      grid.classList.remove('is-locked');
+      grid.classList.add('is-visible');
+    }
+  }
+
+  function onCardClick(cardEl, label) {
+    if (!cardsUnlocked) return;
+    if (visited.has(label)) return; // already visited — allow replay but don't double-count
+
+    document.querySelectorAll('.tile').forEach(function (t) {
+      if (t !== cardEl) t.classList.remove('is-active');
+    });
+    cardEl.classList.add('is-active');
+    visited.add(label);
+    cardEl.classList.add('visited');
+
+    // Play CLICK audio
+    var audioPath = CARD_AUDIO[label];
+    if (audioPath) {
+      SandboxRuntime.interactionAudio.src = audioPath;
+      SandboxRuntime.interactionAudio.play();
+    }
+
+    // All cards visited → unlock Next
+    if (visited.size >= TOTAL_CARDS) {
+      window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+    }
+  }
+
+  // Wire up card click handlers
+  document.querySelectorAll('.tile[data-card]').forEach(function (card, idx) {
+    var label = card.getAttribute('data-card');
+    card.addEventListener('click', function () { onCardClick(card, label); });
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onCardClick(card, label);
+      }
+    });
+    setTimeout(function () { card.classList.add('is-visible'); }, 260 + idx * 110);
+  });
+
+  // Unlock cards when INTRO VO ends
+  setTimeout(function () {
+    if (SandboxRuntime.voAudio) {
+      SandboxRuntime.voAudio.addEventListener('ended', unlockCards);
+      SandboxRuntime.voAudio.addEventListener('error', unlockCards);
+    }
+    // Local file fallback (no player)
+    try {
+      if (!window.parent || !window.parent.CourseRuntime) unlockCards();
+    } catch (_) { unlockCards(); }
+  }, 0);
+})();
+</script>
+
+</body>
+</html>

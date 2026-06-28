@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Course Player (Live Server)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["browser-sync", "start", "--proxy", "127.0.0.1:5500", "--port", "8080", "--no-notify"],
+      "port": 8080,
+      "_note": "VS Code Live Server already runs at 127.0.0.1:5500 — open slides directly there"
+    },
+    {
+      "name": "SCORM Test",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "test-scorm"],
+      "port": 8081
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .stat-layout {
+      display: flex;
+      gap: calc(var(--col-gap) * var(--slide-width) / 100);
+      height: 100%;
+      align-items: flex-start;
+      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+    }
+    .stat-text-col {
+      flex: 0 0 var(--col-text);
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-lg);
+      justify-content: flex-start;
+    }
+    .stat-media-col {
+      flex: 0 0 var(--col-media);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-card {
+      width: 100%;
+      padding: var(--pds-space-2xl) var(--pds-space-xl);
+      background: var(--pds-bg-surface);
+      border: 1px solid var(--pds-border);
+      border-radius: var(--pds-radius-xl);
+      box-shadow: var(--pds-shadow-card);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--pds-space-md);
+    }
+    .stat-value {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-stat);
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1;
+      color: var(--pds-accent);
+    }
+    .stat-label {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-lg);
+      font-weight: var(--pds-font-weight-regular);
+      color: var(--pds-text-secondary);
+      max-width: 360px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}">
+
+  <div class="stat-layout">
+
+    <!-- Left: text content -->
+    <div class="stat-text-col">
+      <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.1s;"></div>
+      <h2 class="pds-heading-display anim-fade-up" style="--anim-delay: 0.2s;">{{SLIDE_TITLE}}</h2>
+      <p class="pds-body anim-fade-up" style="--anim-delay: 0.35s;">
+        <!-- Body copy: add supporting text here or leave for VO to carry the narrative -->
+      </p>
+    </div>
+
+    <!-- Right: stat / quote highlight -->
+    <div class="stat-media-col anim-scale-in" style="--anim-delay: 0.3s;">
+      <div class="stat-card">
+        <div class="stat-value">{{STAT_VALUE}}</div>
+        <div class="stat-label">{{STAT_LABEL}}</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Slide logic ─────────────────────────────────────────────────────────── */
+(function () {
+  document.querySelectorAll('.anim-fade-up, .anim-bar-grow, .anim-scale-in').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+})();
+</script>
+
+</body>
+</html>

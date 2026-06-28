@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+
+    /* ── Slide layout ────────────────────────────────────────────────────── */
+    .slide {
+      display: flex;
+      flex-direction: column;
+      background: #0D0D0F;
+      overflow: hidden;
+    }
+
+    /* ── Top header bar ──────────────────────────────────────────────────── */
+    .slide-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 100px;
+      height: 148px;
+      background: #0D0D0F;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+    }
+    .header-accent {
+      flex-shrink: 0;
+      width: 6px;
+      height: 56px;
+      background: var(--pds-accent);
+      border-radius: 3px;
+      margin-right: 28px;
+    }
+    .header-text {}
+    .header-eyebrow {
+      font-size: var(--pds-font-size-xs);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--pds-accent);
+      margin-bottom: 6px;
+    }
+    .header-title {
+      font-size: var(--pds-font-size-2xl);
+      font-weight: var(--pds-font-weight-bold);
+      color: var(--pds-text-primary);
+      margin: 0;
+      line-height: 1.05;
+    }
+    .step-counter {
+      margin-left: auto;
+      font-size: var(--pds-font-size-xs);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--pds-text-muted);
+    }
+    .step-counter span { color: var(--pds-text-primary); }
+
+    /* ── Main content area ───────────────────────────────────────────────── */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Step items viewport ─────────────────────────────────────────────── */
+    .steps-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step-item {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 64px;
+      padding: 60px 100px 60px 100px;
+      opacity: 0;
+      transform: translateX(32px);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+    .step-item.is-active {
+      opacity: 1;
+      transform: none;
+      pointer-events: auto;
+    }
+    .step-item.exit-left {
+      opacity: 0;
+      transform: translateX(-32px);
+    }
+
+    /* ── Large step number ───────────────────────────────────────────────── */
+    .step-number {
+      flex-shrink: 0;
+      font-size: 120px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1;
+      color: rgba(213,0,28,0.18);
+      letter-spacing: -0.02em;
+      user-select: none;
+      width: 180px;
+      text-align: right;
+    }
+
+    /* ── Step content ────────────────────────────────────────────────────── */
+    .step-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .step-title {
+      font-size: var(--pds-font-size-xl);
+      font-weight: var(--pds-font-weight-bold);
+      color: var(--pds-text-primary);
+      line-height: 1.1;
+    }
+
+    .step-divider {
+      width: 60px;
+      height: 3px;
+      background: var(--pds-accent);
+      border-radius: 2px;
+    }
+
+    /* ── Bullet list ─────────────────────────────────────────────────────── */
+    .bullet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: var(--pds-font-size-md);
+      color: var(--pds-contrast-high);
+      line-height: 1.45;
+    }
+    .bullet-dot {
+      flex-shrink: 0;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--pds-accent);
+      margin-top: 9px;
+    }
+
+    /* ── Bottom navigation bar ───────────────────────────────────────────── */
+    .slide-nav {
+      flex-shrink: 0;
+      height: 88px;
+      background: #111116;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 100px;
+      gap: 24px;
+    }
+
+    .nav-arrow {
+      flex-shrink: 0;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--pds-text-muted);
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    .nav-arrow:hover:not(:disabled) {
+      border-color: var(--pds-accent);
+      background: rgba(213,0,28,0.10);
+      color: var(--pds-text-primary);
+    }
+    .nav-arrow:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    /* ── Step dots ───────────────────────────────────────────────────────── */
+    .step-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-nav-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .step-nav-dot.is-active {
+      background: var(--pds-accent);
+      border-color: var(--pds-accent);
+      transform: scale(1.3);
+    }
+    .step-nav-dot:hover:not(.is-active) {
+      border-color: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* ── Entrance animations ─────────────────────────────────────────────── */
+    .anim-block {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .anim-block.is-visible { opacity: 1; transform: none; }
+
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}">
+
+  <!-- Header -->
+  <header class="slide-header">
+    <div class="header-accent anim-block" id="el-accent"></div>
+    <div class="header-text">
+      <p class="header-eyebrow anim-block" id="el-eyebrow">{{EYEBROW}}</p>
+      <h2 class="header-title anim-block" id="el-headline">{{SLIDE_TITLE}}</h2>
+    </div>
+    <div class="step-counter" id="step-counter">
+      Step <span id="step-current">1</span> of <span id="step-total">{{TOTAL_STEPS}}</span>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="slide-body">
+    <div class="steps-viewport" id="steps-viewport">
+{{STEPS_HTML}}
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="slide-nav">
+    <button class="nav-arrow" id="btn-prev" aria-label="Previous step" disabled>&#8592;</button>
+{{STEP_NAV_HTML}}
+    <button class="nav-arrow" id="btn-next-step" aria-label="Next step">&#8594;</button>
+  </nav>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/slide-pause.js"></script>
+<script>
+(function () {
+
+  /* ── Entrance animations ───────────────────────────────────────────────── */
+  ['el-accent', 'el-eyebrow', 'el-headline'].forEach(function (id, i) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    setTimeout(function () { el.classList.add('is-visible'); }, 80 + i * 100);
+  });
+
+  /* ── Step state ────────────────────────────────────────────────────────── */
+  var stepItems   = Array.from(document.querySelectorAll('.step-item'));
+  var stepDots    = Array.from(document.querySelectorAll('.step-nav-dot'));
+  var btnPrev     = document.getElementById('btn-prev');
+  var btnNext     = document.getElementById('btn-next-step');
+  var currentEl   = document.getElementById('step-current');
+  var total       = stepItems.length;
+  var current     = 0;
+
+  function goToStep(idx, direction) {
+    if (idx < 0 || idx >= total) return;
+    var prev = current;
+    current  = idx;
+
+    /* Exit previous */
+    if (stepItems[prev]) {
+      stepItems[prev].classList.remove('is-active');
+      stepItems[prev].classList.add(direction >= 0 ? 'exit-left' : 'exit-right');
+      var exitEl = stepItems[prev];
+      setTimeout(function () { exitEl.classList.remove('exit-left', 'exit-right'); }, 420);
+    }
+
+    /* Enter current */
+    var entering = stepItems[current];
+    if (entering) {
+      entering.style.transform = direction >= 0 ? 'translateX(32px)' : 'translateX(-32px)';
+      entering.style.opacity   = '0';
+      entering.classList.add('is-active');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          entering.style.transform = '';
+          entering.style.opacity   = '';
+        });
+      });
+
+      /* Play VO */
+      var audio = entering.getAttribute('data-audio');
+      if (audio) {
+        window.parent.postMessage({
+          type: 'sandbox-play-interaction',
+          src: audio,
+          id: String(current + 1),
+          pauseNarration: true,
+          resumeNarration: false
+        }, '*');
+      }
+    }
+
+    /* Update dots */
+    stepDots.forEach(function (dot, i) {
+      dot.classList.toggle('is-active', i === current);
+    });
+
+    /* Update counter */
+    if (currentEl) currentEl.textContent = String(current + 1);
+
+    /* Update nav buttons */
+    if (btnPrev) btnPrev.disabled = current === 0;
+    if (btnNext) btnNext.disabled = current === total - 1;
+  }
+
+  /* ── Nav buttons ───────────────────────────────────────────────────────── */
+  if (btnPrev) btnPrev.addEventListener('click', function () { goToStep(current - 1, -1); });
+  if (btnNext) btnNext.addEventListener('click', function () { goToStep(current + 1, 1); });
+
+  /* ── Dot clicks ────────────────────────────────────────────────────────── */
+  stepDots.forEach(function (dot, i) {
+    dot.addEventListener('click', function () { goToStep(i, i > current ? 1 : -1); });
+  });
+
+  /* ── Keyboard navigation ───────────────────────────────────────────────── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') goToStep(current + 1, 1);
+    else if (e.key === 'ArrowLeft') goToStep(current - 1, -1);
+  });
+
+  /* ── Init first step ───────────────────────────────────────────────────── */
+  if (stepItems.length > 0) {
+    stepItems[0].classList.add('is-active');
+    if (btnPrev) btnPrev.disabled = true;
+    if (btnNext) btnNext.disabled = total <= 1;
+    /* Play first step VO */
+    var firstAudio = stepItems[0].getAttribute('data-audio');
+    if (firstAudio) {
+      window.parent.postMessage({
+        type: 'sandbox-play-interaction',
+        src: firstAudio,
+        id: '1',
+        pauseNarration: true,
+        resumeNarration: false
+      }, '*');
+    }
+  }
+
+}());
+</script>
+
+</body>
+</html>

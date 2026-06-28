@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>Texting Without Eroding Trust</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    /* ── Outer layout — centered header, notebook tabs on top, large image ── */
+    .tab-panel-section {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      height: 100%;
+      padding: 0; /* image is full-bleed; the header carries its own padding */
+    }
+    .tab-panel-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      flex-shrink: 0;
+      text-align: left;
+      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x) 0;
+    }
+    .tab-panel-header .pds-accent-bar { width: 120px; height: 6px; }
+
+    /* Notebook wrapper — tabs sit on the top edge of the full-bleed image. */
+    .tab-panel-notebook {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      margin-top: 20px;
+    }
+
+    /* ────────────────────────────────────────────────────────────────────
+       TAB STRIP — small notebook tabs, centered on top of the stage.
+    ──────────────────────────────────────────────────────────────────── */
+    .tabs {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-bottom: -2px; /* overlap the stage's top border — notebook look */
+      transition: opacity var(--dur-fast) var(--ease-out);
+    }
+    .tabs.is-locked { opacity: 0.55; pointer-events: none; }
+
+    .tab {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      background: #1e2024;
+      border: 1.5px solid var(--pds-border);
+      border-bottom: 0;
+      border-radius: 12px 12px 0 0;
+      cursor: pointer;
+      color: var(--pds-text-muted);
+      font-family: inherit;
+      text-align: left;
+      transition:
+        border-color var(--dur-fast) var(--ease-out),
+        background   var(--dur-fast) var(--ease-out),
+        color        var(--dur-fast) var(--ease-out),
+        transform    var(--dur-fast) var(--ease-out);
+    }
+    .tab:hover {
+      border-color: var(--pds-border-strong);
+      background: #2a2c32;
+      color: var(--pds-text-secondary);
+      transform: translateY(-2px);
+    }
+    .tab:focus-visible {
+      outline: 2px solid var(--pds-accent);
+      outline-offset: 2px;
+    }
+    .tab.is-active {
+      border-color: var(--pds-accent);
+      background: var(--pds-bg-base, #111317);
+      color: var(--pds-text-primary);
+    }
+
+    .tab-number {
+      font-size: 14px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: var(--pds-text-muted);
+      opacity: 0.65;
+    }
+    .tab.is-active .tab-number { color: var(--pds-accent); opacity: 1; }
+
+    .tab-label {
+      font-size: 17px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1;
+      letter-spacing: -0.005em;
+    }
+
+    /* Visited mark — small inline green check */
+    .tab-check {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      border: 1.5px solid var(--pds-success);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pds-success);
+      background: rgba(9, 208, 135, 0.10);
+      opacity: 0;
+      transform: scale(0.85);
+      transition:
+        opacity   var(--dur-normal) var(--ease-out),
+        transform var(--dur-normal) var(--ease-out);
+      pointer-events: none;
+    }
+    .tab.visited .tab-check { opacity: 1; transform: scale(1); }
+    .tab-check svg { width: 11px; height: 11px; display: block; }
+
+    /* ── Full-bleed image stage — fills to the left, right, and bottom edges ── */
+    .tab-panel-stage {
+      position: relative;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      background: #16161a;
+    }
+    .tab-panel-stage > .stage-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: var(--img-pos, center);
+      transform: scale(var(--img-scale, 1));
+      display: block;
+    }
+
+    /* ── Info modal — centered card over a dimmed image ── */
+    .tp-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      background: rgba(10, 10, 12, 0.58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--dur-normal) var(--ease-out);
+      z-index: 10;
+    }
+    .tp-modal-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+    .tp-modal {
+      position: relative;
+      width: min(80%, 760px);
+      max-height: 86%;
+      overflow-y: auto;
+      background: var(--pds-bg-elevated, #1b1d22);
+      border: 1.5px solid var(--pds-border-strong);
+      border-radius: var(--pds-radius-lg, 12px);
+      padding: 44px 52px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+      transform: translateY(10px) scale(0.985);
+      transition: transform var(--dur-normal) var(--ease-out);
+    }
+    .tp-modal[hidden] { display: none; }
+    .tp-modal-backdrop.is-open .tp-modal { transform: none; }
+
+    .tp-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid var(--pds-border-strong);
+      background: transparent;
+      color: var(--pds-text-secondary);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition:
+        background   var(--dur-fast) var(--ease-out),
+        color        var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out);
+    }
+    .tp-modal-close:hover {
+      background: var(--pds-accent);
+      border-color: var(--pds-accent);
+      color: #fff;
+    }
+
+    .tp-modal-head {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 6px;
+      padding-right: 40px;
+    }
+    .tp-modal-eyebrow {
+      font-size: 15px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.08em;
+      color: var(--pds-accent);
+    }
+    .tp-modal-title {
+      font-size: 34px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: var(--pds-line-height-tight);
+      letter-spacing: -0.01em;
+      color: var(--pds-text-primary);
+    }
+    .tp-modal > p {
+      font-size: var(--pds-font-size-md);
+      font-weight: var(--pds-font-weight-regular);
+      line-height: var(--pds-line-height-loose);
+      color: var(--pds-text-secondary);
+    }
+    .tp-modal > p + p { margin-top: 14px; }
+
+    /* Red-dot bullets — identical to accordion-content */
+    .acc-bullets {
+      list-style: none;
+      margin: 20px 0 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .acc-bullets li {
+      display: flex;
+      gap: 14px;
+      font-size: var(--pds-font-size-md);
+      line-height: 1.45;
+      color: var(--pds-contrast-high);
+    }
+    .acc-bullets li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--pds-accent);
+      margin-top: 10px;
+    }
+    .acc-bullets li strong {
+      color: var(--pds-text-primary);
+      font-weight: var(--pds-font-weight-bold);
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="1S08">
+
+  <div class="tab-panel-section">
+
+    <!-- Header -->
+    <header class="tab-panel-header">
+      <div style="display:flex; align-items:flex-end; gap: var(--pds-space-lg); justify-content:flex-start;">
+        <h2 class="pds-heading-display anim-fade-up" style="--anim-delay: 0.10s;">Texting Without Eroding Trust</h2>
+        <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.15s; margin-bottom: 8px;"></div>
+      </div>
+      <p class="pds-body anim-fade-up" style="--anim-delay: 0.20s;">Seventy-seven percent of customers prefer text. Get it right with four rules.</p>
+    </header>
+
+    <!-- Notebook: small centered tabs on top of the large image stage -->
+    <div class="tab-panel-notebook">
+
+      <!-- Tab strip — locked until INTRO ends -->
+      <div class="tabs is-locked" id="tabs" role="tablist">
+      <button class="tab" type="button" aria-haspopup="dialog" aria-expanded="false" data-tab="Permission">
+        <span class="tab-number">01</span>
+        <span class="tab-label">Permission</span>
+        <span class="tab-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
+      </button>
+      <button class="tab" type="button" aria-haspopup="dialog" aria-expanded="false" data-tab="Scope">
+        <span class="tab-number">02</span>
+        <span class="tab-label">Scope</span>
+        <span class="tab-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
+      </button>
+      <button class="tab" type="button" aria-haspopup="dialog" aria-expanded="false" data-tab="Timing">
+        <span class="tab-number">03</span>
+        <span class="tab-label">Timing</span>
+        <span class="tab-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
+      </button>
+      <button class="tab" type="button" aria-haspopup="dialog" aria-expanded="false" data-tab="Tone">
+        <span class="tab-number">04</span>
+        <span class="tab-label">Tone</span>
+        <span class="tab-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
+      </button>
+      </div>
+
+      <!-- Large centered image; clicking a tab opens its info modal on top -->
+      <figure class="tab-panel-stage anim-fade-up" style="--anim-delay: 0.30s;">
+        <img class="stage-img" data-img-adjust src="../assets/images/placeholders/KC_set1.jpg" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
+        <div class="tp-modal-backdrop" id="tp-backdrop">
+        <div class="tp-modal" data-modal="Permission" role="dialog" aria-modal="true" aria-label="Permission" hidden>
+          <button class="tp-modal-close" type="button" aria-label="Close">&times;</button>
+          <div class="tp-modal-head">
+            <span class="tp-modal-eyebrow">01</span>
+            <h3 class="tp-modal-title">Permission</h3>
+          </div>
+          <p><!-- Body for Permission: add Tab-Bullets-Permission (or Item-Permission-Body) to course.md. --></p>
+        </div>
+        <div class="tp-modal" data-modal="Scope" role="dialog" aria-modal="true" aria-label="Scope" hidden>
+          <button class="tp-modal-close" type="button" aria-label="Close">&times;</button>
+          <div class="tp-modal-head">
+            <span class="tp-modal-eyebrow">02</span>
+            <h3 class="tp-modal-title">Scope</h3>
+          </div>
+          <p><!-- Body for Scope: add Tab-Bullets-Scope (or Item-Scope-Body) to course.md. --></p>
+        </div>
+        <div class="tp-modal" data-modal="Timing" role="dialog" aria-modal="true" aria-label="Timing" hidden>
+          <button class="tp-modal-close" type="button" aria-label="Close">&times;</button>
+          <div class="tp-modal-head">
+            <span class="tp-modal-eyebrow">03</span>
+            <h3 class="tp-modal-title">Timing</h3>
+          </div>
+          <p><!-- Body for Timing: add Tab-Bullets-Timing (or Item-Timing-Body) to course.md. --></p>
+        </div>
+        <div class="tp-modal" data-modal="Tone" role="dialog" aria-modal="true" aria-label="Tone" hidden>
+          <button class="tp-modal-close" type="button" aria-label="Close">&times;</button>
+          <div class="tp-modal-head">
+            <span class="tp-modal-eyebrow">04</span>
+            <h3 class="tp-modal-title">Tone</h3>
+          </div>
+          <p><!-- Body for Tone: add Tab-Bullets-Tone (or Item-Tone-Body) to course.md. --></p>
+        </div>
+        </div>
+      </figure>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim — mirrors accordion-content / card-explore ─────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Tab-panel interaction logic — tabs open a modal over the image ─────── */
+(function () {
+  // Lock Next until all tabs visited
+  window.parent.postMessage({ type: 'sandbox-lock-next' }, '*');
+
+  // Audio map + total — reuse card-explore's CLICK trigger plumbing
+  var TAB_AUDIO  = {
+  'Permission': '../assets/audio/vo/1S08-TAB-Permission.mp3',
+  'Scope': '../assets/audio/vo/1S08-TAB-Scope.mp3',
+  'Timing': '../assets/audio/vo/1S08-TAB-Timing.mp3',
+  'Tone': '../assets/audio/vo/1S08-TAB-Tone.mp3'
+};
+  var TOTAL_TABS = 4;
+  var visited    = new Set();
+  var unlocked   = false;
+
+  // Entrance animations
+  document.querySelectorAll('.anim-fade-up, .anim-bar-grow').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+  var tabsEl   = document.getElementById('tabs');
+  var tabs     = document.querySelectorAll('.tab');
+  var backdrop = document.getElementById('tp-backdrop');
+  var modals   = document.querySelectorAll('.tp-modal');
+
+  function unlockTabs() {
+    if (unlocked) return;
+    unlocked = true;
+    if (tabsEl) tabsEl.classList.remove('is-locked');
+    if (visited.size >= TOTAL_TABS) {
+      window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+    }
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('is-open');
+    modals.forEach(function (m) { m.setAttribute('hidden', ''); });
+    tabs.forEach(function (t) {
+      t.classList.remove('is-active');
+      t.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function openModal(key, isUserClick) {
+    tabs.forEach(function (t) {
+      var on = t.dataset.tab === key;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-expanded', on ? 'true' : 'false');
+    });
+    modals.forEach(function (m) {
+      if (m.dataset.modal === key) m.removeAttribute('hidden');
+      else m.setAttribute('hidden', '');
+    });
+    backdrop.classList.add('is-open');
+
+    if (isUserClick && !visited.has(key)) {
+      visited.add(key);
+      var tab = document.querySelector('.tab[data-tab="' + key + '"]');
+      if (tab) tab.classList.add('visited');
+
+      var audioPath = TAB_AUDIO[key];
+      if (audioPath) {
+        SandboxRuntime.interactionAudio.src = audioPath;
+        SandboxRuntime.interactionAudio.play();
+      }
+
+      if (visited.size >= TOTAL_TABS) {
+        window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+      }
+    }
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      if (!unlocked) return;
+      openModal(tab.dataset.tab, true);
+    });
+    tab.addEventListener('keydown', function (e) {
+      if (!unlocked) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openModal(tab.dataset.tab, true);
+        return;
+      }
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      var idx  = Array.prototype.indexOf.call(tabs, tab);
+      var next = (e.key === 'ArrowRight')
+        ? (idx + 1) % tabs.length
+        : (idx - 1 + tabs.length) % tabs.length;
+      tabs[next].focus();
+    });
+  });
+
+  // Close: X button, click on the dim backdrop, or Esc.
+  document.querySelectorAll('.tp-modal-close').forEach(function (btn) {
+    btn.addEventListener('click', closeModal);
+  });
+  backdrop.addEventListener('click', function (e) {
+    if (e.target === backdrop) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && backdrop.classList.contains('is-open')) closeModal();
+  });
+
+  // Unlock when INTRO VO ends — same fallback pattern as accordion-content.
+  // Standalone (no CourseRuntime) or the authoring dashboard preview unlock
+  // immediately so the tabs are usable without waiting for the VO.
+  setTimeout(function () {
+    if (SandboxRuntime.voAudio) {
+      SandboxRuntime.voAudio.addEventListener('ended', unlockTabs);
+      SandboxRuntime.voAudio.addEventListener('error', unlockTabs);
+    }
+    try {
+      var CR = window.parent && window.parent.CourseRuntime;
+      if (!CR || CR.isDashboardPreview) unlockTabs();
+    } catch (_) { unlockTabs(); }
+  }, 0);
+})();
+</script>
+
+</body>
+</html>

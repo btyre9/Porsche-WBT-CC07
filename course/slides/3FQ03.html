@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>Final Assessment — Question 3</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    .fq-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+      gap: var(--pds-space-xl);
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .fq-header {
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-md);
+      flex-shrink: 0;
+    }
+    .fq-question {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-xl);
+      font-weight: var(--pds-font-weight-semibold);
+      line-height: var(--pds-line-height);
+      color: var(--pds-text-primary);
+    }
+    .fq-choices {
+      display: flex;
+      flex-direction: column;
+      gap: var(--pds-space-md);
+      flex: 1;
+    }
+    .fq-choice {
+      display: flex;
+      align-items: center;
+      gap: var(--pds-space-md);
+      padding: var(--pds-space-md) var(--pds-space-lg);
+      background: var(--pds-bg-surface);
+      border: 2px solid var(--pds-border);
+      border-radius: var(--pds-radius-lg);
+      cursor: pointer;
+      transition:
+        background  var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out);
+    }
+    .fq-choice:hover:not(.is-locked) {
+      background: var(--pds-bg-surface-hover);
+      border-color: var(--pds-border-strong);
+    }
+    .fq-choice.is-selected {
+      border-color: rgba(255,255,255,0.50);
+      background: rgba(255,255,255,0.08);
+    }
+    .fq-choice-letter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--pds-radius-md);
+      background: var(--pds-bg-overlay);
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-bold);
+      color: var(--pds-text-muted);
+      flex-shrink: 0;
+      transition: background var(--dur-fast), color var(--dur-fast);
+    }
+    .fq-choice.is-selected .fq-choice-letter { background: var(--pds-accent); color: var(--pds-brand-white); }
+    .fq-choice-text {
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-md);
+      color: var(--pds-text-secondary);
+      line-height: var(--pds-line-height);
+    }
+    .fq-choices.is-locked .fq-choice { pointer-events: none; }
+    .fq-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: var(--pds-space-sm);
+    }
+    .fq-submit {
+      padding: 13px 38px;
+      background: var(--pds-accent);
+      border: 0;
+      border-radius: var(--pds-radius-md);
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.03em;
+      color: var(--pds-brand-white);
+      cursor: pointer;
+      opacity: 0.32;
+      pointer-events: none;
+      transition: background 0.2s, opacity 0.25s, transform 0.12s;
+    }
+    .fq-submit.is-ready {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .fq-submit.is-ready:hover { background: var(--pds-accent-hover); }
+    .fq-submit.is-ready:active { transform: scale(0.98); }
+    .fq-submit.is-submitted {
+      background: rgba(255,255,255,0.08);
+      color: var(--pds-text-muted);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="3FQ03">
+
+  <div class="fq-layout">
+
+    <div class="fq-header anim-fade-up">
+      <div style="display:flex; align-items:center; gap:var(--pds-space-md);">
+        <span class="pds-badge">Final Assessment</span>
+        <span class="pds-caption" id="modal-title">Question 0</span>
+      </div>
+      <div class="pds-accent-bar anim-bar-grow" style="--anim-delay:0.1s;"></div>
+      <p class="fq-question">A customer has not previously confirmed text as a preferred channel. The technician finds an additional service recommendation and wants to update them. What is the best first step?</p>
+    </div>
+
+    <div class="fq-choices stagger-children is-visible" id="fq-choices">
+            <div class="fq-choice" data-choice="1" role="button" tabindex="0">
+        <span class="fq-choice-letter">A</span>
+        <span class="fq-choice-text">Send the recommendation as a text — texts are less intrusive than calls</span>
+      </div>
+      <div class="fq-choice" data-choice="2" role="button" tabindex="0">
+        <span class="fq-choice-letter">B</span>
+        <span class="fq-choice-text">Call the customer to discuss the recommendation and confirm channel preference for future updates</span>
+      </div>
+      <div class="fq-choice" data-choice="3" role="button" tabindex="0">
+        <span class="fq-choice-letter">C</span>
+        <span class="fq-choice-text">Email a detailed explanation without asking about channel preference</span>
+      </div>
+      <div class="fq-choice" data-choice="4" role="button" tabindex="0">
+        <span class="fq-choice-letter">D</span>
+        <span class="fq-choice-text">Wait until the customer calls in for status</span>
+      </div>
+    </div>
+
+    <div class="fq-footer">
+      <button class="fq-submit" id="fq-submit" disabled aria-disabled="true">Submit Answer</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── FQ logic ────────────────────────────────────────────────────────────── */
+(function () {
+  var CORRECT_ANSWER = 2;
+
+  // Entrance animations
+  document.querySelectorAll('.anim-fade-up, .anim-bar-grow').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+  var selectedChoice = null;
+  var selectedValue = null;
+  var answered = false;
+  var choicesContainer = document.getElementById('fq-choices');
+  var submitBtn = document.getElementById('fq-submit');
+
+  function selectChoice(choiceEl, choiceNum) {
+    if (answered) return;
+    choicesContainer.querySelectorAll('.fq-choice').forEach(function (el) {
+      el.classList.remove('is-selected');
+      el.setAttribute('aria-checked', 'false');
+    });
+    choiceEl.classList.add('is-selected');
+    choiceEl.setAttribute('aria-checked', 'true');
+    selectedChoice = choiceEl;
+    selectedValue = choiceNum;
+    submitBtn.classList.add('is-ready');
+    submitBtn.disabled = false;
+    submitBtn.setAttribute('aria-disabled', 'false');
+  }
+
+  function submitAnswer() {
+    if (!selectedChoice || answered) return;
+    answered = true;
+    choicesContainer.classList.add('is-locked');
+    submitBtn.classList.remove('is-ready');
+    submitBtn.classList.add('is-submitted');
+    submitBtn.disabled = true;
+    submitBtn.setAttribute('aria-disabled', 'true');
+
+    try { new Audio('../assets/audio/sfx/submit-answer.mp3').play().catch(function () {}); } catch (_) {}
+    window.parent.postMessage({ type: 'sandbox-next', correct: selectedValue === CORRECT_ANSWER }, '*');
+  }
+
+  document.querySelectorAll('.fq-choice[data-choice]').forEach(function (el) {
+    var num = parseInt(el.getAttribute('data-choice'), 10);
+    el.setAttribute('role', 'radio');
+    el.setAttribute('aria-checked', 'false');
+    el.addEventListener('click', function () { selectChoice(el, num); });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectChoice(el, num);
+      }
+    });
+  });
+  submitBtn.addEventListener('click', submitAnswer);
+  submitBtn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      submitAnswer();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

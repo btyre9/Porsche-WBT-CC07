@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Porsche WBT Module</title>
+  <style>
+    @font-face {
+      font-family: 'Porsche Next TT';
+      src: url('./assets/fonts/porsche-next-tt.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Porsche Next TT';
+      src: url('./assets/fonts/porsche-next-tt-bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Porsche Next TT';
+      src: url('./assets/fonts/porsche-next-tt-italic.ttf') format('truetype');
+      font-weight: 400;
+      font-style: italic;
+    }
+    @font-face {
+      font-family: 'Porsche Next TT';
+      src: url('./assets/fonts/porsche-next-tt-bold-italic.ttf') format('truetype');
+      font-weight: 700;
+      font-style: italic;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button, input, select, textarea { font-family: inherit; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Porsche Next TT', Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* --- Top bar --- */
+    .top-bar {
+      height: 80px;
+      min-height: 80px;
+      background: #3e4146;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 10;
+    }
+    .top-left {
+      display: flex;
+      align-items: center;
+    }
+    .top-title {
+      font-family: 'Porsche Next TT', Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      margin-left: 50px;
+    }
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-family: Porsche Next TT, Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .menu-btn:hover { background: rgba(255,255,255,0.1); }
+    .menu-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #fff;
+    }
+    .top-icon-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .top-icon-btn:hover { background: rgba(255,255,255,0.1); }
+    .top-icon-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+    .top-text-btn {
+      min-width: 44px;
+      height: 36px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .top-text-btn:hover { background: rgba(255,255,255,0.1); }
+    .dev-cues { display: none !important; }
+
+    /* --- Menu drawer --- */
+    .menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 90;
+    }
+    .menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .menu-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 360px;
+      max-width: 90vw;
+      height: 100%;
+      background: #2b2e33;
+      color: #fff;
+      border-right: 1px solid rgba(255,255,255,0.15);
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .menu-overlay.open .menu-panel {
+      transform: translateX(0);
+    }
+    .menu-panel-header {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .toc-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .toc-item {
+      width: 100%;
+      display: block;
+      border: none;
+      background: none;
+      color: #fff;
+      text-align: left;
+      padding: 12px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toc-item:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .toc-item.active {
+      background: rgba(213, 0, 28, 0.25);
+      border-left: 3px solid #d5001c;
+      padding-left: 17px;
+      color: #fff;
+      cursor: default;
+      pointer-events: none;
+    }
+    .toc-item--indented {
+      padding-left: 44px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+      border-left: 2px solid rgba(255,255,255,0.15);
+      margin-left: 20px;
+      width: calc(100% - 20px);
+    }
+    .toc-item--indented:hover {
+      color: #fff;
+      border-left-color: rgba(255,255,255,0.4);
+    }
+    .toc-item--indented.active {
+      padding-left: 41px;
+      color: #fff;
+      border-left-color: #d5001c;
+    }
+
+    /* --- Slide area --- */
+    .slide-area {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a1a;
+      overflow: hidden;
+    }
+
+    .slide-scaler {
+      width: 1920px;
+      height: 920px;
+      transform-origin: center center;
+      position: absolute;
+    }
+
+    .slide-scaler iframe {
+      width: 1920px;
+      height: 920px;
+      border: 0;
+      display: block;
+      background: #1a1a1a;
+    }
+
+    /* --- CC overlay --- */
+    .cc-overlay {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 80%;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 8px 20px;
+      border-radius: 4px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .cc-overlay.hidden { display: none; }
+
+    /* --- Click-to-begin overlay --- */
+    .click-to-begin-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 8;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .click-to-begin-overlay.hidden { display: none; }
+    .click-to-begin-label {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 14px 36px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 6px;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* --- Bottom bar --- */
+    .bottom-bar {
+      height: 80px;
+      min-height: 80px;
+      background: #3e4146;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      column-gap: 20px;
+      padding: 0 20px;
+      z-index: 10;
+    }
+
+    .bottom-logo svg {
+      width: 200px;
+      height: 20px;
+      display: block;
+      margin-left: 36px;
+    }
+    .bottom-center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bottom-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ctrl-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.1); }
+    .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+    .ctrl-btn:disabled:hover { background: none; }
+    .ctrl-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+    .ctrl-btn-text {
+      width: auto;
+      min-width: 56px;
+      padding: 0 10px;
+    }
+    .ctrl-btn-label {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .ctrl-btn.active svg { fill: #d5001c; }
+
+    /* Audio progress — full-width strip at the top edge of .slide-area,
+       sitting against the bottom of the top bar. */
+    .audio-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.10);
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 11;
+    }
+    .audio-progress.disabled { opacity: 0.6; }
+    .audio-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: #d5001c;
+      transition: width 0.12s linear;
+    }
+
+    .ctrl-btn-next {
+      font-family: 'Porsche Next TT', Arial, Helvetica, sans-serif;
+      width: auto;
+      padding: 0 16px;
+      gap: 6px;
+      background: #d5001c;
+      border-radius: 4px;
+    }
+    .ctrl-btn-next:hover { background: #b0001a; }
+    .ctrl-btn-next:disabled { background: #d5001c; opacity: 0.3; }
+    .ctrl-btn-next.pulse-unlock {
+      animation: next-unlock-pulse 1.4s ease-out infinite;
+      transform-origin: center;
+    }
+    @keyframes next-unlock-pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(213, 0, 28, 0.9);
+        transform: scale(1);
+      }
+      42% {
+        box-shadow: 0 0 0 18px rgba(213, 0, 28, 0);
+        transform: scale(1.18);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(213, 0, 28, 0);
+        transform: scale(1);
+      }
+    }
+    .next-label {
+      color: #fff;
+      font-family: 'Porsche Next TT', Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255,255,255,0.2);
+      margin: 0 8px;
+    }
+
+    /* --- Knowledge Check Modal --- */
+    .kc-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .kc-backdrop.hidden { display: none; }
+
+    .kc-card {
+      background: #2a2a2e;
+      color: #fff;
+      border-radius: 8px;
+      width: 580px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    .kc-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    .kc-card .kc-question {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .kc-card .kc-choices {
+      list-style: none;
+    }
+
+    .kc-card .kc-choices label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      border: 1px solid #555;
+      cursor: pointer;
+      font-size: 15px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .kc-card .kc-choices label:hover {
+      border-color: #999;
+      background: rgba(255,255,255,0.05);
+    }
+    .kc-card .kc-choices input[type="radio"] {
+      accent-color: #d5001c;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .kc-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .kc-btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      font-family: Porsche Next TT, Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .kc-btn-submit {
+      background: #d5001c;
+      color: #fff;
+    }
+    .kc-btn-submit:hover { background: #b0001a; }
+    .kc-btn-submit:disabled { opacity: 0.4; cursor: default; }
+    .kc-btn-continue {
+      background: #555;
+      color: #fff;
+    }
+    .kc-btn-continue:hover { background: #666; }
+    .kc-btn-continue.hidden { display: none; }
+
+    .kc-feedback {
+      margin-top: 16px;
+      font-weight: 700;
+      font-size: 15px;
+      min-height: 22px;
+    }
+    .kc-feedback.correct { color: #4caf50; }
+    .kc-feedback.incorrect { color: #ff5252; }
+
+    /* --- Cue Editor --- */
+    .cue-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 110;
+      padding: 20px;
+    }
+    .cue-backdrop.hidden { display: none; }
+    .cue-card {
+      width: min(1040px, 96vw);
+      max-height: 88vh;
+      overflow: auto;
+      background: #26292f;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: #fff;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+    .cue-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .cue-head h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .cue-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      font-size: 13px;
+      color: #d4d8de;
+    }
+    .cue-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .cue-field {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .cue-field label {
+      font-size: 12px;
+      color: #b6bdc8;
+    }
+    .cue-field input,
+    .cue-field select,
+    .cue-field textarea {
+      width: 100%;
+      background: #1e2126;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 4px;
+      padding: 8px 9px;
+      font-size: 13px;
+    }
+    .cue-field textarea {
+      min-height: 170px;
+      font-family: Consolas, Menlo, Monaco, monospace;
+      line-height: 1.35;
+      resize: vertical;
+    }
+    .cue-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .cue-btn {
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: #4a5059;
+    }
+    .cue-btn:hover { background: #5a616d; }
+    .cue-btn-primary { background: #d5001c; }
+    .cue-btn-primary:hover { background: #b0001a; }
+    .cue-btn-danger { background: #6f2d36; }
+    .cue-btn-danger:hover { background: #813642; }
+    .cue-table-wrap {
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .cue-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .cue-table th,
+    .cue-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+      vertical-align: top;
+    }
+    .cue-table th {
+      background: #20242a;
+      color: #c8ced8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .cue-table tr:last-child td { border-bottom: none; }
+    .cue-table .cue-cell-action { white-space: nowrap; }
+    .cue-inline-btn {
+      border: none;
+      border-radius: 4px;
+      padding: 4px 7px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: #5a606b;
+    }
+    .cue-inline-btn:hover { background: #6b7380; }
+    .cue-status {
+      min-height: 18px;
+      font-size: 12px;
+      color: #cdd3dc;
+    }
+    .cue-status.error { color: #ff8a8a; }
+    .cue-status.ok { color: #9be0a3; }
+    .cue-json-wrap {
+      display: grid;
+      gap: 8px;
+    }
+    @media (max-width: 980px) {
+      .cue-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    /* --- Dev mode --- */
+    .audio-progress.dev-scrub { pointer-events: auto !important; cursor: pointer; }
+    .audio-progress.dev-scrub:hover { opacity: 0.85; }
+    #dev-timestamp {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #00ff88;
+      font-size: 13px;
+      font-family: Consolas, Menlo, monospace;
+      padding: 4px 10px;
+      border-radius: 4px;
+      z-index: 9;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="top-left">
+      <button class="menu-btn" id="btn-menu">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m18 16v1h-12v-1zm0-5v1h-12v-1zm0-5v1h-12v-1z"/></svg>
+        <span>Menu</span>
+      </button>
+      <span class="top-title" id="course-title">Porsche WBT Module</span>
+    </div>
+    <div class="top-right">
+      <button class="top-icon-btn" id="btn-resources" title="Resources">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m13 2h-6c-1.1046 0-2 .8954-2 2v16c0 1.1046.8954 2 2 2h10c1.1046 0 2-.8954 2-2v-12zm0 1.414 4.586 4.586h-4.586zm-7 16.586v-16c0-.5523.4477-1 1-1h5v6h6v11c0 .5523-.4477 1-1 1h-10c-.5523 0-1-.4477-1-1z"/></svg>
+      </button>
+      <button class="top-text-btn dev-cues" id="btn-cues" title="Open cue editor">Cues</button>
+    </div>
+  </div>
+
+  <!-- Menu Drawer -->
+  <div class="menu-overlay" id="menu-overlay">
+    <aside class="menu-panel" id="menu-panel" aria-label="Course table of contents">
+      <div class="menu-panel-header">Course Contents</div>
+      <ul class="toc-list" id="toc-list"></ul>
+    </aside>
+  </div>
+
+  <!-- Slide area -->
+  <div class="slide-area" id="slide-area">
+    <!-- Audio progress — moved out of bottom bar; full-width strip at top edge of slide area -->
+    <div class="audio-progress disabled" id="audio-progress" title="Audio progress (visual only)">
+      <div class="audio-progress-fill" id="audio-progress-fill"></div>
+    </div>
+    <div class="slide-scaler" id="slide-scaler">
+      <iframe id="slide-frame" title="Slide content"></iframe>
+    </div>
+    <div class="cc-overlay hidden" id="cc-overlay"></div>
+    <div class="dev-cues" id="dev-timestamp"></div>
+    <div class="click-to-begin-overlay hidden" id="audio-start-overlay">
+      <span class="click-to-begin-label">Click the slide to begin</span>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="bottom-logo">
+      <!-- Porsche wordmark -->
+      <svg viewBox="0 0 4500 300" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#fff" d="M502,221c48.1,0,74-25.9,74-74v-73c0-48.1-25.9-74-74-74H0v300h68v-79h434ZM508,78v65c0,7.8-4.2,12-12,12H68v-89h428c7.8,0,12,4.2,12,12ZM736,300c-48.1,0-74-25.9-74-74V74c0-48.1,25.9-74,74-74h417c48.1,0,74,25.9,74,74v152c0,48.1-25.9,74-74,74h-417ZM1147,234c7.8,0,12-4.2,12-12V78c0-7.8-4.2-12-12-12h-405c-7.8,0-12,4.2-12,12v144c0,7.8,4.2,12,12,12h405ZM1822,198c39.84,16.76,67.85,56.1,68,102h-68c0-54-25-79-79-79h-361v79h-68V0h502c48.1,0,74,25.9,74,74v50.14c0,46.06-23.75,71.76-68,73.86ZM1810,155c7.8,0,12-4.2,12-12v-65c0-7.8-4.2-12-12-12h-428v89h428ZM1972,74c0-48.1,25.9-74,74-74h492v56h-486c-7.8,0-12,4.2-12,12v42c0,7.8,4.2,12,12,12h422c48.1,0,74,25.9,74,74v30c0,48.1-25.9,74-74,74h-492v-56h486c7.8,0,12-4.2,12-12v-42c0-7.8-4.2-12-12-12h-422c-48.1,0-74-25.9-74-74v-30ZM2633,74c0-48.1,25.9-74,74-74h480v66h-474c-7.8,0-12,4.2-12,12v144c0,7.8,4.2,12,12,12h474v66h-480c-48.1,0-74-25.9-74-74V74ZM3817,0v300h-68v-117h-407v117h-68V0h68v117h407V0h68ZM3973,56v66h527v56h-527v66h527v56h-595V0h595v56h-527Z"/>
+      </svg>
+    </div>
+
+    <div class="bottom-center">
+    </div>
+
+    <div class="bottom-controls">
+      <!-- Play / Pause -->
+      <button class="ctrl-btn" id="btn-playpause" title="Play" disabled>
+        <svg id="icon-play" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m8 5 11 7-11 7z"/></svg>
+        <svg id="icon-pause" style="display:none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m7 5h4v14h-4zm6 0h4v14h-4z"/></svg>
+      </button>
+
+      <!-- Next -->
+      <button class="ctrl-btn ctrl-btn-next" id="btn-next" title="Next slide">
+        <span class="next-label">Next</span>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m15.121 11.997-5.477-6.497-.769.642 4.94 5.858-4.94 5.858.768.642 5.476-6.494.006-.005v-.001z"/></svg>
+      </button>
+
+      <!-- Volume -->
+      <button class="ctrl-btn" id="btn-volume" title="Toggle audio">
+        <svg id="icon-vol-on" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m21.504 11.992c0 2.9-1.175 5.524-3.075 7.425l-.708-.707c1.7847-1.7798 2.7863-4.1975 2.783-6.718.0033-2.52-.9979-4.9373-2.782-6.717l.707-.707c1.9 1.9 3.075 4.525 3.075 7.424zm-4 0c.0021 1.7243-.6831 3.3783-1.904 4.596l-.707-.707c1.0327-1.0305 1.6121-2.4301 1.61-3.889.0018-1.4586-.5776-2.8577-1.61-3.888l.708-.708c1.2205 1.2178 1.9054 2.8718 1.903 4.596zm-4.508-7.992v16l-5-5h-4.996v-6h4.996zm-1 2.414-3.586 3.586h-4.414v4h4.414l3.586 3.585z"/></svg>
+        <svg id="icon-vol-off" style="display:none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m20.25 9 .75.75-2.25 2.25 2.25 2.25-.75.75-2.25-2.25-2.25 2.25-.75-.75 2.25-2.25-2.25-2.25.75-.75 2.25 2.25zm-7.25-5v16l-5-5h-5v-6h5zm-1 2.414-3.586 3.586h-4.414v4h4.414l3.586 3.585z"/></svg>
+      </button>
+
+      <!-- CC -->
+      <button class="ctrl-btn" id="btn-cc" title="Toggle captions">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m19 5h-14c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-10c0-1.1-.9-2-2-2zm1 12c0 .55-.45 1-1 1h-14c-.55 0-1-.45-1-1v-10c0-.55.45-1 1-1h14c.55 0 1 .45 1 1zm-6.42-5.04c0 2.08.21 2.42 1.29 2.42.87 0 1.08-.38 1.15-1.54h.99c-.07 1.69-.59 2.37-2.13 2.37-1.87 0-2.37-.81-2.37-3.24s.56-3.19 2.37-3.19 2.06.76 2.13 2.43h-1c-.05-1.15-.26-1.49-1.14-1.49-1.08 0-1.29.39-1.29 2.25zm-5.5 0c0 2.08.21 2.42 1.29 2.42.87 0 1.08-.38 1.15-1.54h.99c-.07 1.69-.59 2.37-2.13 2.37-1.87 0-2.37-.81-2.37-3.24s.56-3.19 2.37-3.19 2.06.76 2.13 2.43h-1c-.05-1.15-.26-1.49-1.14-1.49-1.08 0-1.29.39-1.29 2.25z"/></svg>
+      </button>
+
+      <!-- Replay -->
+      <button class="ctrl-btn" id="btn-replay" title="Replay current slide">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m21,12c0,4.9705-4.0294,9-9,9S3,16.9705,3,12,7.0294,3,12,3c1.975,0,3.7963.6416,5.2784,1.7216l1.7216-1.7216v4h-4l1.5594-1.5594c-1.2949-.9037-2.8638-1.4406-4.5594-1.4406-4.4112,0-8,3.5887-8,8s3.5888,8,8,8,8-3.5888,8-8h1Zm-10-2.865v5.7299l3.4379-2.865-3.4379-2.865m-1-2.135l6,5-6,5V7h0Z"/></svg>
+      </button>
+
+      <!-- Playback Speed -->
+      <button class="ctrl-btn ctrl-btn-text" id="btn-speed" title="Playback speed: 1x">
+        <span class="ctrl-btn-label" id="speed-label">1x</span>
+      </button>
+
+      <span class="nav-divider"></span>
+    </div>
+  </div>
+
+  <!-- Knowledge Check Modal -->
+  <div class="kc-backdrop hidden" id="kc-backdrop">
+    <div class="kc-card">
+      <h3 id="kc-progress">Knowledge Check</h3>
+      <p class="kc-question" id="kc-question"></p>
+      <div class="kc-choices" id="kc-choices"></div>
+      <div class="kc-actions">
+        <button class="kc-btn kc-btn-submit" id="kc-submit" disabled>Submit</button>
+        <button class="kc-btn kc-btn-continue hidden" id="kc-continue">Continue</button>
+      </div>
+      <p class="kc-feedback" id="kc-feedback"></p>
+    </div>
+  </div>
+
+  <!-- Cue Editor -->
+  <div class="cue-backdrop hidden dev-cues" id="cue-backdrop">
+    <div class="cue-card" role="dialog" aria-modal="true" aria-label="Voiceover cue editor">
+      <div class="cue-head">
+        <h3>Voiceover Cue Editor</h3>
+        <button class="cue-btn" id="cue-close">Close</button>
+      </div>
+      <div class="cue-meta">
+        <div>Slide: <strong id="cue-slide-id">-</strong></div>
+        <div>Current audio: <strong id="cue-current-time">0.00</strong>s</div>
+        <div>Source: <strong id="cue-source">new</strong></div>
+      </div>
+
+      <div class="cue-grid">
+        <div class="cue-field">
+          <label for="cue-time">At (sec)</label>
+          <input id="cue-time" type="number" min="0" step="0.01" value="0.00">
+        </div>
+        <div class="cue-field">
+          <label for="cue-target">Target (`data-anim-key`)</label>
+          <input id="cue-target" type="text" placeholder="title">
+        </div>
+        <div class="cue-field">
+          <label for="cue-action">Action</label>
+          <select id="cue-action">
+            <option value="in">in</option>
+            <option value="out">out</option>
+            <option value="set">set</option>
+            <option value="classAdd">classAdd</option>
+            <option value="classRemove">classRemove</option>
+          </select>
+        </div>
+        <div class="cue-field">
+          <label for="cue-preset">Preset</label>
+          <select id="cue-preset">
+            <option value="fade">fade</option>
+            <option value="fadeUp">fadeUp</option>
+            <option value="fadeDown">fadeDown</option>
+            <option value="slideLeft">slideLeft</option>
+            <option value="slideRight">slideRight</option>
+            <option value="scaleIn">scaleIn</option>
+            <option value="scaleOut">scaleOut</option>
+          </select>
+        </div>
+        <div class="cue-field">
+          <label for="cue-duration">Duration (optional)</label>
+          <input id="cue-duration" type="number" min="0" step="0.01" placeholder="0.60">
+        </div>
+        <div class="cue-field">
+          <label for="cue-classname">Class name (for class actions)</label>
+          <input id="cue-classname" type="text" placeholder="is-active">
+        </div>
+      </div>
+
+      <div class="cue-actions">
+        <button class="cue-btn" id="cue-capture">Capture now</button>
+        <button class="cue-btn cue-btn-primary" id="cue-add">Add cue</button>
+        <button class="cue-btn" id="cue-sort">Sort by time</button>
+        <button class="cue-btn cue-btn-danger" id="cue-clear">Clear all</button>
+        <button class="cue-btn" id="cue-load">Reload from file</button>
+      </div>
+
+      <div class="cue-table-wrap">
+        <table class="cue-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>at</th>
+              <th>action</th>
+              <th>target</th>
+              <th>preset</th>
+              <th>duration</th>
+              <th>remove</th>
+            </tr>
+          </thead>
+          <tbody id="cue-list"></tbody>
+        </table>
+      </div>
+
+      <div class="cue-json-wrap">
+        <div class="cue-actions">
+          <button class="cue-btn" id="cue-copy-json">Copy JSON</button>
+          <button class="cue-btn" id="cue-download-json">Download JSON</button>
+        </div>
+        <div class="cue-field">
+          <label for="cue-json-output">Cue JSON</label>
+          <textarea id="cue-json-output" readonly></textarea>
+        </div>
+      </div>
+
+      <p class="cue-status" id="cue-status"></p>
+    </div>
+  </div>
+
+  <script src="./runtime.js"></script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Porsche WBT — AI Creator Suite</title>
+  <link rel="stylesheet" href="assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+<body>
+
+  <!-- ───────────────────────── Top toolbar ───────────────────────── -->
+  <header class="toolbar" id="toolbar">
+    <div class="toolbar-left">
+      <button class="toolbar-btn" id="btn-start-module" title="Create a new module from the template" aria-label="Start a new module">
+        <i class="pi pi-plus toolbar-btn-icon"></i>
+        <span class="toolbar-btn-label">Start Module</span>
+      </button>
+      <button class="toolbar-btn" id="btn-materials-toggle" title="Show learning materials" aria-label="Toggle materials drawer">
+        <i class="pi pi-stack toolbar-btn-icon"></i>
+        <span class="toolbar-btn-label">Materials</span>
+        <span class="pill" id="material-count">0</span>
+      </button>
+      <button class="toolbar-btn" id="btn-review-toggle" title="Review notes from SMEs / instructors" aria-label="Toggle review notes" disabled>
+        <i class="pi pi-edit toolbar-btn-icon"></i>
+        <span class="toolbar-btn-label">Review</span>
+        <span class="pill" id="review-note-count">0</span>
+      </button>
+    </div>
+
+    <div class="toolbar-center">
+      <svg class="brand-wordmark" viewBox="0 0 4500 300" xmlns="http://www.w3.org/2000/svg" aria-label="Porsche">
+        <path d="M502,221c48.1,0,74-25.9,74-74v-73c0-48.1-25.9-74-74-74H0v300h68v-79h434ZM508,78v65c0,7.8-4.2,12-12,12H68v-89h428c7.8,0,12,4.2,12,12ZM736,300c-48.1,0-74-25.9-74-74V74c0-48.1,25.9-74,74-74h417c48.1,0,74,25.9,74,74v152c0,48.1-25.9,74-74,74h-417ZM1147,234c7.8,0,12-4.2,12-12V78c0-7.8-4.2-12-12-12h-405c-7.8,0-12,4.2-12,12v144c0,7.8,4.2,12,12,12h405ZM1822,198c39.84,16.76,67.85,56.1,68,102h-68c0-54-25-79-79-79h-361v79h-68V0h502c48.1,0,74,25.9,74,74v50.14c0,46.06-23.75,71.76-68,73.86ZM1810,155c7.8,0,12-4.2,12-12v-65c0-7.8-4.2-12-12-12h-428v89h428ZM1972,74c0-48.1,25.9-74,74-74h492v56h-486c-7.8,0-12,4.2-12,12v42c0,7.8,4.2,12,12,12h422c48.1,0,74,25.9,74,74v30c0,48.1-25.9,74-74,74h-492v-56h486c7.8,0,12-4.2,12-12v-42c0-7.8-4.2-12-12-12h-422c-48.1,0-74-25.9-74-74v-30ZM2633,74c0-48.1,25.9-74,74-74h480v66h-474c-7.8,0-12,4.2-12,12v144c0,7.8,4.2,12,12,12h474v66h-480c-48.1,0-74-25.9-74-74V74ZM3817,0v300h-68v-117h-407v117h-68V0h68v117h407V0h68ZM3973,56v66h527v56h-527v66h527v56h-595V0h595v56h-527Z"/>
+      </svg>
+      <span class="toolbar-divider"></span>
+      <span class="toolbar-title">WBT AI Creator Suite</span>
+    </div>
+
+    <div class="toolbar-right">
+      <span class="badge status-badge online" id="status-badge">Pipeline Ready</span>
+      <button class="toolbar-btn icon-only" id="btn-theme-toggle" title="Toggle light / dark theme" aria-label="Toggle theme">
+        <i class="pi pi-moon theme-icon"></i>
+      </button>
+      <button class="toolbar-btn danger" id="btn-stop-server" title="Stop the local dashboard server process">
+        <i class="pi pi-stop toolbar-btn-icon"></i>
+        <span class="toolbar-btn-label">Stop</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ───────────────────────── Workspace ───────────────────────── -->
+  <main class="workspace" id="dashboard-grid">
+
+    <!-- Center stage: slide preview / player -->
+    <section class="stage" id="preview-drawer" aria-label="Slide preview">
+      <div class="stage-frame">
+        <div class="iframe-container">
+          <iframe src="about:blank" id="preview-iframe" title="Interactive Slide Preview Frame"></iframe>
+          <!-- Drop overlay for assigning a slide image (shown only on drag-over) -->
+          <div class="slide-image-dropzone" id="slide-image-dropzone" hidden>
+            <div class="dropzone-inner">
+              <i class="pi pi-image"></i>
+              <span class="dropzone-title">Drop image to assign to <strong id="dropzone-slide-id">this slide</strong></span>
+              <span class="dropzone-sub">Converted to WebP automatically</span>
+            </div>
+          </div>
+        </div>
+        <!-- Hidden control kept for image-adjust cancel hook -->
+        <button id="btn-close-preview" hidden aria-hidden="true"></button>
+      </div>
+
+      <!-- Scrubber -->
+      <div class="audio-scrubber-track" id="audio-scrubber" title="Click to seek">
+        <div class="scrubber-fill" id="scrubber-fill"></div>
+        <div class="scrubber-cue-markers" id="scrubber-cue-markers"></div>
+        <div class="scrubber-handle" id="scrubber-handle"></div>
+      </div>
+
+      <!-- Stage control bar -->
+      <div class="stage-controls">
+        <div class="stage-controls-left">
+          <select class="slide-select" id="preview-slide-selector">
+            <option value="">Select compiled slide…</option>
+          </select>
+          <button class="btn btn-secondary btn-xs" id="btn-preview-mode" title="Toggle Slide / Player Shell Mode" disabled><i class="pi pi-document"></i><span class="btn-label">Slide Mode</span></button>
+          <span class="preview-timer-display" id="preview-timer">0.00s / 0.00s</span>
+        </div>
+        <div class="stage-controls-right">
+          <button class="btn btn-secondary btn-xs" id="btn-preview-edit" title="Locate in Storyboard Editor" disabled><i class="pi pi-edit"></i><span class="btn-label">Focus Editor</span></button>
+          <button class="btn btn-secondary btn-xs" id="btn-set-image" title="Paste (⌘V), drop, or click to pick an image — converts to WebP and assigns it to this slide" disabled><i class="pi pi-image"></i><span class="btn-label">Set Image</span></button>
+          <input type="file" id="slide-image-uploader" accept="image/png,image/jpeg,image/webp" hidden>
+          <button class="btn btn-secondary btn-xs" id="btn-img-adjust" title="Position, scale, matte/haze, color overlay & vignette — all in one tool. Saves to the storyboard"><i class="pi pi-adjust"></i><span class="btn-label">Adjust Image</span></button>
+          <span class="stage-controls-sep"></span>
+          <button class="btn btn-secondary btn-xs" id="btn-update-slide" title="Recompile just this slide's HTML — fast, no audio regeneration" disabled><i class="pi pi-refresh"></i><span class="btn-label">Update Slide</span></button>
+          <button class="btn btn-secondary btn-xs" id="btn-update-slide-voice" title="Regenerate this slide's audio + captions + cues, then recompile (hits the TTS API — use when narration changed)" disabled><i class="pi pi-microphone"></i><span class="btn-label">+ Voice</span></button>
+          <label class="auto-compile-toggle" title="Auto-compile after saving the storyboard">
+            <input type="checkbox" id="chk-auto-compile">
+            <span class="toggle-label">Auto-Compile</span>
+          </label>
+        </div>
+      </div>
+      <div class="stage-hints">
+        <span class="shortcut-hint"><kbd>Space</kbd> Play/Pause</span>
+        <span class="shortcut-hint"><kbd>←</kbd> Prev</span>
+        <span class="shortcut-hint"><kbd>→</kbd> Next</span>
+        <span class="shortcut-hint"><kbd>⌘S</kbd> Save</span>
+      </div>
+    </section>
+
+    <!-- Resize handle between stage and side panel -->
+    <div class="col-resize-handle" id="col-resize-2" title="Drag to resize"></div>
+
+    <!-- Right side panel: tabbed Storyboard / Build -->
+    <aside class="sidepanel" id="sidepanel" aria-label="Editor and pipeline">
+      <div class="tabbar" role="tablist">
+        <button class="tab active" id="tab-btn-storyboard" data-tab="storyboard" role="tab" aria-selected="true">Storyboard</button>
+        <button class="tab" id="tab-btn-animations" data-tab="animations" role="tab" aria-selected="false">Animations</button>
+        <button class="tab" id="tab-btn-build" data-tab="build" role="tab" aria-selected="false">Build</button>
+      </div>
+
+      <!-- Storyboard tab -->
+      <section class="tabpanel active" id="tab-storyboard" data-tab="storyboard" role="tabpanel">
+        <div class="panel-head">
+          <div class="editor-eyebrow">
+            <span>storyboard/course.md</span>
+            <span class="unsaved-indicator" id="unsaved-indicator">Unsaved changes</span>
+          </div>
+          <div class="panel-head-actions">
+            <button class="btn btn-secondary btn-xs" id="btn-reset-storyboard">Revert</button>
+            <button class="btn btn-primary btn-xs" id="btn-save-storyboard">Save</button>
+          </div>
+        </div>
+
+        <textarea class="storyboard-textarea" id="storyboard-editor" spellcheck="false" placeholder="# Course: Explaining Technical Issues…"></textarea>
+
+        <div class="prompt-copier-container">
+          <label for="ai-scope-prompt" class="prompt-scope-label">AI Direction &amp; Module Target Scope</label>
+          <textarea id="ai-scope-prompt" class="prompt-scope-textarea" placeholder="Example: Extract only Module 3: Diagnostics. Limit to slides 1S01–1S08. Make it highly technical for Porsche technicians."></textarea>
+          <div class="prompt-copier-actions">
+            <button class="btn btn-secondary btn-xs" id="btn-copy-prompt">Copy Prompt</button>
+            <button class="btn btn-primary btn-xs accent" id="btn-ai-generate"><i class="pi pi-ai-spark"></i><span class="btn-label">Generate Storyboard</span></button>
+          </div>
+          <p class="prompt-copier-desc">Copy this calibrated prompt into your LLM with your dropped materials to auto-generate a compliant storyboard, or generate inline.</p>
+        </div>
+      </section>
+
+      <!-- Build tab -->
+      <section class="tabpanel" id="tab-build" data-tab="build" role="tabpanel">
+        <button class="pipeline-btn pipeline-btn-hero" id="btn-pipeline-all">
+          <i class="pi pi-ai-spark pipeline-icon"></i>
+          <span class="pipeline-label">Generate All</span>
+          <span class="pipeline-sub">Full build: compile → voiceover → SCORM</span>
+        </button>
+
+        <div class="pipeline-actions-grid">
+          <button class="pipeline-btn" id="btn-pipeline-compile">
+            <i class="pi pi-configurate pipeline-icon"></i>
+            <span class="pipeline-label">Compile Slides</span>
+            <span class="pipeline-sub">generate-slides --force</span>
+          </button>
+          <button class="pipeline-btn" id="btn-pipeline-image-prompts" title="Compose AI image-gen prompts from the storyboard. Run after slides are reviewed with placeholders.">
+            <i class="pi pi-image pipeline-icon"></i>
+            <span class="pipeline-label">Generate Image Prompts</span>
+            <span class="pipeline-sub">After review — one prompt per image</span>
+          </button>
+          <button class="pipeline-btn" id="btn-pipeline-vo">
+            <i class="pi pi-microphone pipeline-icon"></i>
+            <span class="pipeline-label">Generate Voiceover</span>
+            <span class="pipeline-sub">TTS + captions + cues + recompile</span>
+          </button>
+          <button class="pipeline-btn" id="btn-pipeline-package">
+            <i class="pi pi-save pipeline-icon"></i>
+            <span class="pipeline-label">Package SCORM</span>
+            <span class="pipeline-sub">LMS zip deliverable</span>
+          </button>
+          <button class="pipeline-btn" id="btn-scorm-test">
+            <i class="pi pi-play-circle pipeline-icon"></i>
+            <span class="pipeline-label">Test in SCORM Harness</span>
+            <span class="pipeline-sub">Local LMS simulator + API log</span>
+          </button>
+        </div>
+
+        <details class="pipeline-advanced">
+          <summary>Advanced — re-run individual steps</summary>
+          <div class="pipeline-actions-grid">
+            <button class="pipeline-btn" id="btn-pipeline-vtt">
+              <i class="pi pi-closed-caption pipeline-icon"></i>
+              <span class="pipeline-label">Generate Captions</span>
+              <span class="pipeline-sub">VTT only — skips TTS</span>
+            </button>
+            <button class="pipeline-btn" id="btn-pipeline-cues">
+              <i class="pi pi-stopwatch pipeline-icon"></i>
+              <span class="pipeline-label">Extract VO Cues</span>
+              <span class="pipeline-sub">Legacy — objectives reveal; use Animations tab</span>
+            </button>
+          </div>
+        </details>
+
+        <div class="console-box">
+          <div class="console-header">
+            <span>Terminal Stream Output</span>
+            <button class="console-clear-btn" id="btn-clear-console">Clear</button>
+          </div>
+          <pre class="console-output" id="console-stream">Console idle. Ready for compilation pipeline triggers…</pre>
+        </div>
+      </section>
+
+      <!-- Animations tab — VO-synced, post-load element animations -->
+      <section class="tabpanel" id="tab-animations" data-tab="animations" role="tabpanel">
+        <div class="panel-head">
+          <div class="editor-eyebrow"><span id="anim-slide-label">Select a slide in Slide Mode</span></div>
+          <div class="panel-head-actions">
+            <button class="btn btn-primary btn-xs" id="btn-anim-apply" title="Save cues to animation-cues/<slide>.json and recompile this slide">Apply Changes</button>
+          </div>
+        </div>
+
+        <div class="anim-editor">
+          <p class="anim-hint">Animate elements <strong>after</strong> the slide loads, timed to the voiceover. Play the slide and scrub the audio, then capture the moment. Template entrance animations are never touched.</p>
+
+          <div class="anim-row">
+            <button class="btn btn-secondary btn-xs" id="btn-anim-pick"><i class="pi pi-target"></i><span class="btn-label">Pick Element</span></button>
+            <input type="text" id="anim-target" class="anim-input anim-target" placeholder="#element-id or .selector" />
+          </div>
+
+          <div class="anim-grid">
+            <label class="anim-field">Preset
+              <select id="anim-preset" class="anim-input"></select>
+            </label>
+            <label class="anim-field">Ease
+              <select id="anim-ease" class="anim-input">
+                <option>power2.out</option><option>power1.inOut</option><option>none</option>
+                <option>back.out(1.4)</option><option>elastic.out(1,0.4)</option><option>bounce.out</option><option>expo.out</option>
+              </select>
+            </label>
+            <label class="anim-field">Start (s)
+              <span class="anim-capture-wrap"><input type="number" step="0.01" min="0" id="anim-start" class="anim-input" /><button class="anim-cap" id="anim-start-cap" title="Capture current preview time">⦿</button></span>
+            </label>
+            <label class="anim-field">Duration (s)
+              <input type="number" step="0.05" min="0" id="anim-duration" class="anim-input" value="0.5" />
+            </label>
+            <label class="anim-field">Delay (s)
+              <input type="number" step="0.05" min="0" id="anim-delay" class="anim-input" value="0" />
+            </label>
+            <label class="anim-field anim-check"><input type="checkbox" id="anim-after" checked /> After entrance</label>
+            <label class="anim-field anim-check"><input type="checkbox" id="anim-return" /> Return to original</label>
+            <label class="anim-field">Return at (s)
+              <span class="anim-capture-wrap"><input type="number" step="0.01" min="0" id="anim-return-at" class="anim-input" disabled /><button class="anim-cap" id="anim-return-cap" title="Capture current preview time" disabled>⦿</button></span>
+            </label>
+          </div>
+
+          <label class="anim-field anim-params" id="anim-params-wrap" hidden>Custom GSAP vars (JSON)
+            <textarea id="anim-params" class="anim-input" rows="2" placeholder='{ "x": 40, "rotation": 10 }'></textarea>
+          </label>
+
+          <div class="anim-row anim-actions">
+            <button class="btn btn-secondary btn-xs" id="btn-anim-preview" title="Seek to just before the start and play">▶ Preview</button>
+            <span class="anim-spacer"></span>
+            <button class="btn btn-secondary btn-xs" id="btn-anim-cancel" hidden>Cancel edit</button>
+            <button class="btn btn-primary btn-xs" id="btn-anim-add">Add animation</button>
+          </div>
+
+          <ul class="anim-list" id="anim-list"></ul>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- ───────────────── Materials slide-over drawer (left) ───────────────── -->
+  <div class="materials-scrim" id="materials-scrim" hidden></div>
+  <aside class="materials-drawer" id="materials-drawer" aria-label="Learning Materials Hub" hidden>
+    <div class="materials-header">
+      <h3 class="materials-title">Material Hub</h3>
+      <button class="btn-drawer-close" id="btn-materials-close" aria-label="Close materials"><i class="pi pi-close"></i></button>
+    </div>
+
+    <div class="drop-zone" id="material-drop-zone">
+      <i class="pi pi-upload drop-zone-icon"></i>
+      <p class="drop-zone-text">Drag &amp; drop learning materials</p>
+      <span class="drop-zone-sub">PDF, PPTX, XLSX, DOCX, CSV, MD, HTML &amp; images</span>
+      <input type="file" id="file-uploader" multiple style="display:none;">
+    </div>
+
+    <div class="inventory-section">
+      <h4 class="inventory-title">Active Source Resources</h4>
+      <div class="inventory-list" id="materials-list">
+        <div class="inventory-empty-state">No source files dropped yet.</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───────────────── Review notes panel (non-modal, stays open while editing) ───────────────── -->
+  <aside class="review-panel" id="review-panel" aria-label="Reviewer notes" hidden>
+    <div class="review-panel-head">
+      <h3 class="review-panel-title">Review Notes <span class="pill" id="review-panel-count">0</span></h3>
+      <div class="review-panel-actions">
+        <button class="btn-drawer-close" id="btn-review-refresh" title="Re-scan the review folder"><i class="pi pi-refresh"></i></button>
+        <button class="btn-drawer-close" id="btn-review-close" title="Close"><i class="pi pi-close"></i></button>
+      </div>
+    </div>
+    <div class="review-panel-sub" id="review-panel-sub"></div>
+    <div class="review-panel-body" id="review-panel-body"></div>
+  </aside>
+
+  <!-- File viewer modal -->
+  <div class="viewer-overlay" id="viewer-overlay" hidden>
+    <div class="viewer-modal">
+      <div class="viewer-header">
+        <h3 class="viewer-filename" id="viewer-filename">File Viewer</h3>
+        <button class="viewer-close" id="btn-close-viewer"><i class="pi pi-close"></i></button>
+      </div>
+      <div class="viewer-body" id="viewer-content"></div>
+    </div>
+  </div>
+
+  <!-- ───────────────── Start New Module wizard ───────────────── -->
+  <div class="wizard-scrim" id="module-wizard-scrim" hidden></div>
+  <div class="module-wizard" id="module-wizard" role="dialog" aria-modal="true" aria-labelledby="wiz-heading" hidden>
+    <div class="wizard-head">
+      <h3 class="wizard-title" id="wiz-heading">Start New Module</h3>
+      <button class="viewer-close" id="btn-wiz-close" title="Close"><i class="pi pi-close"></i></button>
+    </div>
+
+    <div class="wizard-body" id="wiz-form">
+      <p class="wizard-intro">Duplicates the Porsche WBT template into a new module folder, stamps the Player title, and (optionally) creates a connected GitHub repo. The template is never modified.</p>
+
+      <label class="wiz-field">Module code
+        <input type="text" id="wiz-code" class="anim-input" placeholder="e.g. HV02" autocomplete="off" spellcheck="false" />
+        <span class="wiz-help">Two letters + number → folder <code id="wiz-folder-preview">Porsche-WBT-…</code></span>
+      </label>
+
+      <label class="wiz-field">Module title <span class="wiz-sub">(shown in the Player top bar)</span>
+        <input type="text" id="wiz-title" class="anim-input" placeholder="e.g. High-Voltage Safety &amp; Compliance" autocomplete="off" />
+      </label>
+
+      <label class="wiz-field">Location <span class="wiz-sub">(parent folder for the new module)</span>
+        <input type="text" id="wiz-location" class="anim-input" spellcheck="false" placeholder="/path/to/00_Projects" />
+      </label>
+
+      <label class="wiz-field wiz-check">
+        <input type="checkbox" id="wiz-repo" checked />
+        <span>Create &amp; connect a private GitHub repo (<code>gh</code> CLI)</span>
+      </label>
+
+      <div class="wiz-error" id="wiz-error" hidden></div>
+
+      <div class="wizard-actions">
+        <button class="btn btn-secondary btn-xs" id="btn-wiz-cancel">Cancel</button>
+        <button class="btn btn-primary btn-xs" id="btn-wiz-submit">Create Module</button>
+      </div>
+    </div>
+
+    <!-- Standby / streaming log (shown during creation) -->
+    <div class="wizard-progress" id="wiz-progress" hidden>
+      <div class="wiz-progress-head"><span class="wiz-spinner" aria-hidden="true"></span><span id="wiz-status">Creating module…</span></div>
+      <pre class="wiz-console" id="wiz-console"></pre>
+    </div>
+
+    <!-- Success / handoff -->
+    <div class="wizard-success" id="wiz-success" hidden>
+      <div class="wiz-success-msg" id="wiz-success-msg"></div>
+      <div class="wizard-actions">
+        <button class="btn btn-secondary btn-xs" id="btn-wiz-done">Close</button>
+        <a class="btn btn-primary btn-xs" id="btn-wiz-open" target="_blank" rel="noopener">Open New Dashboard →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

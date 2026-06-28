@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 3 — Storyboard Architecture & Design Reasoning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --porsche-red: #D5001C;
+      --porsche-gold: #C8A46E;
+      --bg-dark: #0A0B0D;
+      --bg-card: #121316;
+      --border-color: rgba(200, 164, 110, 0.15);
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      --font-outfit: 'Outfit', sans-serif;
+      --font-inter: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-inter);
+      line-height: 1.6;
+      padding: 40px 20px;
+      overflow-x: hidden;
+    }
+
+    /* --- Custom Scrollbar --- */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0B0D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #25262B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--porsche-gold);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* --- Header Section --- */
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+      position: relative;
+    }
+
+    header::after {
+      content: '';
+      display: block;
+      width: 100px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--porsche-red) 0%, var(--porsche-gold) 100%);
+      margin: 20px auto 0;
+      border-radius: 2px;
+    }
+
+    .porsche-wordmark {
+      height: 18px;
+      fill: var(--text-primary);
+      margin-bottom: 24px;
+      letter-spacing: 0.1em;
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFF 30%, #C8A46E 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+    }
+
+    /* --- Grid Layout --- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* --- Cards --- */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px rgba(200, 164, 110, 0.1);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--porsche-gold);
+    }
+
+    .card.red-accent::before {
+      background: var(--porsche-red);
+    }
+
+    .card-title {
+      font-family: var(--font-outfit);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #FFF;
+    }
+
+    .card-title svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--porsche-gold);
+    }
+
+    /* --- SVG Infographics --- */
+    .svg-container {
+      width: 100%;
+      background: rgba(10, 11, 13, 0.5);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .svg-graphic {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+    }
+
+    /* --- List Styling --- */
+    .stat-list {
+      list-style: none;
+      display: grid;
+      gap: 16px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      border-left: 3px solid rgba(200, 164, 110, 0.3);
+    }
+
+    .stat-num {
+      font-family: var(--font-outfit);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--porsche-gold);
+      line-height: 1;
+      min-width: 40px;
+    }
+
+    .stat-details h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #FFF;
+      margin-bottom: 4px;
+    }
+
+    .stat-details p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* --- Timeline --- */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 28px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -30px;
+      top: 6px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 2px solid var(--porsche-gold);
+      transition: background 0.3s ease;
+    }
+
+    .timeline-item:hover::before {
+      background: var(--porsche-gold);
+      box-shadow: 0 0 8px var(--porsche-gold);
+    }
+
+    .timeline-title {
+      font-family: var(--font-outfit);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #FFF;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .template-badge {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(200, 164, 110, 0.1);
+      border: 1px solid rgba(200, 164, 110, 0.2);
+      color: var(--porsche-gold);
+      font-weight: 600;
+    }
+
+    .timeline-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    /* --- Highlight Callout --- */
+    .callout {
+      background: linear-gradient(135deg, rgba(213, 0, 28, 0.08) 0%, rgba(200, 164, 110, 0.05) 100%);
+      border: 1px solid rgba(200, 164, 110, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 30px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .callout-text h4 {
+      font-family: var(--font-outfit);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--porsche-gold);
+      margin-bottom: 6px;
+    }
+
+    .callout-text p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* --- Footer --- */
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Brand Header -->
+    <header>
+      <svg class="porsche-wordmark" viewBox="0 0 4500 300" xmlns="http://www.w3.org/2000/svg">
+        <path d="M502,221c48.1,0,74-25.9,74-74v-73c0-48.1-25.9-74-74-74H0v300h68v-79h434ZM508,78v65c0,7.8-4.2,12-12,12H68v-89h428c7.8,0,12,4.2,12,12ZM736,300c-48.1,0-74-25.9-74-74V74c0-48.1,25.9-74,74-74h417c48.1,0,74,25.9,74,74v152c0,48.1-25.9,74-74,74h-417ZM1147,234c7.8,0,12-4.2,12-12V78c0-7.8-4.2-12-12-12h-405c-7.8,0-12,4.2-12,12v144c0,7.8,4.2,12,12,12h405ZM1822,198c39.84,16.76,67.85,56.1,68,102h-68c0-54-25-79-79-79h-361v79h-68V0h502c48.1,0,74,25.9,74,74v50.14c0,46.06-23.75,71.76-68,73.86ZM1810,155c7.8,0,12-4.2,12-12v-65c0-7.8-4.2-12-12-12h-428v89h428ZM1972,74c0-48.1,25.9-74,74-74h492v56h-486c-7.8,0-12,4.2-12,12v42c0,7.8,4.2,12,12,12h422c48.1,0,74,25.9,74,74v30c0,48.1-25.9,74-74,74h-492v-56h486c7.8,0,12-4.2,12-12v-30c0-7.8-4.2-12-12-12h-422c-48.1,0-74-25.9-74-74ZM3085,226c-39.84-16.76-67.85-56.1-68-102h68c0,54,25,79,79,79h361V124c.08-45.9-27.93-85.24-68-102C3417.15,5.24,3389.14,5.24,3389,5c0-.13-.03-.25-.09-.36-.02-.04-.04-.08-.07-.12-.04-.07-.08-.13-.13-.2C3388.59,4.14,3388.45,4,3388,3.61l-.22-.29c-.06-.08-.13-.15-.2-.23L3387,2.5c-.15-.17-.32-.33-.49-.49L3386,1.52c-.17-.16-.36-.31-.55-.45L3385,.67c-.22-.16-.44-.3-.68-.44l-.3-.17C3383.74,.02,3383.47,.01,3383.2,0H2881v300h68v-74h136ZM2949,66v81h136c7.8,0,12-4.2,12-12V78c0-7.8-4.2-12-12-12h-136ZM3972,74c0-48.1,25.9-74,74-74h417c48.1,0,74,25.9,74,74v50h-68v-46c0-7.8-4.2-12-12-12h-405c-7.8,0-12,4.2-12,12v144c0,7.8,4.2,12,12,12h405c7.8,0,12-4.2,12-12v-50h68v54c0,48.1-25.9,74-74,74h-417c-48.1,0-74-25.9-74-74V74Z"/>
+      </svg>
+      <h1>Storyboard Architecture & Reasoning</h1>
+      <p class="subtitle">Module 3: Behavioral Styles — Reading Your Customer</p>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Left Column: Instructional Design and Graphics -->
+      <div class="card red-accent">
+        <h2 class="card-title">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/></svg>
+          Why Exactly 11 Content Slides?
+        </h2>
+        
+        <p style="margin-bottom: 24px; color: var(--text-secondary);">
+          Instructional design at Porsche mandates that a standard WBT module target <strong>15–20 minutes</strong> of active learning seat time. To cover the DiSC framework thoroughly without causing cognitive overload or unnecessary scrolling, the AI mapped Module 3's information outline across a curated <strong>11 content slides</strong>.
+        </p>
+
+        <!-- SVG Infographic: Slide Distribution -->
+        <div class="svg-container">
+          <svg class="svg-graphic" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background Radial Glow -->
+            <defs>
+              <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#C8A46E" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="500" height="300" fill="url(#glow)" />
+            
+            <!-- Central DiSC Circle representation -->
+            <circle cx="250" cy="130" r="70" fill="none" stroke="rgba(200, 164, 110, 0.3)" stroke-width="2" />
+            <circle cx="250" cy="130" r="85" fill="none" stroke="rgba(213, 0, 28, 0.2)" stroke-width="1" stroke-dasharray="5,5" />
+            
+            <!-- Axes -->
+            <line x1="250" y1="45" x2="250" y2="215" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+            <line x1="165" y1="130" x2="335" y2="130" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+            
+            <!-- Text Labels for Styles -->
+            <text x="210" y="90" font-family="'Outfit', sans-serif" font-weight="bold" font-size="16" fill="#FFF">D</text>
+            <text x="275" y="90" font-family="'Outfit', sans-serif" font-weight="bold" font-size="16" fill="#FFF">I</text>
+            <text x="210" y="175" font-family="'Outfit', sans-serif" font-weight="bold" font-size="16" fill="#FFF">C</text>
+            <text x="275" y="175" font-family="'Outfit', sans-serif" font-weight="bold" font-size="16" fill="#FFF">S</text>
+            
+            <!-- Surrounding Slide Nodes visualization -->
+            <!-- We will map 11 nodes in a semi-circle arch above the DiSC circle -->
+            <!-- Active Node 1 -->
+            <circle cx="80" cy="80" r="14" fill="#D5001C" />
+            <text x="80" y="84" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">01</text>
+            
+            <!-- Node 2 -->
+            <circle cx="120" cy="50" r="14" fill="#C8A46E" />
+            <text x="120" y="54" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#000" text-anchor="middle">02</text>
+            
+            <!-- Node 3 -->
+            <circle cx="170" cy="35" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="170" y="39" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">03</text>
+            
+            <!-- Node 4 -->
+            <circle cx="225" cy="28" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="225" y="32" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">04</text>
+            
+            <!-- Node 5 -->
+            <circle cx="275" cy="28" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="275" y="32" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">05</text>
+            
+            <!-- Node 6 -->
+            <circle cx="330" cy="35" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="330" y="39" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">06</text>
+            
+            <!-- Node 7 -->
+            <circle cx="380" cy="50" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="380" y="54" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">07</text>
+            
+            <!-- Node 8 -->
+            <circle cx="420" cy="80" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="420" y="84" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">08</text>
+            
+            <!-- Node 9 -->
+            <circle cx="440" cy="125" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="440" y="129" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">09</text>
+            
+            <!-- Node 10 -->
+            <circle cx="430" cy="175" r="14" fill="#121316" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+            <text x="430" y="179" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">10</text>
+            
+            <!-- Node 11 -->
+            <circle cx="395" cy="215" r="14" fill="#D5001C" />
+            <text x="395" y="219" font-family="'Outfit', sans-serif" font-weight="bold" font-size="9" fill="#FFF" text-anchor="middle">11</text>
+            
+            <!-- Connections representation -->
+            <path d="M 94 74 Q 130 50 160 38" fill="none" stroke="rgba(200, 164, 110, 0.2)" stroke-width="1.5" />
+            <path d="M 340 38 Q 380 50 410 74" fill="none" stroke="rgba(200, 164, 110, 0.2)" stroke-width="1.5" />
+            <path d="M 434 135 C 430 150 415 190 395 205" fill="none" stroke="rgba(200, 164, 110, 0.2)" stroke-width="1.5" />
+            
+            <!-- Explanatory Footnotes -->
+            <text x="250" y="260" font-family="'Inter', sans-serif" font-size="12" fill="var(--text-secondary)" text-anchor="middle">Module 3 Standard Core Footprint</text>
+            <text x="250" y="280" font-family="'Inter', sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">11 Content Slides + 4 Knowledge Checks + 10 Quiz Pool Questions</text>
+          </svg>
+        </div>
+
+        <ul class="stat-list">
+          <li class="stat-item">
+            <div class="stat-num">4</div>
+            <div class="stat-details">
+              <h4>Learning Objectives covered</h4>
+              <p>Each learning objective gets a tailored intro, active conceptual framing, real-world examples, and interactive application slides.</p>
+            </div>
+          </li>
+          <li class="stat-item">
+            <div class="stat-num">3-4</div>
+            <div class="stat-details">
+              <h4>Slides per major theme axis</h4>
+              <p>Ensures that complex details (verbal cues vs. video adaptations) get dedicated layouts instead of forcing the learner to scan massive single-slide texts.</p>
+            </div>
+          </li>
+          <li class="stat-item">
+            <div class="stat-num">80%</div>
+            <div class="stat-details">
+              <h4>Interactive core slides</h4>
+              <p>Uses card-explore and tab-panel formats to force user clicking, triggering focused micro-recordings to ensure high retention scores.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Column: Slide Breakdown & Narrative Flow -->
+      <div class="card">
+        <h2 class="card-title">
+          <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+          Slide-by-Slide Design Rationale
+        </h2>
+        
+        <div class="timeline">
+          
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 01: Opener 
+              <span class="template-badge">hero-title</span>
+            </div>
+            <p class="timeline-desc">Establishes Porsche brand context, links behavioral alignment to Gold-Certified technician professionalism, and builds learner anticipation.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 02: Objectives
+              <span class="template-badge">learning-objectives</span>
+            </div>
+            <p class="timeline-desc">Fades in the 4 learning objectives sequentially. Built-in interactive lock restricts progression until the objectives VO is finished.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 03: Why DiSC?
+              <span class="template-badge">content-split</span>
+            </div>
+            <p class="timeline-desc">Conveys Objective 1. Highlights that "different does not mean wrong" and frames profiling as a respect-based relationship accelerator.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 04: The 4 Styles
+              <span class="template-badge">card-explore</span>
+            </div>
+            <p class="timeline-desc">Conveys Objective 2. Employs a beautiful card-explore grid for Dominance, Influence, Steadiness, and Conscientiousness to make spotting easy.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 05: Spotting Cues
+              <span class="template-badge">tab-panel</span>
+            </div>
+            <p class="timeline-desc">Conveys Objective 3. Segregates verbal, pace, and non-verbal cues into tab selectors so technicians learn drive-path dynamics.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 06: Elevator Test
+              <span class="template-badge">content-split</span>
+            </div>
+            <p class="timeline-desc">Conveys Objective 3. Employs a memorable visual elevator lobby scenario to ground style attributes before the mid-course checks.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 07: Adapting Explanations
+              <span class="template-badge">card-explore</span>
+            </div>
+            <p class="timeline-desc">Conveys Objective 4. Explains precisely how to talk to each style (Direct D, Warm I, Reassuring S, Analytical C) during recommendations.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 08: Scenarios
+              <span class="template-badge">tab-panel</span>
+            </div>
+            <p class="timeline-desc">Conveys Objective 5. Anchors behavioral adaptions to critical daily jobs like Video Updates, Cost structures, and Procedural Timelines.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 09: Priorities
+              <span class="template-badge">content-bullets</span>
+            </div>
+            <p class="timeline-desc">Fine-tunes communication preferences by introducing the 8 specialized Priorities within the traditional DiSC circle.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 10: Meeting Customers
+              <span class="template-badge">content-quote</span>
+            </div>
+            <p class="timeline-desc">Provides a dramatic, emotionally resonant pause centered around the core philosophy of FLEXING to serve and build lasting partnerships.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-title">
+              Slide 11: Summary
+              <span class="template-badge">closing</span>
+            </div>
+            <p class="timeline-desc">Recaps the module competencies and prepares the learner with confidence before unlocking the randomized final assessment.</p>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Highlighted Callout Box -->
+    <div class="callout">
+      <div class="callout-icon">✨</div>
+      <div class="callout-text">
+        <h4>Perfect System Architecture Alignment</h4>
+        <p>By mapping your learning materials to exactly 11 standard content slides, we guarantee a robust learning pace, 100% template compatibility, and pristine SCORM tracking parameters. After these content slides, the player automatically appends 4 mid-course Knowledge Checks (consecutive events 2KC01-02 and 2KC03-04) and the silent 10-question Final Quiz pool to deliver the complete, premium Porsche training module.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      Porsche WBT AI Creator Suite &copy; 2026. Certified Storyboard Architecture.
+    </footer>
+  </div>
+
+</body>
+</html>

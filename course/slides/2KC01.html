@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>Knowledge Check</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    /* ── Center modal card on the slide canvas ────────────────────── */
+    .slide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Set-level background image (per Image-File on the slide) ──── */
+    .kc-bg-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .kc-bg-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 28%;
+    }
+
+    /* ── Dimmed backdrop overlays the image to keep the modal readable ── */
+    .kc-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: rgba(0,0,0,0.55);
+    }
+
+    .kc-backdrop::before {
+      content: '';
+      position: absolute;
+      inset: -100%;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      transform: rotate(45deg);
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    /* ── Modal card ───────────────────────────────────────────────── */
+    .modal-card {
+      position: relative;
+      z-index: 10;
+      width: 1080px;
+      background: var(--pds-bg-surface);
+      border: 1px solid var(--pds-border-strong);
+      border-radius: var(--pds-radius-xl);
+      box-shadow:
+        0 32px 80px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.06) inset;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      /* Entrance animation */
+      opacity: 0;
+      transform: translateY(24px) scale(0.98);
+      transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .modal-card.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ── Modal header bar ─────────────────────────────────────────── */
+    .modal-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 20px 32px;
+      background: var(--pds-accent);
+      border-radius: var(--pds-radius-xl) var(--pds-radius-xl) 0 0;
+    }
+
+    .modal-header__title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.01em;
+      color: var(--pds-brand-white);
+    }
+
+    /* ── Modal body ───────────────────────────────────────────────── */
+    .modal-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 32px 36px 28px;
+    }
+
+    /* ── Question stem ────────────────────────────────────────────── */
+    .question-stem {
+      flex-shrink: 0;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--pds-border);
+    }
+
+    .question-stem__label {
+      display: block;
+      font-size: var(--pds-font-size-xs);
+      font-weight: var(--pds-font-weight-semibold);
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--pds-text-muted);
+      margin-bottom: 10px;
+    }
+
+    .question-stem__text {
+      margin: 0;
+      font-size: var(--pds-font-size-md);
+      line-height: var(--pds-line-height-loose);
+      color: var(--pds-text-primary);
+    }
+
+    /* ── Options list ─────────────────────────────────────────────── */
+    .options-list {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Option row ───────────────────────────────────────────────── */
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 22px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--pds-border);
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+    }
+
+    .option-row:hover:not(.is-locked) {
+      border-color: var(--pds-border-strong);
+      background: rgba(255,255,255,0.07);
+    }
+
+    .option-row:active:not(.is-locked) { transform: scale(0.995); }
+
+    .option-row.is-selected {
+      border-color: rgba(255,255,255,0.50);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .option-row.is-correct {
+      border-color: rgba(9,208,135,0.65);
+      background: rgba(9,208,135,0.08);
+    }
+
+    .option-row.is-incorrect {
+      border-color: rgba(252,64,64,0.55);
+      background: rgba(252,64,64,0.07);
+    }
+
+    .option-row.is-dimmed { opacity: 0.38; }
+    .option-row.is-locked { cursor: default; }
+
+    /* Letter badge */
+    .option-row__letter {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid var(--pds-border);
+      background: rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: var(--pds-font-weight-bold);
+      color: var(--pds-text-muted);
+      transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+
+    .option-row.is-selected  .option-row__letter { border-color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.10); color: var(--pds-text-primary); }
+    .option-row.is-correct   .option-row__letter { border-color: rgba(9,208,135,0.65);   background: rgba(9,208,135,0.18);   color: var(--pds-success); }
+    .option-row.is-incorrect .option-row__letter { border-color: rgba(252,64,64,0.55);   background: rgba(252,64,64,0.16);   color: var(--pds-error); }
+
+    /* Option text */
+    .option-row__text {
+      font-size: 19px;
+      font-weight: var(--pds-font-weight-semibold);
+      color: var(--pds-text-secondary);
+      line-height: 1.3;
+      transition: color 0.18s;
+    }
+
+    .option-row.is-correct   .option-row__text { color: var(--pds-success); }
+    .option-row.is-incorrect .option-row__text { color: var(--pds-error); }
+
+    /* ── Feedback strip ───────────────────────────────────────────── */
+    .feedback-strip {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 20px;
+      border-radius: var(--pds-radius-md);
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease 0.1s, padding 0.3s ease;
+    }
+
+    .feedback-strip.is-visible {
+      max-height: 80px;
+      opacity: 1;
+      padding: 16px 20px;
+    }
+
+    .feedback-strip--correct   { background: rgba(9,208,135,0.09);  border: 1px solid rgba(9,208,135,0.35); }
+    .feedback-strip--incorrect { background: rgba(252,64,64,0.08);  border: 1px solid rgba(252,64,64,0.30); }
+
+    .feedback-strip__icon {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: var(--pds-font-weight-bold);
+    }
+
+    .feedback-strip--correct   .feedback-strip__icon { background: rgba(9,208,135,0.18); color: var(--pds-success); }
+    .feedback-strip--incorrect .feedback-strip__icon { background: rgba(252,64,64,0.14); color: var(--pds-error); }
+
+    .feedback-strip__text {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.5;
+      color: var(--pds-text-secondary);
+    }
+
+    .feedback-strip__text strong { color: var(--pds-text-primary); }
+
+    /* ── Modal footer ─────────────────────────────────────────────── */
+    .modal-footer {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 36px 28px;
+    }
+
+    /* ── Submit / action button ───────────────────────────────────── */
+    .submit-btn {
+      padding: 13px 38px;
+      background: var(--pds-accent);
+      border: none;
+      border-radius: var(--pds-radius-md);
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.03em;
+      color: var(--pds-brand-white);
+      cursor: pointer;
+      opacity: 0.32;
+      pointer-events: none;
+      transition: background 0.2s, opacity 0.25s, transform 0.12s;
+    }
+
+    .submit-btn.is-ready {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .submit-btn.is-ready:hover  { background: var(--pds-accent-hover); }
+    .submit-btn.is-ready:active { transform: scale(0.98); }
+
+    .submit-btn.is-submitted {
+      background: rgba(255,255,255,0.08);
+      color: var(--pds-text-muted);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    /* ── VO lock — options disabled until intro VO finishes ──────────── */
+    .options-list.is-vo-locked {
+      opacity: 0.4;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="2KC01" data-review-slide="1S07">
+
+  <!-- Set-level background image (sits behind the dimmed backdrop) -->
+  <div class="kc-bg-image">
+    <img data-img-adjust src="../assets/images/placeholders/man-panemera.jpg" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
+  </div>
+
+  <!-- Dimmed backdrop -->
+  <div class="kc-backdrop"></div>
+
+  <!-- Modal card -->
+  <div class="modal-card" id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+
+    <!-- Header bar -->
+    <div class="modal-header">
+      <h2 class="modal-header__title" id="modal-title">Knowledge Check</h2>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+
+      <!-- Question stem -->
+      <div class="question-stem">
+        <span class="question-stem__label">Question</span>
+        <p class="question-stem__text">A technician records a 45-second video showing two minor findings and ends with &quot;let me know what you want to do.&quot; What is the most important thing missing?</p>
+      </div>
+
+      <!-- Options — shuffled + re-labelled A–D by JS on load -->
+      <div class="options-list is-vo-locked" id="options-list" role="radiogroup" aria-label="Answer options">
+              <div class="option-row" data-value="A" role="radio" aria-checked="false" tabindex="0">
+        <div class="option-row__letter">A</div>
+        <span class="option-row__text">Background music to keep it engaging</span>
+      </div>
+      <div class="option-row" data-correct="true" data-value="B" role="radio" aria-checked="false" tabindex="0">
+        <div class="option-row__letter">B</div>
+        <span class="option-row__text">A clear next step that tells the customer when you will follow up and what they need to do</span>
+      </div>
+      <div class="option-row" data-value="C" role="radio" aria-checked="false" tabindex="0">
+        <div class="option-row__letter">C</div>
+        <span class="option-row__text">A summary of the dealership's hours</span>
+      </div>
+      <div class="option-row" data-value="D" role="radio" aria-checked="false" tabindex="0">
+        <div class="option-row__letter">D</div>
+        <span class="option-row__text">A statement of the total cost of all possible repairs</span>
+      </div>
+      </div>
+
+      <!-- Feedback strip -->
+      <div class="feedback-strip" id="feedback-strip" role="alert" aria-live="polite" aria-atomic="true">
+        <div class="feedback-strip__icon" id="feedback-icon"></div>
+        <p class="feedback-strip__text" id="feedback-text"></p>
+      </div>
+
+    </div><!-- /.modal-body -->
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="submit-btn" id="submit-btn" disabled aria-disabled="true">Submit Answer</button>
+    </div>
+
+  </div><!-- /.modal-card -->
+
+</div><!-- /.slide -->
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim ─────────────────────────────────────────────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── KC slide logic ──────────────────────────────────────────────────────── */
+(function () {
+  // Lock Next on entry — only correct answer unlocks it
+  window.parent.postMessage({ type: 'sandbox-lock-next' }, '*');
+
+  // Modal entrance
+  setTimeout(function () {
+    document.getElementById('modal-card').classList.add('is-visible');
+  }, 120);
+
+  // ── VO lock: disable options until intro VO finishes ─────────────────── //
+  var optionsList = document.getElementById('options-list');
+  var voReady = false;
+  function unlockInteraction() {
+    if (voReady) return;
+    voReady = true;
+    optionsList.classList.remove('is-vo-locked');
+  }
+  SandboxRuntime.voAudio.addEventListener('ended', unlockInteraction);
+  setTimeout(unlockInteraction, 15000); // fallback if audio never plays
+
+  // ── Shuffle options + re-assign A–D labels ────────────────────────────── //
+  var CORRECT = 'A'; // updated after shuffle based on data-correct="true"
+
+  (function shuffleOptions() {
+    var list  = document.getElementById('options-list');
+    var items = Array.from(list.querySelectorAll('.option-row'));
+    for (var i = items.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      list.appendChild(items[j]);
+      var tmp = items[i]; items[i] = items[j]; items[j] = tmp;
+    }
+    var letters = ['A', 'B', 'C', 'D'];
+    Array.from(list.querySelectorAll('.option-row')).forEach(function (row, idx) {
+      row.dataset.value = letters[idx];
+      row.querySelector('.option-row__letter').textContent = letters[idx];
+      if (row.dataset.correct === 'true') CORRECT = letters[idx];
+    });
+  })();
+
+  // ── Interaction state ─────────────────────────────────────────────────── //
+  var selected  = null;
+  var submitted = false;
+
+  var rows          = document.querySelectorAll('.option-row');
+  var submitBtn     = document.getElementById('submit-btn');
+  var feedbackStrip = document.getElementById('feedback-strip');
+  var feedbackIcon  = document.getElementById('feedback-icon');
+  var feedbackText  = document.getElementById('feedback-text');
+
+  function selectOption(row) {
+    if (submitted) return;
+    rows.forEach(function (r) {
+      r.classList.remove('is-selected');
+      r.setAttribute('aria-checked', 'false');
+    });
+    row.classList.add('is-selected');
+    row.setAttribute('aria-checked', 'true');
+    selected = row.dataset.value;
+    submitBtn.classList.add('is-ready');
+    submitBtn.removeAttribute('disabled');
+    submitBtn.setAttribute('aria-disabled', 'false');
+  }
+
+  function handleSubmit() {
+    if (!selected || submitted) return;
+    submitted = true;
+    try { new Audio('../assets/audio/sfx/submit-answer.mp3').play().catch(function(){}); } catch(_) {}
+    var isCorrect = (selected === CORRECT);
+
+    // Lock all options
+    rows.forEach(function (r) {
+      r.classList.add('is-locked');
+      r.setAttribute('tabindex', '-1');
+    });
+
+    // Apply result states
+    rows.forEach(function (r) {
+      r.classList.remove('is-selected');
+      if (r.dataset.value === selected) {
+        r.classList.add(isCorrect ? 'is-correct' : 'is-incorrect');
+      } else {
+        r.classList.add('is-dimmed');
+      }
+    });
+
+    // Show feedback strip
+    var type = isCorrect ? 'correct' : 'incorrect';
+    feedbackStrip.classList.add('feedback-strip--' + type, 'is-visible');
+    feedbackIcon.textContent = isCorrect ? '✓' : '✗';
+    feedbackText.innerHTML   = isCorrect
+      ? '<strong>Correct!</strong>'
+      : 'Not quite — let\'s go back to review.';
+
+    // Play interaction audio
+    SandboxRuntime.interactionAudio.src = isCorrect
+      ? '../assets/audio/vo/KC_correct_response.mp3'
+      : '../assets/audio/vo/KC_Incorrect_response.mp3';
+    SandboxRuntime.interactionAudio.play();
+
+    // Update submit button
+    submitBtn.classList.remove('is-ready');
+    if (isCorrect) {
+      submitBtn.classList.add('is-submitted');
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-disabled', 'true');
+      submitBtn.textContent = 'Correct ✓';
+      window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+    } else {
+      submitBtn.classList.add('is-ready');
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('disabled');
+      submitBtn.setAttribute('aria-disabled', 'false');
+      submitBtn.textContent = 'Back to Review ←';
+      submitBtn.addEventListener('click', function () {
+        var slideEl = document.querySelector('[data-slide-id]');
+        window.parent.postMessage({
+          type: 'sandbox-start-review',
+          kcSlideId: slideEl ? slideEl.dataset.slideId : ''
+        }, '*');
+      }, { once: true });
+    }
+  }
+
+  rows.forEach(function (row) {
+    row.addEventListener('click', function () { selectOption(row); });
+    row.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectOption(row); }
+    });
+  });
+
+  submitBtn.addEventListener('click', handleSubmit);
+  submitBtn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSubmit(); }
+  });
+})();
+</script>
+
+</body>
+</html>

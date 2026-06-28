@@ -1,0 +1,601 @@
+/*
+ * slide-base.css
+ * Shared layout, typography reset, and slide shell for all WBT slides.
+ * Import AFTER pds-tokens.css.
+ *
+ * Every slide HTML file should include:
+ *   <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+ *   <link rel="stylesheet" href="../assets/css/slide-base.css">
+ *   <link rel="stylesheet" href="../assets/css/animations.css">
+ */
+
+/* ─── Font face declarations ──────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Porsche Next TT';
+  src: url('../fonts/porsche-next-tt.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Porsche Next TT';
+  src: url('../fonts/porsche-next-tt-italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Porsche Next TT';
+  src: url('../fonts/porsche-next-tt-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Porsche Next TT';
+  src: url('../fonts/porsche-next-tt-bold-italic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Porsche Next TT';
+  src: url('../fonts/porsche-next-tt-thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+/* ─── Reset ───────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Viewport scaling ────────────────────────────────────────────────── */
+/*
+ * Slides are designed at 1920×920px.
+ * This block scales the slide to fill any viewport while preserving aspect ratio.
+ * The inline scale-to-viewport script in each slide sets --scale on <html>.
+ */
+
+html {
+  width:  var(--slide-width);
+  height: var(--slide-height);
+  overflow: hidden;
+  transform-origin: top left;
+  /* --scale is set by the inline script in each slide */
+  transform: scale(var(--scale, 1));
+}
+
+body {
+  width:  var(--slide-width);
+  height: var(--slide-height);
+  overflow: hidden;
+  background: var(--pds-bg-base);
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-sm);
+  line-height: var(--pds-line-height);
+  color: var(--pds-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Slide shell ─────────────────────────────────────────────────────── */
+
+.slide {
+  position: relative;
+  width:  var(--slide-width);
+  height: var(--slide-height);
+  overflow: hidden;
+  background: var(--pds-bg-base);
+}
+
+/* ─── Hex pattern background texture ─────────────────────────────────── */
+/*
+ * Sits at z-index 0, behind all content and images.
+ * --hex-opacity defaults to 0.045 — override per slide to tune or disable:
+ *   <div class="slide" style="--hex-opacity: 0.07">   ← stronger
+ *   <div class="slide" style="--hex-opacity: 0">      ← off
+ */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url('../images/992_targa_bg.webp');
+  background-size: cover;
+  background-position: center;
+  opacity: var(--hex-opacity, 0.045);
+  pointer-events: none;
+  transform: scaleX(-1);
+}
+
+/* ─── Layout regions ──────────────────────────────────────────────────── */
+
+.slide__content {
+  position: relative;
+  z-index: 2;
+  width:  100%;
+  height: 100%;
+  padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+  display: flex;
+  flex-direction: column;
+}
+
+.slide__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.slide__bg img,
+.slide__bg video {
+  width:  100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--img-pos, center);
+}
+
+/* ─── PDS Grid Layout System ──────────────────────────────────────────── */
+/*
+ * 12-column grid adapted from PDS modern grid utilities.
+ * Source: packages/utilities/projects/utilities/src/js/grid/
+ *
+ * On our 1920×920px slide canvas:
+ *   content width  = 1920 − (80×2) = 1760px  (safe zone = --pds-slide-pad-x)
+ *   grid gap       = 36px  (--pds-grid-gap at max = spacingFluidMd)
+ *   column width   ≈ (1760 − 11×36) / 12 ≈ 113.7px each
+ *
+ * Usage — inside .slide__content:
+ *   <div class="slide__grid slide__grid--middle">
+ *     <div class="col-7"> … text … </div>
+ *     <div class="col-5"> … image … </div>
+ *   </div>
+ *
+ * Common patterns:
+ *   col-7 + col-5   → content + media  (current split template)
+ *   col-6 + col-6   → balanced half/half
+ *   col-4 + col-4 + col-4  → three-column cards
+ *   col-8 + col-4   → text-heavy + sidebar
+ *   col-12          → full-width (col-wide / col-full)
+ */
+
+.slide__grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--pds-grid-gap);   /* spacingFluidMd — 36px at 1920px */
+  width: 100%;
+}
+
+/* Vertical alignment modifiers */
+.slide__grid--middle  { align-items: center; }
+.slide__grid--top     { align-items: start; }
+.slide__grid--bottom  { align-items: end; }
+.slide__grid--stretch { align-items: stretch; }
+
+/* ── Numeric column spans ── */
+.col-1  { grid-column: span 1; }
+.col-2  { grid-column: span 2; }
+.col-3  { grid-column: span 3; }
+.col-4  { grid-column: span 4; }
+.col-5  { grid-column: span 5; }
+.col-6  { grid-column: span 6; }
+.col-7  { grid-column: span 7; }
+.col-8  { grid-column: span 8; }
+.col-9  { grid-column: span 9; }
+.col-10 { grid-column: span 10; }
+.col-11 { grid-column: span 11; }
+.col-12 { grid-column: span 12; }
+
+/* ── Named spans — PDS grid area language ── */
+/* Mirrors gridNarrow / gridBasic / gridExtended / gridWide from PDS utilities */
+.col-narrow   { grid-column: span 6;  }   /* 50%  of content */
+.col-basic    { grid-column: span 8;  }   /* 67%  of content */
+.col-extended { grid-column: span 10; }   /* 83%  of content */
+.col-wide     { grid-column: span 12; }   /* 100% of content */
+.col-full     { grid-column: span 12; }   /* alias for col-wide  */
+
+/* ── Fraction spans ── */
+.col-one-third    { grid-column: span 4; }   /* ⅓  */
+.col-one-half     { grid-column: span 6; }   /* ½  */
+.col-two-thirds   { grid-column: span 8; }   /* ⅔  */
+.col-two-fifths   { grid-column: span 5; }   /* ~2/5 — media in 7+5 split */
+.col-three-fifths { grid-column: span 7; }   /* ~3/5 — text in 7+5 split */
+
+/* ── Self-alignment within a grid row ── */
+.row-start   { align-self: start; }
+.row-center  { align-self: center; }
+.row-end     { align-self: end; }
+.row-stretch { align-self: stretch; }
+
+/* ── Legacy flex split — kept for backward compatibility ── */
+/* Prefer .slide__grid + column spans for new templates.    */
+.slide__split {
+  display: flex;
+  gap: calc(var(--col-gap) * var(--slide-width) / 100);
+  height: 100%;
+  align-items: flex-start;
+  padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+}
+
+.slide__split--text {
+  flex: 0 0 var(--col-text);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: var(--pds-space-lg);
+}
+
+.slide__split--media {
+  position: relative;   /* positioning context for the .img-vignette overlay */
+  flex: 0 0 var(--col-media);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--pds-radius-xl);
+}
+
+.slide__split--media img,
+.slide__split--media video {
+  width:  100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--img-pos, center);
+  border-radius: var(--pds-radius-xl);
+}
+
+/* ─── Image position — custom property ───────────────────────────────── */
+/*
+ * Set --img-pos on any <img> (or a parent element) to precisely reframe
+ * the crop. Accepts any valid CSS <position> value.
+ *
+ * Examples:
+ *   <img style="--img-pos: 75% 30%">          ← x% y% — most precise
+ *   <img style="--img-pos: right 20%">        ← keyword + percent
+ *   <div class="col-image" style="--img-pos: 60% top">  ← parent override
+ *
+ * x: 0% = left edge  100% = right edge
+ * y: 0% = top edge   100% = bottom edge
+ */
+img { object-position: var(--img-pos, center); }
+
+/* ─── Image scale — custom property ──────────────────────────────────── */
+/*
+ * Set --img-scale (zoom factor, 1 = none) on a media <img> to zoom the crop.
+ * Scoped to images inside overflow-hidden media containers so the zoom is
+ * clipped, never bleeding onto the layout. Default 1 is a no-op, so untagged
+ * images are unaffected. Authored per-slide via the Image-Scale storyboard
+ * field; paired with --img-pos (Image-Position) above.
+ */
+.slide__bg img,
+.slide__split--media img,
+img[data-img-adjust] {
+  transform: scale(var(--img-scale, 1));
+  /* Zoom originates at the pan point so panning a zoomed/full-bleed image works
+     (object-position alone can't move a cover image that has no overflow). */
+  transform-origin: var(--img-pos, center);
+}
+
+/* ─── Matte & haze ────────────────────────────────────────────────────── */
+/* Lifts black points + reduces contrast for a soft, faded "vintage film" look.
+ * Authored via the `Image-Matte` storyboard field (0–1) and the dashboard's
+ * Adjust Image tool. Scoped to the PRIMARY image only (NOT the .img-vignette
+ * blur copy, which keeps its own filter: blur()). Default 0 is a no-op. */
+img[data-img-adjust] {
+  filter:
+    contrast(calc(1 - var(--img-matte, 0) * 0.22))
+    brightness(calc(1 + var(--img-matte, 0) * 0.05));
+}
+
+/* ─── Color overlay ───────────────────────────────────────────────────── */
+/* A translucent colored layer over the primary image. Authored via the
+ * `Image-Overlay: #RRGGBB <opacity>` field + the Adjust Image tool. Injected by
+ * generate-slides.js after the primary [data-img-adjust] image (so it sits
+ * inside the image container), beneath the vignette. */
+.img-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;            /* above the base image, below .slide content (z-index 2) */
+  pointer-events: none;
+}
+
+/* ─── Movable blur/frost vignette ─────────────────────────────────────── */
+/*
+ * Optional per-image overlay authored via the `Image-Vignette` storyboard field
+ * and the dashboard's Vignette tool. Injected by generate-slides.js after the
+ * primary [data-img-adjust] image (so it lives inside the image container).
+ *   spot  — blur + frosted-strong tint INSIDE the region (hide an imperfection)
+ *   focus — blur + tint OUTSIDE the region, region stays sharp (direct the eye)
+ * Driven by CSS vars: --vig-x/y (center), --vig-size (radius %), --vig-feather
+ * (soft edge %), --vig-blur (px, default = PDS blurFrosted 32), --vig-tint (0–1,
+ * PDS frosted-strong color). Uses filter: blur() on a duplicate image — NOT
+ * backdrop-filter, which Chromium disables under the slide's transform scale.
+ */
+.img-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;            /* above the base image, below .slide__content (z-index 2) */
+  pointer-events: none;
+  overflow: hidden;
+}
+.img-vignette__blur {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--img-pos, center);
+  transform: scale(var(--img-scale, 1));
+  filter: blur(var(--vig-blur, 32px));
+}
+.img-vignette[data-vig-mode="spot"] .img-vignette__blur {
+  -webkit-mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), #000 calc(100% - var(--vig-feather)), transparent 100%);
+          mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), #000 calc(100% - var(--vig-feather)), transparent 100%);
+}
+.img-vignette[data-vig-mode="spot"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), rgba(14,14,18,var(--vig-tint)) calc(100% - var(--vig-feather)), transparent 100%);
+}
+.img-vignette[data-vig-mode="focus"] .img-vignette__blur {
+  -webkit-mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), #000 100%);
+          mask-image: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), #000 100%);
+}
+.img-vignette[data-vig-mode="focus"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), rgba(14,14,18,var(--vig-tint)) 100%);
+}
+
+/* ─── Typography ──────────────────────────────────────────────────────── */
+
+.pds-eyebrow {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-xs);
+  font-weight: var(--pds-font-weight-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pds-accent);
+}
+
+.pds-heading-hero {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-hero);
+  font-weight: var(--pds-font-weight-bold);
+  line-height: var(--pds-line-height-tight);
+  color: var(--pds-text-primary);
+}
+
+.pds-heading-display {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-display);
+  font-weight: var(--pds-font-weight-bold);
+  line-height: var(--pds-line-height-tight);
+  color: var(--pds-text-primary);
+}
+
+.pds-heading-xl {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-2xl);
+  font-weight: var(--pds-font-weight-bold);
+  line-height: var(--pds-line-height-tight);
+  color: var(--pds-text-primary);
+}
+
+.pds-heading-lg {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-xl);
+  font-weight: var(--pds-font-weight-bold);
+  line-height: var(--pds-line-height-tight);
+  color: var(--pds-text-primary);
+}
+
+.pds-heading-md {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-lg);
+  font-weight: var(--pds-font-weight-semibold);
+  line-height: var(--pds-line-height-tight);
+  color: var(--pds-text-primary);
+}
+
+.pds-body {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-md);
+  font-weight: var(--pds-font-weight-regular);
+  line-height: var(--pds-line-height-loose);
+  color: var(--pds-text-secondary);
+}
+
+.pds-callout {
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  column-gap: var(--pds-space-md);
+  max-width: 780px;
+  padding: var(--pds-space-md) var(--pds-space-lg);
+  background: rgba(255,255,255,0.045);
+  border: 1px solid var(--pds-border);
+  border-radius: var(--pds-radius-md);
+  color: var(--pds-text-secondary);
+}
+
+.pds-callout::before {
+  content: "";
+  grid-row: 1 / span 2;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--pds-accent);
+}
+
+.pds-callout strong {
+  display: block;
+  color: var(--pds-text-primary);
+  font-size: var(--pds-font-size-xs);
+  font-weight: var(--pds-font-weight-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.pds-callout span {
+  font-size: var(--pds-font-size-md);
+  line-height: var(--pds-line-height);
+}
+
+.pds-caption {
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-xs);
+  font-weight: var(--pds-font-weight-regular);
+  line-height: var(--pds-line-height);
+  color: var(--pds-text-muted);
+}
+
+/* ─── Accent bar ──────────────────────────────────────────────────────── */
+/*
+ * Decorative red line used beneath headings and in hero layouts.
+ * Usage: <div class="pds-accent-bar"></div>
+ */
+
+.pds-accent-bar {
+  width:  var(--accent-bar-width);
+  height: var(--accent-bar-height);
+  background: var(--accent-bar-color);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Card ────────────────────────────────────────────────────────────── */
+
+.pds-card {
+  position: relative;
+  background: var(--pds-bg-surface);
+  border: 1px solid var(--pds-border);
+  border-radius: var(--pds-radius-lg);
+  padding: var(--pds-space-lg);
+  box-shadow: var(--pds-shadow-card);
+  transition:
+    background  var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow  var(--dur-fast) var(--ease-out);
+  overflow: hidden;
+}
+
+.pds-card--interactive {
+  cursor: pointer;
+}
+
+.pds-card--interactive:hover {
+  background: var(--pds-bg-surface-hover);
+  border-color: var(--pds-border-strong);
+  box-shadow: var(--pds-shadow-card), var(--pds-shadow-glow);
+}
+
+.pds-card--active {
+  border-color: var(--pds-accent);
+  box-shadow: var(--pds-shadow-card), var(--pds-shadow-glow);
+}
+
+/* ─── Badge / Tag ─────────────────────────────────────────────────────── */
+
+.pds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pds-space-xs);
+  padding: var(--pds-space-xs) var(--pds-space-md);
+  border-radius: var(--pds-radius-pill);
+  font-family: var(--pds-font-family);
+  font-size: var(--pds-font-size-xs);
+  font-weight: var(--pds-font-weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(213, 0, 28, 0.15);
+  color: var(--pds-accent);
+  border: 1px solid rgba(213, 0, 28, 0.30);
+}
+
+/* ─── Divider ─────────────────────────────────────────────────────────── */
+
+.pds-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--pds-border);
+  flex-shrink: 0;
+}
+
+/* ─── Icon ────────────────────────────────────────────────────────────── */
+
+.pds-icon {
+  width:  24px;
+  height: 24px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.pds-icon img,
+.pds-icon svg {
+  width:  100%;
+  height: 100%;
+}
+
+/* ─── Overlay gradient (for image/video backgrounds) ─────────────────── */
+
+.pds-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to right,
+    rgba(14, 15, 17, 0.92) 40%,
+    rgba(14, 15, 17, 0.50) 70%,
+    rgba(14, 15, 17, 0.10) 100%
+  );
+}
+
+.pds-overlay--full {
+  background: rgba(14, 15, 17, 0.65);
+}
+
+.pds-overlay--bottom {
+  background: linear-gradient(
+    to top,
+    rgba(14, 15, 17, 0.90) 0%,
+    rgba(14, 15, 17, 0.00) 60%
+  );
+}
+
+/* ─── Locked / disabled state ─────────────────────────────────────────── */
+
+.is-locked {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Shimmer (on interactive cards waiting to be clicked) ────────────── */
+
+.is-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0)    30%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0)    70%
+  );
+  background-size: 400%;
+  animation: shimmer 2.8s infinite linear;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position:   0% 0; }
+}

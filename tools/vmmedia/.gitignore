@@ -1,0 +1,10 @@
+# Browser session + scraped artifacts — may contain auth cookies / LICENSED images.
+.userdata/
+captures/
+node_modules/
+downloads/
+thumbs/
+sheet-*.png
+package-lock.json
+catalog.json
+catalog.csv

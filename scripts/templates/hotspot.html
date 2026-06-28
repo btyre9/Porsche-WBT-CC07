@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+    /* ── Layout shell ─────────────────────────────────────────────────────── */
+    .hotspot-section {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      height: 100%;
+      padding: var(--pds-slide-pad-y) var(--pds-slide-pad-x);
+    }
+    .hotspot-section .slide-header {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex-shrink: 0;
+      max-width: 1280px;
+    }
+    .hotspot-section .pds-accent-bar { width: 120px; height: 6px; }
+
+    /* ── Stage: background image + markers + popovers ─────────────────────── */
+    .hotspot-stage {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      border-radius: var(--pds-radius-lg, 12px);
+      overflow: hidden;
+      background:
+        repeating-linear-gradient(
+          135deg,
+          rgba(255,255,255,0.025) 0 18px,
+          rgba(255,255,255,0)    18px 36px
+        ),
+        linear-gradient(180deg, #1d1d22 0%, #111115 100%);
+      border: 1px solid var(--pds-border);
+      transition: opacity var(--dur-fast) var(--ease-out);
+    }
+    .hotspot-stage.is-locked .hotspot { pointer-events: none; opacity: 0.35; }
+    .hotspot-stage.is-locked .hotspot-dot::after { animation: none; opacity: 0; }
+
+    .hotspot-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: var(--img-pos, center);
+      display: block;
+    }
+    /* Vignette so markers/popovers always pop, regardless of bg image */
+    .hotspot-stage::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0,0,0,0) 40%,
+        rgba(0,0,0,0.55) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* ── Marker ───────────────────────────────────────────────────────────── */
+    :root {
+      --hs-size:        44px;
+      --hs-pulse-color: rgba(213, 0, 28, 0.45);
+    }
+    .hotspot {
+      position: absolute;
+      left: var(--hs-x, 50%);
+      top:  var(--hs-y, 50%);
+      width:  var(--hs-size);
+      height: var(--hs-size);
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+    }
+    .hotspot:focus-visible .hotspot-dot {
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.85);
+    }
+    .hotspot-dot {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(14, 14, 18, 0.85);
+      border: 2px solid var(--pds-accent);
+      box-shadow:
+        0 4px 14px rgba(0,0,0,0.45),
+        inset 0 0 0 2px rgba(14, 14, 18, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pds-text-primary);
+      font-size: 14px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.06em;
+      transition:
+        background   var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out),
+        transform    var(--dur-fast) var(--ease-out),
+        box-shadow   var(--dur-fast) var(--ease-out);
+    }
+    .hotspot:hover .hotspot-dot {
+      transform: scale(1.08);
+      background: rgba(213, 0, 28, 0.18);
+    }
+
+    /* Pulse — unvisited only */
+    .hotspot-dot::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 2px solid var(--pds-accent);
+      opacity: 0;
+      animation: hotspot-pulse 2.2s var(--ease-out) infinite;
+      pointer-events: none;
+    }
+    @keyframes hotspot-pulse {
+      0%   { transform: scale(1);    opacity: 0.85; }
+      70%  { transform: scale(1.85); opacity: 0;    }
+      100% { transform: scale(1.85); opacity: 0;    }
+    }
+
+    /* Active state */
+    .hotspot.is-active .hotspot-dot {
+      background: var(--pds-accent);
+      border-color: var(--pds-accent);
+      box-shadow:
+        0 6px 22px rgba(213, 0, 28, 0.55),
+        inset 0 0 0 2px rgba(213, 0, 28, 1);
+      transform: scale(1.05);
+    }
+    .hotspot.is-active .hotspot-dot::after { animation: none; opacity: 0; }
+
+    /* Visited (but not currently active) — green ring + check */
+    .hotspot.visited:not(.is-active) .hotspot-dot {
+      background: rgba(9, 208, 135, 0.12);
+      border-color: var(--pds-success);
+    }
+    .hotspot.visited:not(.is-active) .hotspot-dot::after { animation: none; opacity: 0; }
+    .hotspot.visited:not(.is-active) .hotspot-number { display: none; }
+    .hotspot.visited:not(.is-active) .hotspot-check  { display: block; }
+
+    .hotspot-check {
+      display: none;
+      width: 18px;
+      height: 18px;
+      color: var(--pds-success);
+    }
+    .hotspot-check svg { width: 100%; height: 100%; display: block; }
+
+    /* ── Popover ──────────────────────────────────────────────────────────── */
+    .popover {
+      position: absolute;
+      width: 380px;
+      background: var(--pds-bg-surface);
+      border: 1px solid var(--pds-border-strong);
+      border-radius: var(--pds-radius-lg, 12px);
+      box-shadow: var(--pds-shadow-card);
+      padding: 22px 26px 24px 26px;
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(4px);
+      transition:
+        opacity   var(--dur-normal) var(--ease-out),
+        transform var(--dur-normal) var(--ease-out);
+    }
+    .popover.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+    .popover[data-side="right"] {
+      left: calc(var(--hs-x) + var(--hs-size) / 2 + 22px);
+      top:  var(--hs-y);
+      transform: translateY(calc(-50% + 4px));
+    }
+    .popover[data-side="right"].is-active { transform: translateY(-50%); }
+    .popover[data-side="left"] {
+      right: calc(100% - var(--hs-x) + var(--hs-size) / 2 + 22px);
+      top:   var(--hs-y);
+      transform: translateY(calc(-50% + 4px));
+    }
+    .popover[data-side="left"].is-active { transform: translateY(-50%); }
+
+    /* Tail triangle */
+    .popover::before, .popover::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 0;
+      height: 0;
+      transform: translateY(-50%);
+    }
+    .popover[data-side="right"]::before {
+      left: -10px;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 10px solid var(--pds-border-strong);
+    }
+    .popover[data-side="right"]::after {
+      left: -8px;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-right: 9px solid var(--pds-bg-surface);
+    }
+    .popover[data-side="left"]::before {
+      right: -10px;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 10px solid var(--pds-border-strong);
+    }
+    .popover[data-side="left"]::after {
+      right: -8px;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-left: 9px solid var(--pds-bg-surface);
+    }
+
+    .popover-eyebrow {
+      font-size: 12px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--pds-accent);
+      margin-bottom: 10px;
+    }
+    .popover-title {
+      font-size: 22px;
+      font-weight: var(--pds-font-weight-bold);
+      line-height: 1.2;
+      letter-spacing: -0.005em;
+      color: var(--pds-text-primary);
+      margin-bottom: 12px;
+    }
+    .popover-body p {
+      font-size: var(--pds-font-size-sm);
+      line-height: var(--pds-line-height-loose);
+      color: var(--pds-text-secondary);
+    }
+    .popover-body p + p { margin-top: 10px; }
+    .popover-body .acc-bullets { margin-top: 12px; }
+
+    .acc-bullets {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .acc-bullets li {
+      display: flex;
+      gap: 12px;
+      font-size: var(--pds-font-size-sm);
+      line-height: 1.45;
+      color: var(--pds-contrast-high);
+    }
+    .acc-bullets li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--pds-accent);
+      margin-top: 9px;
+    }
+    .acc-bullets li strong {
+      color: var(--pds-text-primary);
+      font-weight: var(--pds-font-weight-bold);
+    }
+
+    .popover-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--pds-border);
+      background: transparent;
+      color: var(--pds-text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+    }
+    .popover-close:hover {
+      color: var(--pds-text-primary);
+      border-color: var(--pds-border-strong);
+    }
+    .popover-close svg { width: 12px; height: 12px; display: block; }
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}">
+
+  <div class="hotspot-section">
+
+    <!-- Header -->
+    <header class="slide-header">
+      <div style="display:flex; align-items:flex-end; gap: var(--pds-space-lg);">
+        <h2 class="pds-heading-display anim-fade-up" style="--anim-delay: 0.10s;">{{SLIDE_TITLE}}</h2>
+        <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.15s; margin-bottom: 8px;"></div>
+      </div>
+      <p class="pds-body anim-fade-up" style="--anim-delay: 0.20s;">{{ON_SCREEN_TEXT}}</p>
+    </header>
+
+    <!-- Hotspot stage — locked until INTRO ends -->
+    <div class="hotspot-stage is-locked anim-fade-up" style="--anim-delay: 0.30s;" id="hotspot-stage">
+      <img class="hotspot-bg" data-img-adjust src="{{IMAGE_PATH}}" alt="" style="--img-pos:{{IMG_POS}};--img-scale:{{IMG_SCALE}};" onerror="this.style.display='none'">
+
+{{HOTSPOT_MARKERS_HTML}}
+
+{{HOTSPOT_POPOVERS_HTML}}
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/porsche-components.js"></script>
+<script>
+/* ── SandboxRuntime shim — mirrors accordion-content / tab-panel ────────── */
+var SandboxRuntime = (function () {
+  var CR = (function () {
+    try { return window.parent && window.parent.CourseRuntime ? window.parent.CourseRuntime : null; }
+    catch (_) { return null; }
+  })();
+
+  function makeFakeVO() {
+    var listeners = {};
+    var obj = {
+      currentTime: 0,
+      _wasPlaying: false,
+      addEventListener: function (e, f) { (listeners[e] = listeners[e] || []).push(f); },
+      removeEventListener: function (e, f) {
+        if (listeners[e]) listeners[e] = listeners[e].filter(function (g) { return g !== f; });
+      },
+      _fire: function (e) { (listeners[e] || []).forEach(function (f) { f(); }); },
+      play: function () { return Promise.resolve(); }
+    };
+    (function poll() {
+      requestAnimationFrame(function () {
+        if (CR) {
+          obj.currentTime = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+          var p = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+          if (!obj._wasPlaying && p) obj._wasPlaying = true;
+          if (obj._wasPlaying && !p && obj.currentTime > 0) {
+            if (!(document.querySelector('.slide') || {classList:{contains:function(){return false;}}}).classList.contains('is-paused')) {
+              obj._wasPlaying = false;
+              obj._fire('ended');
+            }
+          }
+          obj._fire('timeupdate');
+        }
+        poll();
+      });
+    })();
+    return obj;
+  }
+
+  function makeInteraction() {
+    return {
+      src: '',
+      play: function () {
+        if (CR && CR.playInteractionAudio) {
+          CR.playInteractionAudio({ src: this.src });
+        } else {
+          var a = new Audio(this.src);
+          a.play().catch(function () {});
+        }
+        return Promise.resolve();
+      }
+    };
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-play-state') return;
+    var s = document.querySelector('.slide');
+    if (s) s.classList.toggle('is-paused', e.data.state === 'paused');
+  });
+
+  return { voAudio: makeFakeVO(), interactionAudio: makeInteraction() };
+})();
+
+/* ── Hotspot interaction logic ─────────────────────────────────────────── */
+(function () {
+  // Lock Next until all markers visited
+  window.parent.postMessage({ type: 'sandbox-lock-next' }, '*');
+
+  var HS_AUDIO  = {{CARD_AUDIO_MAP}};
+  var TOTAL_HS  = {{TOTAL_CARDS}};
+  var visited   = new Set();
+  var unlocked  = false;
+
+  // Entrance animations
+  document.querySelectorAll('.anim-fade-up, .anim-bar-grow').forEach(function (el) {
+    el.classList.add('is-visible');
+  });
+
+  var stage    = document.getElementById('hotspot-stage');
+  var hotspots = document.querySelectorAll('.hotspot');
+  var popovers = document.querySelectorAll('.popover');
+
+  function unlockHotspots() {
+    if (unlocked) return;
+    unlocked = true;
+    if (stage) stage.classList.remove('is-locked');
+  }
+
+  function clearActive() {
+    hotspots.forEach(function (h) { h.classList.remove('is-active'); });
+    popovers.forEach(function (p) {
+      p.classList.remove('is-active');
+      p.setAttribute('hidden', '');
+    });
+  }
+
+  function setActive(key, isUserClick) {
+    hotspots.forEach(function (h) {
+      h.classList.toggle('is-active', h.dataset.hs === key);
+    });
+    popovers.forEach(function (p) {
+      var on = (p.dataset.popover === key);
+      p.classList.toggle('is-active', on);
+      if (on) p.removeAttribute('hidden');
+      else    p.setAttribute('hidden', '');
+    });
+
+    if (isUserClick && !visited.has(key)) {
+      visited.add(key);
+      var marker = document.querySelector('.hotspot[data-hs="' + key + '"]');
+      if (marker) marker.classList.add('visited');
+
+      var audioPath = HS_AUDIO[key];
+      if (audioPath) {
+        SandboxRuntime.interactionAudio.src = audioPath;
+        SandboxRuntime.interactionAudio.play();
+      }
+
+      if (visited.size >= TOTAL_HS) {
+        window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+      }
+    }
+  }
+
+  hotspots.forEach(function (h) {
+    h.addEventListener('click', function () {
+      if (!unlocked) return;
+      if (h.classList.contains('is-active')) {
+        clearActive();
+      } else {
+        setActive(h.dataset.hs, true);
+      }
+    });
+  });
+
+  popovers.forEach(function (p) {
+    var close = p.querySelector('.popover-close');
+    if (close) close.addEventListener('click', function (e) {
+      e.stopPropagation();
+      clearActive();
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && unlocked) clearActive();
+  });
+
+  // Unlock when INTRO VO ends — same fallback as accordion-content
+  setTimeout(function () {
+    if (SandboxRuntime.voAudio) {
+      SandboxRuntime.voAudio.addEventListener('ended', unlockHotspots);
+      SandboxRuntime.voAudio.addEventListener('error', unlockHotspots);
+    }
+    try {
+      if (!window.parent || !window.parent.CourseRuntime) unlockHotspots();
+    } catch (_) { unlockHotspots(); }
+  }, 0);
+})();
+</script>
+
+</body>
+</html>

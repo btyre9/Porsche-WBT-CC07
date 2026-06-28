@@ -1,0 +1,28 @@
+{
+  "scripts": {
+    "start-player": "browser-sync start --server course --startPath /index.html --port 8080 --no-notify",
+    "test-scorm": "browser-sync start --server output/course --startPath /player/index.html --port 8081 --no-notify",
+    "sync": "node scripts/sync-output.js",
+    "sync:review": "node scripts/sync-output.js --review",
+    "package": "node scripts/sync-output.js && node scripts/package-scorm.js",
+    "package:review": "node scripts/sync-output.js --review && node scripts/package-scorm.js",
+    "import-review": "node scripts/import-review.js",
+    "import-storyboard": "node scripts/import-storyboard.js",
+    "generate-vo": "node scripts/generate-vo.js",
+    "generate-vtt": "node scripts/generate-vtt.js",
+    "extract-vo-cues": "node scripts/extract-vo-cues.js",
+    "export-tts": "node scripts/export-tts.js",
+    "generate-slides": "node scripts/generate-slides.js",
+    "clean-generated": "node scripts/clean-generated.js",
+    "init-module": "node scripts/init-module.js",
+    "init-repo": "node scripts/init-repo.js",
+    "sync-from-template": "node scripts/sync-from-template.js",
+    "sync-template": "node scripts/sync-template.js"
+  },
+  "devDependencies": {
+    "browser-sync": "^3.0.4",
+    "docx": "^9.6.0",
+    "lottie-web": "^5.13.0",
+    "mammoth": "^1.11.0"
+  }
+}

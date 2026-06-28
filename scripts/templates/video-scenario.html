@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>{{SLIDE_TITLE}}</title>
+  <link rel="stylesheet" href="../assets/css/pds-tokens.css">
+  <link rel="stylesheet" href="../assets/css/slide-base.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
+  <style>
+
+    /* ── Full-slide layout ───────────────────────────────────────────────── */
+    .slide {
+      display: flex;
+      flex-direction: column;
+      background: #0A0A0C;
+      overflow: hidden;
+    }
+
+    /* ── Top header bar ──────────────────────────────────────────────────── */
+    .slide-header {
+      flex-shrink: 0;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      padding: 0 80px;
+      gap: 20px;
+      background: #0D0D0F;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .header-accent-dot {
+      flex-shrink: 0;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--pds-accent);
+    }
+    .header-label {
+      font-size: var(--pds-font-size-xs);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--pds-accent);
+    }
+    .header-divider {
+      width: 1px; height: 20px;
+      background: rgba(255,255,255,0.14);
+    }
+    .header-title {
+      font-size: var(--pds-font-size-md);
+      font-weight: var(--pds-font-weight-semibold);
+      color: var(--pds-text-primary);
+      margin: 0;
+    }
+
+    /* ── Video area ──────────────────────────────────────────────────────── */
+    .video-area {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+
+    /* Placeholder — replace with real <video> element when files are ready */
+    .video-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background:
+        repeating-linear-gradient(
+          45deg,
+          rgba(255,255,255,0.015) 0px,
+          rgba(255,255,255,0.015) 1px,
+          transparent 1px,
+          transparent 24px
+        ),
+        #0A0A0C;
+    }
+    .placeholder-icon {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: rgba(255,255,255,0.35);
+    }
+    .placeholder-label {
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+    }
+    .placeholder-filename {
+      font-size: var(--pds-font-size-xs);
+      color: rgba(255,255,255,0.18);
+      font-family: monospace;
+      letter-spacing: 0.04em;
+    }
+
+    /* TODO: wire up pause points when video is ready.
+       Replace .video-placeholder with:
+       <video id="video-player" src="../assets/video/FILENAME.mp4"
+              playsinline preload="metadata"></video>
+       Add pause-point logic in the script block below. */
+
+    /* ── MC overlay — pause-point question ──────────────────────────────── */
+    .mc-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .mc-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mc-card {
+      width: 920px;
+      background: #1e2128;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 20px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.65);
+      overflow: hidden;
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .mc-overlay.is-visible .mc-card { transform: none; }
+
+    .mc-header {
+      background: var(--pds-accent);
+      padding: 18px 32px;
+    }
+    .mc-header__title {
+      margin: 0;
+      font-size: var(--pds-font-size-md);
+      font-weight: var(--pds-font-weight-bold);
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+
+    .mc-body { padding: 28px 32px 24px; }
+
+    .mc-question {
+      margin: 0 0 22px 0;
+      font-size: var(--pds-font-size-md);
+      line-height: 1.5;
+      color: var(--pds-text-primary);
+    }
+
+    .mc-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mc-choice {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .mc-choice:hover:not(.is-locked) {
+      border-color: rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.07);
+    }
+    .mc-choice.is-selected  { border-color: rgba(255,255,255,0.50); background: rgba(255,255,255,0.08); }
+    .mc-choice.is-correct   { border-color: rgba(9,208,135,0.65);   background: rgba(9,208,135,0.08); }
+    .mc-choice.is-incorrect { border-color: rgba(252,64,64,0.55);   background: rgba(252,64,64,0.07); }
+    .mc-choice.is-locked    { cursor: default; }
+
+    .mc-choice__letter {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-bold);
+      color: var(--pds-text-muted);
+    }
+    .mc-choice.is-correct   .mc-choice__letter { border-color: rgba(9,208,135,0.65);  background: rgba(9,208,135,0.18);  color: var(--pds-success, #09D087); }
+    .mc-choice.is-incorrect .mc-choice__letter { border-color: rgba(252,64,64,0.55); background: rgba(252,64,64,0.16);  color: var(--pds-error, #FC4040); }
+
+    .mc-choice__text {
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-semibold);
+      color: var(--pds-text-secondary);
+      line-height: 1.3;
+    }
+
+    .mc-footer {
+      padding: 0 32px 24px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .mc-submit {
+      padding: 12px 36px;
+      background: var(--pds-accent);
+      border: none;
+      border-radius: 8px;
+      font-family: var(--pds-font-family);
+      font-size: var(--pds-font-size-sm);
+      font-weight: var(--pds-font-weight-bold);
+      color: #fff;
+      cursor: pointer;
+      opacity: 0.32;
+      pointer-events: none;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    .mc-submit.is-ready { opacity: 1; pointer-events: auto; }
+    .mc-submit.is-ready:hover { background: #b8001a; }
+
+    /* ── Video controls bar ──────────────────────────────────────────────── */
+    .video-controls {
+      flex-shrink: 0;
+      height: 64px;
+      background: #0D0D0F;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 80px;
+      gap: 20px;
+    }
+    .video-play-btn {
+      flex-shrink: 0;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.20);
+      background: rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--pds-text-muted);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .video-play-btn:hover { border-color: var(--pds-accent); color: var(--pds-text-primary); }
+    .video-progress {
+      flex: 1;
+      height: 4px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+    .video-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--pds-accent);
+      border-radius: 2px;
+      transition: width 0.1s linear;
+    }
+    .video-time {
+      flex-shrink: 0;
+      font-size: var(--pds-font-size-xs);
+      color: var(--pds-text-muted);
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    .todo-badge {
+      margin-left: auto;
+      padding: 4px 14px;
+      background: rgba(213,0,28,0.15);
+      border: 1px solid rgba(213,0,28,0.35);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: var(--pds-font-weight-bold);
+      letter-spacing: 0.08em;
+      color: var(--pds-accent);
+      text-transform: uppercase;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="slide" data-slide-id="{{SLIDE_ID}}" data-template="video-scenario"
+     data-dual="{{VIDEO_IS_DUAL}}"
+     data-file-a="{{VIDEO_FILE_A}}"
+     data-file-b="{{VIDEO_FILE_B}}"
+     data-file="{{VIDEO_FILE}}"
+     data-summary-audio="{{VOICEOVER_SUMMARY_SRC}}">
+
+  <!-- Header -->
+  <header class="slide-header">
+    <div class="header-accent-dot"></div>
+    <span class="header-label">Video Scenario</span>
+    <div class="header-divider"></div>
+    <h2 class="header-title">{{SLIDE_TITLE}}</h2>
+  </header>
+
+  <!-- Video area -->
+  <div class="video-area" id="video-area">
+
+    <!-- Dual-clip label bar (hidden for single-clip slides) -->
+    <div class="clip-label-bar" id="clip-label-bar" style="display:none">
+      <span class="clip-label" id="clip-label-a">{{VIDEO_LABEL_A}}</span>
+      <span class="clip-sep">→</span>
+      <span class="clip-label" id="clip-label-b">{{VIDEO_LABEL_B}}</span>
+      <span class="clip-now" id="clip-now"></span>
+    </div>
+
+    <!-- Video element (src swapped by JS; placeholder shown when file missing) -->
+    <video id="video-player" class="video-player" preload="metadata" playsinline
+           style="display:none">
+    </video>
+
+    <!-- Placeholder shown when no video file is present yet -->
+    <div class="video-placeholder" id="video-placeholder">
+      <div class="placeholder-icon">&#9654;</div>
+      <div class="placeholder-label">Video Coming Soon</div>
+      <div class="placeholder-filename" id="placeholder-filename"></div>
+    </div>
+
+    <!-- MC Overlay — shown at each pause point -->
+    <div class="mc-overlay" id="mc-overlay" role="dialog" aria-modal="true" aria-labelledby="mc-title">
+      <div class="mc-card">
+        <div class="mc-header">
+          <h3 class="mc-header__title" id="mc-title">Check Your Understanding</h3>
+          <span class="mc-counter" id="mc-counter"></span>
+        </div>
+        <div class="mc-body">
+          <p class="mc-question" id="mc-question"></p>
+          <div class="mc-choices" id="mc-choices" role="radiogroup" aria-label="Answer options"></div>
+          <div class="mc-feedback" id="mc-feedback" aria-live="polite"></div>
+        </div>
+        <div class="mc-footer">
+          <button class="mc-submit" id="mc-submit" disabled aria-disabled="true">Submit Answer</button>
+          <button class="mc-continue" id="mc-continue" style="display:none">Continue ›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary VO overlay — plays after all clips & questions complete -->
+    <div class="summary-overlay" id="summary-overlay" style="display:none">
+      <div class="summary-card" id="summary-card">
+        <div class="summary-icon" aria-hidden="true">&#10003;</div>
+        <p class="summary-text" id="summary-text"></p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Video controls -->
+  <div class="video-controls" id="video-controls">
+    <button class="video-play-btn" id="video-play-btn" aria-label="Play / Pause">&#9654;</button>
+    <div class="video-progress" id="video-progress" role="progressbar"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="video-progress-fill" id="video-progress-fill"></div>
+    </div>
+    <span class="video-time" id="video-time">0:00 / 0:00</span>
+  </div>
+
+</div>
+
+<!-- Pause question data injected by generate-slides.js -->
+<script>
+var PAUSE_QUESTIONS = {{PAUSE_QUESTIONS_JSON}};
+</script>
+
+<script src="../assets/vendor/gsap/gsap.min.js"></script>
+<script src="../assets/vendor/slide-pause.js"></script>
+<script>
+(function () {
+
+  /* ── Config from data attributes ──────────────────────────────────────── */
+  var root       = document.querySelector('.slide');
+  var isDual     = root.dataset.dual === 'true';
+  var fileA      = root.dataset.fileA   || '';
+  var fileB      = root.dataset.fileB   || '';
+  var fileSingle = root.dataset.file    || '';
+  var summaryAudioSrc = root.dataset.summaryAudio || '';
+
+  var clips = isDual
+    ? [{ src: fileA, label: document.getElementById('clip-label-a') ? document.getElementById('clip-label-a').textContent : 'Clip A' },
+       { src: fileB, label: document.getElementById('clip-label-b') ? document.getElementById('clip-label-b').textContent : 'Clip B' }]
+    : [{ src: fileSingle, label: '' }];
+
+  var currentClip      = 0;
+  var pauseIdx         = 0;   /* index into PAUSE_QUESTIONS */
+  var questionsPerClip = isDual
+    ? Math.ceil(PAUSE_QUESTIONS.length / 2)
+    : PAUSE_QUESTIONS.length;
+
+  /* ── DOM refs ─────────────────────────────────────────────────────────── */
+  var videoEl        = document.getElementById('video-player');
+  var placeholder    = document.getElementById('video-placeholder');
+  var placeholderLbl = document.getElementById('placeholder-filename');
+  var clipLabelBar   = document.getElementById('clip-label-bar');
+  var clipNow        = document.getElementById('clip-now');
+  var overlay        = document.getElementById('mc-overlay');
+  var questionEl     = document.getElementById('mc-question');
+  var choicesEl      = document.getElementById('mc-choices');
+  var feedbackEl     = document.getElementById('mc-feedback');
+  var submitBtn      = document.getElementById('mc-submit');
+  var continueBtn    = document.getElementById('mc-continue');
+  var counterEl      = document.getElementById('mc-counter');
+  var summaryOverlay = document.getElementById('summary-overlay');
+  var playBtn        = document.getElementById('video-play-btn');
+  var progFill       = document.getElementById('video-progress-fill');
+  var timeEl         = document.getElementById('video-time');
+
+  var selected  = null;
+  var submitted = false;
+  var letters   = ['A', 'B', 'C', 'D'];
+
+  /* ── Feedback audio ───────────────────────────────────────────────────── */
+  var feedbackAudio = new Audio();
+
+  function playFeedbackAudio(src) {
+    if (!src) return;
+    feedbackAudio.src = src;
+    feedbackAudio.play().catch(function () {});
+  }
+
+  /* ── Video setup ──────────────────────────────────────────────────────── */
+  function loadClip(idx) {
+    var clip = clips[idx];
+    if (!clip || !clip.src) {
+      /* No file yet — show placeholder */
+      placeholder.style.display = '';
+      videoEl.style.display     = 'none';
+      if (placeholderLbl) {
+        var names = isDual ? [fileA, fileB] : [fileSingle];
+        placeholderLbl.textContent = names.filter(Boolean).join(' / ') || 'Video file not yet available';
+      }
+      return;
+    }
+    videoEl.src           = clip.src;
+    videoEl.style.display = '';
+    placeholder.style.display = 'none';
+    if (isDual) {
+      clipLabelBar.style.display = '';
+      if (clipNow) clipNow.textContent = clip.label || '';
+    }
+    videoEl.load();
+  }
+
+  loadClip(0);
+
+  /* ── Playback controls ────────────────────────────────────────────────── */
+  function fmt(s) {
+    var m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  if (playBtn) {
+    playBtn.addEventListener('click', function () {
+      if (!videoEl.src) return;
+      videoEl.paused ? videoEl.play() : videoEl.pause();
+    });
+  }
+
+  videoEl.addEventListener('play',  function () { playBtn.innerHTML = '&#9646;&#9646;'; });
+  videoEl.addEventListener('pause', function () { playBtn.innerHTML = '&#9654;'; });
+
+  videoEl.addEventListener('timeupdate', function () {
+    if (!videoEl.duration) return;
+    var pct = (videoEl.currentTime / videoEl.duration) * 100;
+    if (progFill) progFill.style.width = pct + '%';
+    if (timeEl)   timeEl.textContent   = fmt(videoEl.currentTime) + ' / ' + fmt(videoEl.duration);
+  });
+
+  /* ── Pause-point detection ────────────────────────────────────────────── */
+  /* Timecodes are not yet known — pause points are triggered manually via  */
+  /* postMessage from the runtime when it detects the correct cue time.     */
+  /* Until timecodes are set, press P during playback to test the overlay.  */
+
+  function triggerNextPauseQuestion() {
+    if (pauseIdx >= PAUSE_QUESTIONS.length) {
+      onAllQuestionsComplete();
+      return;
+    }
+    if (videoEl.src) videoEl.pause();
+    showQuestion(PAUSE_QUESTIONS[pauseIdx]);
+  }
+
+  /* ── Clip ended ───────────────────────────────────────────────────────── */
+  videoEl.addEventListener('ended', function () {
+    if (isDual && currentClip === 0) {
+      /* Between clips — show pause question(s) for clip A, then load clip B */
+      triggerNextPauseQuestion();
+    } else {
+      triggerNextPauseQuestion();
+    }
+  });
+
+  /* ── Show MC question ─────────────────────────────────────────────────── */
+  function showQuestion(data) {
+    selected  = null;
+    submitted = false;
+
+    questionEl.textContent  = data.question || '';
+    feedbackEl.textContent  = '';
+    feedbackEl.className    = 'mc-feedback';
+    choicesEl.innerHTML     = '';
+    submitBtn.disabled      = true;
+    submitBtn.style.display = '';
+    continueBtn.style.display = 'none';
+    submitBtn.classList.remove('is-ready');
+
+    if (counterEl) {
+      counterEl.textContent = 'Question ' + (pauseIdx + 1) + ' of ' + PAUSE_QUESTIONS.length;
+    }
+
+    data.choices.forEach(function (text, i) {
+      if (!text) return;
+      var row = document.createElement('div');
+      row.className = 'mc-choice';
+      row.setAttribute('role', 'radio');
+      row.setAttribute('aria-checked', 'false');
+      row.setAttribute('tabindex', '0');
+      row.dataset.value   = letters[i];
+      row.dataset.correct = (String(data.correct).toUpperCase() === letters[i]) ? 'true' : 'false';
+
+      var ls = document.createElement('span');
+      ls.className   = 'mc-choice__letter';
+      ls.textContent = letters[i];
+
+      var ts = document.createElement('span');
+      ts.className   = 'mc-choice__text';
+      ts.textContent = text;
+
+      row.appendChild(ls);
+      row.appendChild(ts);
+      choicesEl.appendChild(row);
+
+      row.addEventListener('click',   function () { selectChoice(row); });
+      row.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectChoice(row); }
+      });
+    });
+
+    overlay.classList.add('is-visible');
+  }
+
+  function selectChoice(row) {
+    if (submitted) return;
+    Array.from(choicesEl.querySelectorAll('.mc-choice')).forEach(function (r) {
+      r.classList.remove('is-selected');
+      r.setAttribute('aria-checked', 'false');
+    });
+    row.classList.add('is-selected');
+    row.setAttribute('aria-checked', 'true');
+    selected = row;
+    submitBtn.disabled = false;
+    submitBtn.classList.add('is-ready');
+  }
+
+  submitBtn.addEventListener('click', function () {
+    if (!selected || submitted) return;
+    submitted = true;
+
+    var isCorrect  = selected.dataset.correct === 'true';
+    var data       = PAUSE_QUESTIONS[pauseIdx];
+    var feedbackTxt = isCorrect
+      ? (data.feedbackCorrect   || 'Correct!')
+      : (data.feedbackIncorrect || 'Not quite.');
+
+    Array.from(choicesEl.querySelectorAll('.mc-choice')).forEach(function (r) {
+      r.classList.add('is-locked');
+      r.setAttribute('tabindex', '-1');
+      if (r === selected) r.classList.add(isCorrect ? 'is-correct' : 'is-incorrect');
+    });
+
+    feedbackEl.textContent = feedbackTxt;
+    feedbackEl.classList.add(isCorrect ? 'is-correct' : 'is-incorrect');
+
+    playFeedbackAudio(isCorrect ? data.audioCorrect : data.audioIncorrect);
+
+    submitBtn.style.display   = 'none';
+    continueBtn.style.display = '';
+  });
+
+  continueBtn.addEventListener('click', function () {
+    overlay.classList.remove('is-visible');
+    pauseIdx++;
+
+    if (isDual && currentClip === 0 && pauseIdx >= questionsPerClip) {
+      /* Advance to clip B */
+      currentClip = 1;
+      loadClip(1);
+      videoEl.play().catch(function () {});
+    } else if (pauseIdx < PAUSE_QUESTIONS.length) {
+      /* More questions — but resume video first */
+      if (videoEl.src) videoEl.play().catch(function () {});
+    } else {
+      onAllQuestionsComplete();
+    }
+  });
+
+  /* ── All done — show summary VO ───────────────────────────────────────── */
+  function onAllQuestionsComplete() {
+    overlay.classList.remove('is-visible');
+    if (summaryAudioSrc) {
+      window.parent.postMessage({
+        type: 'sandbox-play-interaction',
+        src:  summaryAudioSrc.replace('../', ''),
+        id:   'video-summary',
+        pauseNarration: false,
+      }, '*');
+    }
+    window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+  }
+
+  /* ── Dev helpers ──────────────────────────────────────────────────────── */
+  document.addEventListener('keydown', function (e) {
+    /* P — trigger next pause question */
+    if ((e.key === 'p' || e.key === 'P') && PAUSE_QUESTIONS.length) {
+      triggerNextPauseQuestion();
+    }
+  });
+
+}());
+</script>
+
+</body>
+</html>
