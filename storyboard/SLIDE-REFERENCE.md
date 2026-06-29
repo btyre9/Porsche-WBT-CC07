@@ -170,7 +170,7 @@ Objective-3: Apply the four-step delivery conversation framework
 Voiceover-INTRO: By the end of this module, you will be able to do three things. First — identify the key characteristics of today's Porsche customer and what sets them apart. Second — explain how CSI scores are calculated and what daily behaviors move the needle. And third — apply the four-step delivery conversation framework in your next customer interaction.
 Caption-Text: By the end of this module, you will be able to do three things.
 Status: Draft
-Notes: objectives chosen — standard second slide. VO explicitly names each objective so the stagger animation syncs naturally to the audio.
+Notes: learning-objectives chosen — standard second slide. VO explicitly names each objective so the stagger animation syncs naturally to the audio.
 ```
 
 ---

@@ -162,7 +162,7 @@ Image-File: learning_objectives_CC00.jpg
 Image: A Porsche service advisor in a clean, professional environment. Attentive and approachable.
 Voiceover-INTRO: By the end of this module, you will be able to do four things. First — explain why communication breaks down even when both parties are trying. Second — identify the four active listening techniques used by the most effective Porsche service advisors. Third — apply the FACE framework in your next customer conversation. And fourth — recognize the most common barriers to listening and know what to do about them.
 Status: Draft
-Notes: objectives chosen — standard second slide. VO explicitly names each objective so stagger animations sync naturally to audio.
+Notes: learning-objectives chosen — standard second slide. VO explicitly names each objective so stagger animations sync naturally to audio.
 ```
 
 ---

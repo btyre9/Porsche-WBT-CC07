@@ -1,10 +1,5 @@
 node_modules/
-output/
-storyboard/course.md
-storyboard/vo_manifest.csv
-course/data/tts_script.csv
-course/assets/audio/vo/*.mp3
-course/assets/captions/*.vtt
+
 .env
 *.zip
 .DS_Store

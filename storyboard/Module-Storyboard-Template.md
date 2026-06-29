@@ -130,7 +130,7 @@ Notes: Pass threshold: 80%. Pass state: congratulations + continue. Fail state: 
 ## Field Reference
 
 Slide-ID: Unique slide identifier — 01, 01, 01. Use underscores only.
-Template-ID: Slide layout — hero-title, objectives, content-bullets, content-stat, content-quote, content-split, card-explore, split-explore, video-bg, closing, knowledge-check, final-quiz, quiz-score
+Template-ID: Slide layout — hero-title, learning-objectives, content-bullets, content-stat, content-quote, content-split, card-explore, split-explore, video-bg, closing, knowledge-check, final-quiz, quiz-score
 Slide-Title: Display title shown in course menu
 >> Stage direction lines (starting with >>) are ignored by the parser — show clip triggers and filenames
 Voiceover-INTRO: VO that plays on slide entry (required on all slides with audio)

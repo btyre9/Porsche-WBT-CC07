@@ -24,7 +24,7 @@ A reviewer should be able to open any generated slide and see finished, accurate
 Every module follows this exact sequence:
 
 1. **Slide 01** — `hero-title` (always first, no exceptions)
-2. **Slide 02** — `objectives` (always second, no exceptions)
+2. **Slide 02** — `learning-objectives` (always second, no exceptions)
 3. **Content slides** — 3–5 slides per learning objective, using the best template for the content type
 4. **Knowledge checks** — exactly 4 `knowledge-check` slides per module, named `2KC01` through `2KC04`. They are usually arranged as 2 KC events with 2 consecutive questions each. Place each event after a logical topic group completes, not evenly spaced.
 5. **Closing slide** — `closing` (last content slide before the final quiz)
@@ -97,12 +97,12 @@ There are exactly two title positions across the entire course. Every slide fall
 ## Template selection guide
 
 > **Rule S11 — No same template back-to-back:** No two consecutive content slides may use the same template. `knowledge-check`, `final-quiz`, and `quiz-score` are exempt (assessment banks are inherently sequential). For all other templates, if the next slide would repeat, choose a different template that serves the same learning goal.
-> **Rule S10 — Passive slide limit:** `content-split`, `content-stat`, `content-quote`, and `content-bullets` are passive (no learner interaction). Use **no more than 2 passive slides per module** — exempt: `hero-title`, `objectives`, `closing` (structural), and the **first 2 content slides** of the module (always informational by design). After the opening pair, never place two passive slides back-to-back — always separate them with an interactive slide. Ensure at least one interactive slide appears every 6–7 slides. When in doubt, restructure passive content into an interactive template instead.
+> **Rule S10 — Passive slide limit:** `content-split`, `content-stat`, `content-quote`, and `content-bullets` are passive (no learner interaction). Use **no more than 2 passive slides per module** — exempt: `hero-title`, `learning-objectives`, `closing` (structural), and the **first 2 content slides** of the module (always informational by design). After the opening pair, never place two passive slides back-to-back — always separate them with an interactive slide. Ensure at least one interactive slide appears every 6–7 slides. When in doubt, restructure passive content into an interactive template instead.
 
 | Content type | Template ID |
 |---|---|
 | Module opener (Slide 01 only) | `hero-title` |
-| Learning objectives (Slide 02 only) | `objectives` |
+| Learning objectives (Slide 02 only) | `learning-objectives` |
 | Single concept with supporting context | `content-split` |
 | List of 3–6 parallel principles, steps, or components | `content-bullets` |
 | Single striking statistic as the main point | `content-stat` |
@@ -140,13 +140,13 @@ Status: Draft
 Notes: hero-title chosen — standard module opener.
 ```
 
-### `objectives`
+### `learning-objectives`
 
 Each objective is highlighted in sync with the VO as it is read aloud. `VO-Cue-N` is the timestamp (seconds) at which the narrator begins reading objective N. `VO-Clear-Time` is the timestamp at which the last objective finishes — the emphasis resets to normal at that point. Fill these in after the INTRO audio is generated.
 
 ```
 Slide-ID: 1S02
-Template-ID: objectives
+Template-ID: learning-objectives
 Slide-Title: What You'll Learn
 Caption-Text: [First sentence of INTRO VO, ≤120 chars]
 On-Screen-Text: By the end of this module, you will be able to do [N] things.
@@ -165,7 +165,7 @@ Image-File: 1S02.webp
 Image: [Art direction]
 Voiceover-INTRO: [1 intro sentence + 1 sentence per objective. Each objective sentence closely mirrors the Objective-N field text.]
 Status: Draft
-Notes: objectives chosen — standard second slide.
+Notes: learning-objectives chosen — standard second slide.
 ```
 
 ### `content-split`
