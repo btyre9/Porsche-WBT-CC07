@@ -163,6 +163,31 @@
     }
     .hotspot-check svg { width: 100%; height: 100%; display: block; }
 
+    /* ── Animated callout line (marker → popover) ─────────────────────────── */
+    /* An SVG connector is drawn from the active marker to its popover, like a
+       video callout. Coordinates are in the stage's layout px (offset* based),
+       so it stays correct under the slide's transform: scale(). */
+    .hs-lines {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      z-index: 2; pointer-events: none; overflow: visible;
+    }
+    .hs-lines line {
+      stroke: var(--pds-accent); stroke-width: 2.5; stroke-linecap: round;
+      filter: drop-shadow(0 0 5px rgba(213,0,28,0.75));
+      stroke-dasharray: var(--len, 0); stroke-dashoffset: var(--len, 0);
+      opacity: 0;
+    }
+    .hs-lines line.is-drawn {
+      opacity: 1; stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.5s var(--ease-out, ease), opacity 0.18s ease;
+    }
+    .hs-lines circle {
+      fill: var(--pds-accent); opacity: 0;
+      filter: drop-shadow(0 0 6px rgba(213,0,28,0.9));
+      transition: opacity 0.2s ease 0.36s;
+    }
+    .hs-lines circle.is-drawn { opacity: 1; }
+
     /* ── Popover ──────────────────────────────────────────────────────────── */
     .popover {
       position: absolute;
@@ -327,85 +352,88 @@
     <div class="hotspot-stage is-locked anim-fade-up" style="--anim-delay: 0.30s;" id="hotspot-stage">
       <img class="hotspot-bg" data-img-adjust src="../assets/images/1S06.webp" alt="" style="--img-pos:center;--img-scale:1;" onerror="this.style.display='none'">
 
-      <button class="hotspot" type="button" data-hs="Hotspot1" aria-label="Hotspot1 — open detail" style="--hs-x: 50%; --hs-y: 50%;">
+      <!-- Animated callout connector (marker → active popover) -->
+      <svg class="hs-lines" aria-hidden="true"><line id="hs-line"></line><circle id="hs-line-end" r="4"></circle></svg>
+
+      <button class="hotspot" type="button" data-hs="Hotspot1" aria-label="Hotspot1 — open detail" style="--hs-x: 27%; --hs-y: 56%;">
         <span class="hotspot-dot">
           <span class="hotspot-number">01</span>
           <span class="hotspot-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
         </span>
       </button>
-      <button class="hotspot" type="button" data-hs="Hotspot2" aria-label="Hotspot2 — open detail" style="--hs-x: 50%; --hs-y: 50%;">
+      <button class="hotspot" type="button" data-hs="Hotspot2" aria-label="Hotspot2 — open detail" style="--hs-x: 31%; --hs-y: 21%;">
         <span class="hotspot-dot">
           <span class="hotspot-number">02</span>
           <span class="hotspot-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
         </span>
       </button>
-      <button class="hotspot" type="button" data-hs="Hotspot3" aria-label="Hotspot3 — open detail" style="--hs-x: 50%; --hs-y: 50%;">
+      <button class="hotspot" type="button" data-hs="Hotspot3" aria-label="Hotspot3 — open detail" style="--hs-x: 51%; --hs-y: 62%;">
         <span class="hotspot-dot">
           <span class="hotspot-number">03</span>
           <span class="hotspot-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
         </span>
       </button>
-      <button class="hotspot" type="button" data-hs="Hotspot4" aria-label="Hotspot4 — open detail" style="--hs-x: 50%; --hs-y: 50%;">
+      <button class="hotspot" type="button" data-hs="Hotspot4" aria-label="Hotspot4 — open detail" style="--hs-x: 80%; --hs-y: 32%;">
         <span class="hotspot-dot">
           <span class="hotspot-number">04</span>
           <span class="hotspot-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
         </span>
       </button>
-      <button class="hotspot" type="button" data-hs="Hotspot5" aria-label="Hotspot5 — open detail" style="--hs-x: 50%; --hs-y: 50%;">
+      <button class="hotspot" type="button" data-hs="Hotspot5" aria-label="Hotspot5 — open detail" style="--hs-x: 45%; --hs-y: 30%;">
         <span class="hotspot-dot">
           <span class="hotspot-number">05</span>
           <span class="hotspot-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
         </span>
       </button>
 
-      <aside class="popover" data-popover="Hotspot1" data-side="right" role="dialog" aria-label="Hotspot1 — detail" style="--hs-x: 50%; --hs-y: 50%;" hidden>
+      <aside class="popover" data-popover="Hotspot1" data-side="right" role="dialog" aria-label="Hotspot1 — detail" style="--hs-x: 27%; --hs-y: 56%;" hidden>
         <button class="popover-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
         </button>
-        <div class="popover-eyebrow">01</div>
-        <h2 class="popover-title">Hotspot1</h2>
+        <div class="popover-eyebrow">01 &middot; Appearance</div>
+        <h2 class="popover-title">Look the Part</h2>
         <div class="popover-body">
-          <p><!-- Body for Hotspot1: add Item-Hotspot1-Body to course.md, or edit this slide directly. --></p>
+          <p>Clean uniform, sharp grooming, professional posture — the same standards you would meet in person. For many customers, this video <em>is</em> the in-person.</p>
         </div>
       </aside>
-      <aside class="popover" data-popover="Hotspot2" data-side="right" role="dialog" aria-label="Hotspot2 — detail" style="--hs-x: 50%; --hs-y: 50%;" hidden>
+      <aside class="popover" data-popover="Hotspot2" data-side="right" role="dialog" aria-label="Hotspot2 — detail" style="--hs-x: 31%; --hs-y: 21%;" hidden>
         <button class="popover-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
         </button>
-        <div class="popover-eyebrow">02</div>
-        <h2 class="popover-title">Hotspot2</h2>
+        <div class="popover-eyebrow">02 &middot; Lighting</div>
+        <h2 class="popover-title">Light on Your Face</h2>
         <div class="popover-body">
-          <p><!-- Body for Hotspot2: add Item-Hotspot2-Body to course.md, or edit this slide directly. --></p>
+          <p>Put the light on your face, not behind you. Standing in front of a bay door at noon turns you into a silhouette. Your expression is most of what makes a video feel personal.</p>
         </div>
       </aside>
-      <aside class="popover" data-popover="Hotspot3" data-side="right" role="dialog" aria-label="Hotspot3 — detail" style="--hs-x: 50%; --hs-y: 50%;" hidden>
+      <aside class="popover" data-popover="Hotspot3" data-side="left" role="dialog" aria-label="Hotspot3 — detail" style="--hs-x: 51%; --hs-y: 62%;" hidden>
         <button class="popover-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
         </button>
-        <div class="popover-eyebrow">03</div>
-        <h2 class="popover-title">Hotspot3</h2>
+        <div class="popover-eyebrow">03 &middot; Camera</div>
+        <h2 class="popover-title">Hold It Steady</h2>
         <div class="popover-body">
-          <p><!-- Body for Hotspot3: add Item-Hotspot3-Body to course.md, or edit this slide directly. --></p>
+          <p>Walking around the car? Use a gimbal. Standing still? Hold the phone with both hands. Shaky footage is distracting and the message gets lost.</p>
         </div>
       </aside>
-      <aside class="popover" data-popover="Hotspot4" data-side="right" role="dialog" aria-label="Hotspot4 — detail" style="--hs-x: 50%; --hs-y: 50%;" hidden>
+      <aside class="popover" data-popover="Hotspot4" data-side="left" role="dialog" aria-label="Hotspot4 — detail" style="--hs-x: 80%; --hs-y: 32%;" hidden>
         <button class="popover-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
         </button>
-        <div class="popover-eyebrow">04</div>
-        <h2 class="popover-title">Hotspot4</h2>
+        <div class="popover-eyebrow">04 &middot; Background</div>
+        <h2 class="popover-title">Mind the Background</h2>
         <div class="popover-body">
-          <p><!-- Body for Hotspot4: add Item-Hotspot4-Body to course.md, or edit this slide directly. --></p>
+          <p>Check what is behind you before you record. Clutter, oily rags, another customer's car — it is all on camera. A clean, organised bay says, "This is how I treat your car."</p>
         </div>
       </aside>
-      <aside class="popover" data-popover="Hotspot5" data-side="right" role="dialog" aria-label="Hotspot5 — detail" style="--hs-x: 50%; --hs-y: 50%;" hidden>
+      <aside class="popover" data-popover="Hotspot5" data-side="right" role="dialog" aria-label="Hotspot5 — detail" style="--hs-x: 45%; --hs-y: 30%;" hidden>
         <button class="popover-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
         </button>
-        <div class="popover-eyebrow">05</div>
-        <h2 class="popover-title">Hotspot5</h2>
+        <div class="popover-eyebrow">05 &middot; Audio</div>
+        <h2 class="popover-title">Speak Up, Slow Down</h2>
         <div class="popover-body">
-          <p><!-- Body for Hotspot5: add Item-Hotspot5-Body to course.md, or edit this slide directly. --></p>
+          <p>Shop noise is real — speak up and slow down. Enunciate technical terms and pause between points. You know this car cold; they are seeing it for the first time.</p>
         </div>
       </aside>
 
@@ -506,6 +534,44 @@ var SandboxRuntime = (function () {
   var hotspots = document.querySelectorAll('.hotspot');
   var popovers = document.querySelectorAll('.popover');
 
+  // Animated callout connector (single reusable line + endpoint dot).
+  var svgLine = document.getElementById('hs-line');
+  var svgEnd  = document.getElementById('hs-line-end');
+
+  function clearConnector() {
+    if (svgLine) svgLine.classList.remove('is-drawn');
+    if (svgEnd)  svgEnd.classList.remove('is-drawn');
+  }
+
+  // Draw a red line from the active marker's centre to its popover's near edge.
+  // Uses offset* geometry (stage layout px) so it's correct under transform:scale.
+  function drawConnector(key) {
+    if (!svgLine || !svgEnd || !stage) return;
+    var marker  = document.querySelector('.hotspot[data-hs="' + key + '"]');
+    var popover = document.querySelector('.popover[data-popover="' + key + '"]');
+    if (!marker || !popover) return;
+    requestAnimationFrame(function () {
+      var mx = marker.offsetLeft, my = marker.offsetTop;   // marker visual centre
+      var side = popover.getAttribute('data-side');
+      var px = (side === 'left') ? (popover.offsetLeft + popover.offsetWidth) : popover.offsetLeft;
+      var py = popover.offsetTop;                            // popover vertical centre
+      var len = Math.hypot(px - mx, py - my);
+      svgLine.setAttribute('x1', mx); svgLine.setAttribute('y1', my);
+      svgLine.setAttribute('x2', px); svgLine.setAttribute('y2', py);
+      svgLine.style.setProperty('--len', len);
+      svgEnd.setAttribute('cx', px); svgEnd.setAttribute('cy', py);
+      clearConnector();
+      void svgLine.getBoundingClientRect(); // force reflow so the draw replays
+      svgLine.classList.add('is-drawn');
+      svgEnd.classList.add('is-drawn');
+    });
+  }
+
+  window.addEventListener('resize', function () {
+    var active = document.querySelector('.hotspot.is-active');
+    if (active) drawConnector(active.dataset.hs);
+  });
+
   function unlockHotspots() {
     if (unlocked) return;
     unlocked = true;
@@ -518,6 +584,7 @@ var SandboxRuntime = (function () {
       p.classList.remove('is-active');
       p.setAttribute('hidden', '');
     });
+    clearConnector();
   }
 
   function setActive(key, isUserClick) {
@@ -530,6 +597,8 @@ var SandboxRuntime = (function () {
       if (on) p.removeAttribute('hidden');
       else    p.setAttribute('hidden', '');
     });
+
+    drawConnector(key);
 
     if (isUserClick && !visited.has(key)) {
       visited.add(key);

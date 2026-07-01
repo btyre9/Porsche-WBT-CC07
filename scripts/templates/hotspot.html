@@ -163,6 +163,31 @@
     }
     .hotspot-check svg { width: 100%; height: 100%; display: block; }
 
+    /* ── Animated callout line (marker → popover) ─────────────────────────── */
+    /* An SVG connector is drawn from the active marker to its popover, like a
+       video callout. Coordinates are in the stage's layout px (offset* based),
+       so it stays correct under the slide's transform: scale(). */
+    .hs-lines {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      z-index: 2; pointer-events: none; overflow: visible;
+    }
+    .hs-lines line {
+      stroke: var(--pds-accent); stroke-width: 2.5; stroke-linecap: round;
+      filter: drop-shadow(0 0 5px rgba(213,0,28,0.75));
+      stroke-dasharray: var(--len, 0); stroke-dashoffset: var(--len, 0);
+      opacity: 0;
+    }
+    .hs-lines line.is-drawn {
+      opacity: 1; stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.5s var(--ease-out, ease), opacity 0.18s ease;
+    }
+    .hs-lines circle {
+      fill: var(--pds-accent); opacity: 0;
+      filter: drop-shadow(0 0 6px rgba(213,0,28,0.9));
+      transition: opacity 0.2s ease 0.36s;
+    }
+    .hs-lines circle.is-drawn { opacity: 1; }
+
     /* ── Popover ──────────────────────────────────────────────────────────── */
     .popover {
       position: absolute;
@@ -327,6 +352,9 @@
     <div class="hotspot-stage is-locked anim-fade-up" style="--anim-delay: 0.30s;" id="hotspot-stage">
       <img class="hotspot-bg" data-img-adjust src="{{IMAGE_PATH}}" alt="" style="--img-pos:{{IMG_POS}};--img-scale:{{IMG_SCALE}};" onerror="this.style.display='none'">
 
+      <!-- Animated callout connector (marker → active popover) -->
+      <svg class="hs-lines" aria-hidden="true"><line id="hs-line"></line><circle id="hs-line-end" r="4"></circle></svg>
+
 {{HOTSPOT_MARKERS_HTML}}
 
 {{HOTSPOT_POPOVERS_HTML}}
@@ -422,6 +450,44 @@ var SandboxRuntime = (function () {
   var hotspots = document.querySelectorAll('.hotspot');
   var popovers = document.querySelectorAll('.popover');
 
+  // Animated callout connector (single reusable line + endpoint dot).
+  var svgLine = document.getElementById('hs-line');
+  var svgEnd  = document.getElementById('hs-line-end');
+
+  function clearConnector() {
+    if (svgLine) svgLine.classList.remove('is-drawn');
+    if (svgEnd)  svgEnd.classList.remove('is-drawn');
+  }
+
+  // Draw a red line from the active marker's centre to its popover's near edge.
+  // Uses offset* geometry (stage layout px) so it's correct under transform:scale.
+  function drawConnector(key) {
+    if (!svgLine || !svgEnd || !stage) return;
+    var marker  = document.querySelector('.hotspot[data-hs="' + key + '"]');
+    var popover = document.querySelector('.popover[data-popover="' + key + '"]');
+    if (!marker || !popover) return;
+    requestAnimationFrame(function () {
+      var mx = marker.offsetLeft, my = marker.offsetTop;   // marker visual centre
+      var side = popover.getAttribute('data-side');
+      var px = (side === 'left') ? (popover.offsetLeft + popover.offsetWidth) : popover.offsetLeft;
+      var py = popover.offsetTop;                            // popover vertical centre
+      var len = Math.hypot(px - mx, py - my);
+      svgLine.setAttribute('x1', mx); svgLine.setAttribute('y1', my);
+      svgLine.setAttribute('x2', px); svgLine.setAttribute('y2', py);
+      svgLine.style.setProperty('--len', len);
+      svgEnd.setAttribute('cx', px); svgEnd.setAttribute('cy', py);
+      clearConnector();
+      void svgLine.getBoundingClientRect(); // force reflow so the draw replays
+      svgLine.classList.add('is-drawn');
+      svgEnd.classList.add('is-drawn');
+    });
+  }
+
+  window.addEventListener('resize', function () {
+    var active = document.querySelector('.hotspot.is-active');
+    if (active) drawConnector(active.dataset.hs);
+  });
+
   function unlockHotspots() {
     if (unlocked) return;
     unlocked = true;
@@ -434,6 +500,7 @@ var SandboxRuntime = (function () {
       p.classList.remove('is-active');
       p.setAttribute('hidden', '');
     });
+    clearConnector();
   }
 
   function setActive(key, isUserClick) {
@@ -446,6 +513,8 @@ var SandboxRuntime = (function () {
       if (on) p.removeAttribute('hidden');
       else    p.setAttribute('hidden', '');
     });
+
+    drawConnector(key);
 
     if (isUserClick && !visited.has(key)) {
       visited.add(key);

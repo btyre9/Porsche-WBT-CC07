@@ -42,9 +42,19 @@ Slide-Title: Why Video Updates Move the Needle
 Caption-Text: Sending a video during service drives a 27% lift in approval of additional recommended work.
 On-Screen-Text: 27% Lift in approval of recommended work
 Image: Close-up of a Porsche technician holding a phone showing a paused video frame of a brake rotor; warm shop lighting, professional composition. A customer's hand reaching for a coffee mug at a desk in soft focus suggests remote viewing.
-Notes: content-stat chosen — opens the module with the single hardest data point in the source. Exempt from rule S10 as one of the first two content slides.
+Notes: content-stat chosen — opens the module with the single hardest data point in the source. Exempt from rule S10 as one of the first two content slides. Animated count-up readout (0→27%) with a supporting image, lead, payoff, and why-it-works chips.
 Status: Draft
 Voiceover-INTRO: Twenty-seven percent. That is the lift in approved recommended work when a customer sees a video of their car instead of just a phone call. C S I scores climb by roughly fifty-four points on the same data. The reason is simple — your customer can see what you see. They are not deciding based on a service advisor's translation. They are deciding based on you. The expert. Talking to them about their car.
+Stat-Value: 27
+Stat-Unit: %
+Stat-Mode: count
+Stat-From: 0
+Stat-Sub: lift in approval of recommended work
+Stat-Lead: Sending a video during service — instead of just calling — changes how customers decide.
+Stat-Payoff: The customer sees what you see, and says yes.
+Stat-Points-Label: Why it works
+Stat-Point-1: +54-point CSI increase on the same data
+Stat-Point-2: The customer sees the finding, not a translation
 Image-File: 1S03.webp
 
 ## Slide 04 — The Digital Landscape
@@ -95,8 +105,8 @@ Slide-ID: 1S06
 Template-ID: hotspot
 Slide-Title: Inside a Quality Video Update
 On-Screen-Text: Select each marker to see what makes a video look — and sound — like a Porsche technician.
-Image: A wide shot of a Porsche technician filming a video next to a 911 on a lift. He wears a clean uniform with a visible name tag and holds the phone in a small gimbal. Bright shop lighting on his face, a clean tool board behind him, a polished floor. Composition allows distinct zones — upper-left for face and lighting, mid-center for the phone and gimbal, mid-right for the clean background, lower-center for the actual car detail, and lower-left for the organized work area.
-Notes: hotspot chosen — single visual scene with five distinct discovery zones (appearance, lighting, camera stability, background, audio). All hotspots must be visited before Next unlocks.
+Image: A wide, eye-level shot of a Porsche service technician filming a vehicle video update beside a 911 on a black lift in a bright, spotless service bay. He stands left-of-centre, turned slightly toward the camera, softly front-lit so his face is clearly and evenly illuminated (never backlit or in silhouette), holding a smartphone mounted in a small handheld gimbal at chest height in the centre of the frame. Behind him on the right is a tidy, organised tool board on a clean white wall; the polished light-gray tile floor and the car's lower body are visible across the bottom. The composition deliberately leaves five clearly separated, uncluttered zones for callout markers, each with generous negative space around it: (1) his face, upper-left; (2) his chest and well-fitted uniform, left of centre; (3) the phone-in-gimbal in his hands, centre; (4) the clean, organised tool board, upper-right; (5) his mouth as he speaks, upper-centre. Calm, premium, editorial; markers must not overlap the subject's eyes.
+Notes: hotspot chosen — a single purpose-built scene with five spatially distinct discovery zones (appearance, lighting, camera stability, background, audio), each mapped to a marker position below. All five must be visited before Next unlocks. Animated red callout lines connect each marker to its popover.
 Status: Draft
 Voiceover-INTRO: A video update is more than just hitting record. The Porsche brand shows up in every detail your customer can see and hear. Select each marker to see what makes a video look — and sound — like you.
 Voiceover-CLICK-Hotspot1: Your customer is meeting you for the first time on this video. Clean uniform. Visible name tag. The same standards you would meet in person — because for many customers, this is the in-person.
@@ -104,6 +114,26 @@ Voiceover-CLICK-Hotspot2: Find a spot where the light is on your face, not behin
 Voiceover-CLICK-Hotspot3: If you walk around the car, use a gimbal. Standing still, hold the phone with both hands. Shaky footage is distracting and the message gets lost. Smooth video signals you take this seriously.
 Voiceover-CLICK-Hotspot4: Look at what is behind you before you hit record. Clutter, oily rags, another customer's vehicle — all of it is on camera. A clean, organized work area says quietly, "This is how I treat your car."
 Voiceover-CLICK-Hotspot5: Shop noise is real, so speak up and slow down. Enunciate technical terms. Pause between points so the customer's brain can keep up. You know this car cold. They are seeing it for the first time.
+Item-Hotspot1-Eyebrow: Appearance
+Item-Hotspot1-Title: Look the Part
+Item-Hotspot1-Pos: 27%, 56%
+Item-Hotspot1-Body: <p>Clean uniform, sharp grooming, professional posture — the same standards you would meet in person. For many customers, this video <em>is</em> the in-person.</p>
+Item-Hotspot2-Eyebrow: Lighting
+Item-Hotspot2-Title: Light on Your Face
+Item-Hotspot2-Pos: 31%, 21%
+Item-Hotspot2-Body: <p>Put the light on your face, not behind you. Standing in front of a bay door at noon turns you into a silhouette. Your expression is most of what makes a video feel personal.</p>
+Item-Hotspot3-Eyebrow: Camera
+Item-Hotspot3-Title: Hold It Steady
+Item-Hotspot3-Pos: 51%, 62%
+Item-Hotspot3-Body: <p>Walking around the car? Use a gimbal. Standing still? Hold the phone with both hands. Shaky footage is distracting and the message gets lost.</p>
+Item-Hotspot4-Eyebrow: Background
+Item-Hotspot4-Title: Mind the Background
+Item-Hotspot4-Pos: 80%, 32%
+Item-Hotspot4-Body: <p>Check what is behind you before you record. Clutter, oily rags, another customer's car — it is all on camera. A clean, organised bay says, "This is how I treat your car."</p>
+Item-Hotspot5-Eyebrow: Audio
+Item-Hotspot5-Title: Speak Up, Slow Down
+Item-Hotspot5-Pos: 45%, 30%
+Item-Hotspot5-Body: <p>Shop noise is real — speak up and slow down. Enunciate technical terms and pause between points. You know this car cold; they are seeing it for the first time.</p>
 Image-File: 1S06.webp
 Hotspot-1-X: 22
 Hotspot-1-Y: 25

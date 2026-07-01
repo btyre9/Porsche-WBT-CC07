@@ -9,7 +9,17 @@
   <link rel="stylesheet" href="../assets/css/animations.css">
   <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
   <style>
+    /* ── Random background photo (assigned per slide at build) + scrim ─────── */
+    .fq-bg { position: absolute; inset: 0; z-index: 0; }
+    .fq-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .fq-scrim {
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(180deg,
+        rgba(14,15,17,0.80) 0%, rgba(14,15,17,0.64) 45%, rgba(14,15,17,0.82) 100%);
+    }
     .fq-layout {
+      position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -120,6 +130,12 @@
 
 <div class="slide" data-slide-id="3FQ08">
 
+  <!-- Random background photo (path assigned per slide by generate-slides.js) -->
+  <div class="fq-bg">
+    <img src="../assets/images/FQ-images/SP21L31OX0011_layout.jpg" alt="" onerror="this.style.display='none'">
+  </div>
+  <div class="fq-scrim"></div>
+
   <div class="fq-layout">
 
     <div class="fq-header anim-fade-up">
@@ -128,7 +144,7 @@
         <span class="pds-caption" id="modal-title">Question 0</span>
       </div>
       <div class="pds-accent-bar anim-bar-grow" style="--anim-delay:0.1s;"></div>
-      <p class="fq-question">A Porsha customer prefers text updates but the situation requires explaining several technical findings before they can decide. Which approach best matches channel to message?</p>
+      <p class="fq-question">A Porsche customer prefers text updates but the situation requires explaining several technical findings before they can decide. Which approach best matches channel to message?</p>
     </div>
 
     <div class="fq-choices stagger-children is-visible" id="fq-choices">

@@ -1882,6 +1882,182 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
   })();
 
   // =========================================================================
+  // Hotspot marker drag tool — reposition a hotspot slide's markers (and their
+  // attached callout + connector line) by dragging, then save to the storyboard.
+  // Writes Item-<Label>-Pos: X%, Y% per marker into course.md (never the slide
+  // HTML), so Compile can't overwrite the placement. Design-time only — learners
+  // see the final saved positions. Mirrors initImageAdjust's activate/save flow.
+  // =========================================================================
+  (function initHotspotDrag() {
+    const btn = document.getElementById('btn-hotspot-drag');
+    if (!btn) return;
+    const setBtn = (saving) => {
+      const ico = btn.querySelector('.pi');
+      const lbl = btn.querySelector('.btn-label');
+      if (ico) { ico.classList.toggle('pi-save', saving); ico.classList.toggle('pi-adjust', !saving); }
+      if (lbl) lbl.textContent = saving ? 'Save Markers' : 'Drag Markers';
+    };
+
+    let active = false;
+    let markers = [];   // [{ el, label, popover, x, y }]
+    let overlay = null;
+    let dragging = false, dragIdx = -1, startClientX = 0, startClientY = 0, startX = 0, startY = 0;
+
+    function parseVar(el, name) {
+      const m = String(el.style.getPropertyValue(name) || '').match(/(-?\d+(?:\.\d+)?)/);
+      return m ? parseFloat(m[1]) : 50;
+    }
+    function findMarkers() {
+      try {
+        const doc = previewIframe.contentDocument;
+        if (!doc) return [];
+        return Array.from(doc.querySelectorAll('.hotspot')).map((el) => {
+          const label = el.getAttribute('data-hs');
+          const esc = (window.CSS && CSS.escape) ? CSS.escape(label) : label;
+          const popover = doc.querySelector(`.popover[data-popover="${esc}"]`);
+          return { el, label, popover, x: parseVar(el, '--hs-x'), y: parseVar(el, '--hs-y') };
+        });
+      } catch (e) { return []; }
+    }
+    // Move the marker and its attached popover together (both read --hs-x/--hs-y).
+    function applyLive(m) {
+      m.el.style.setProperty('--hs-x', m.x.toFixed(1) + '%');
+      m.el.style.setProperty('--hs-y', m.y.toFixed(1) + '%');
+      if (m.popover) {
+        m.popover.style.setProperty('--hs-x', m.x.toFixed(1) + '%');
+        m.popover.style.setProperty('--hs-y', m.y.toFixed(1) + '%');
+      }
+    }
+    // Reveal only the grabbed marker's callout so the author can see what it covers.
+    function showOnly(idx) {
+      markers.forEach((m, i) => {
+        const on = (i === idx);
+        m.el.classList.toggle('is-active', on);
+        if (m.popover) {
+          m.popover.classList.toggle('is-active', on);
+          if (on) m.popover.removeAttribute('hidden'); else m.popover.setAttribute('hidden', '');
+        }
+      });
+    }
+
+    function repositionOverlay() {
+      if (!overlay) return;
+      const r = previewIframe.getBoundingClientRect();
+      overlay.style.cssText =
+        `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:9998;cursor:grab;`;
+    }
+    function makeOverlay() {
+      overlay = document.createElement('div');
+      overlay.className = 'hotspot-drag-overlay';
+      document.body.appendChild(overlay);
+      repositionOverlay();
+      overlay.addEventListener('mousedown', onDown);
+    }
+    function dropOverlay() { if (overlay) { overlay.remove(); overlay = null; } }
+
+    function onDown(e) {
+      e.preventDefault();
+      const r = previewIframe.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+      // Grab the nearest marker within ~7% of the click point.
+      let best = -1, bestD = Infinity;
+      markers.forEach((m, i) => {
+        const d = Math.hypot(m.x - x, m.y - y);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      if (best < 0 || bestD > 7) { dragIdx = -1; return; }
+      dragIdx = best;
+      dragging = true;
+      startClientX = e.clientX; startClientY = e.clientY;
+      startX = markers[best].x; startY = markers[best].y;
+      showOnly(best);
+      if (overlay) overlay.style.cursor = 'grabbing';
+    }
+    function onMove(e) {
+      if (!dragging || dragIdx < 0) return;
+      const r = previewIframe.getBoundingClientRect();
+      const m = markers[dragIdx];
+      // Marker follows the cursor (drag right → +x), clamped inside the stage.
+      m.x = Math.max(2, Math.min(98, startX + ((e.clientX - startClientX) / r.width) * 100));
+      m.y = Math.max(3, Math.min(97, startY + ((e.clientY - startClientY) / r.height) * 100));
+      applyLive(m);
+    }
+    function onUp() { if (dragging) { dragging = false; if (overlay) overlay.style.cursor = 'grab'; } }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+
+    function activate() {
+      const slideId = slideSelector.value;
+      if (!slideId) { appendConsole('[MARKERS] Select a slide to preview first.\n'); return; }
+      if (previewMode !== 'slide') { appendConsole('[MARKERS] Switch to Slide Mode to drag markers.\n'); return; }
+      const tpl = readField(storyboardEditor.value, slideId, 'Template-ID');
+      if (tpl !== 'hotspot') { appendConsole(`[MARKERS] ${slideId} is not a hotspot slide (it's ${tpl || 'unknown'}).\n`); return; }
+      markers = findMarkers();
+      if (!markers.length) { appendConsole(`[MARKERS] No markers found on ${slideId} — compile it first.\n`); return; }
+      // Unlock the stage so markers/popovers render at full strength while editing.
+      try { const st = previewIframe.contentDocument.getElementById('hotspot-stage'); if (st) st.classList.remove('is-locked'); } catch (_) {}
+      active = true;
+      btn.classList.add('active');
+      setBtn(true);
+      makeOverlay();
+      window.addEventListener('resize', repositionOverlay);
+      appendConsole(`>>> Marker drag ON for ${slideId} (${markers.length} markers) — drag each marker to move its callout off important content; click Save Markers to save (Esc cancels).\n`);
+    }
+    function teardown() {
+      active = false;
+      btn.classList.remove('active');
+      setBtn(false);
+      dropOverlay();
+      window.removeEventListener('resize', repositionOverlay);
+      markers = [];
+      dragIdx = -1;
+    }
+    function cancel() {
+      if (!active) return;
+      const slideId = slideSelector.value;
+      teardown();
+      if (slideId) updateIframeSrc(slideId);   // reload to discard live moves
+      appendConsole('>>> Marker drag cancelled — positions reverted.\n');
+    }
+
+    async function save() {
+      const slideId = slideSelector.value;
+      const moved = markers.slice();           // capture before teardown
+      if (!(await prepareEditorBase())) return;
+      let text = storyboardEditor.value;
+      moved.forEach((m) => {
+        text = upsertField(text, slideId, `Item-${m.label}-Pos`, `${m.x.toFixed(1)}%, ${m.y.toFixed(1)}%`);
+      });
+      storyboardEditor.value = text;
+      try {
+        const res = await fetch('/api/storyboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: text })
+        });
+        const data = await res.json();
+        if (!data.success) { appendConsole(`[MARKERS] Save failed: ${data.error}\n`); return; }
+        originalStoryboardContent = text;
+        unsavedIndicator.classList.remove('active');
+        appendConsole(`>>> Saved ${moved.length} marker position(s) on ${slideId}. Recompiling...\n`);
+      } catch (err) { appendConsole(`[MARKERS] Save error: ${err.message}\n`); return; }
+      teardown();
+      await triggerPipeline('/api/compile-single', btn, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slideId })
+      });
+      updateIframeSrc(slideId);
+    }
+
+    btn.addEventListener('click', () => { active ? save() : activate(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && active) cancel(); });
+    slideSelector.addEventListener('change', () => { if (active) cancel(); });
+    btnClosePreview.addEventListener('click', () => { if (active) cancel(); });
+  })();
+
+  // =========================================================================
   // Movable blur/frost vignette tool — drop a soft region on a slide image to
   // hide an imperfection (Spot) or direct focus (Focus). Saves a single
   // `Image-Vignette` line to course.md; generate-slides re-injects the layer on

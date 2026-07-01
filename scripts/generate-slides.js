@@ -962,6 +962,49 @@ function splitStat(onScreenText, slideTitle) {
   return { value: onScreenText, label: '' };
 }
 
+// FQ background picker — final-quiz question slides get a random photo from
+// course/assets/images/FQ-images, assigned per slide at build time. Returns a
+// closure yielding the next filename from a freshly shuffled pool (no adjacent
+// repeats); '' when the folder is empty/missing.
+function makeFqBgPicker(fqImagesDir) {
+  const files = fs.existsSync(fqImagesDir)
+    ? fs.readdirSync(fqImagesDir).filter(f => /\.(jpe?g|png|webp)$/i.test(f))
+    : [];
+  let pool = [];
+  let last = null;
+  return function next() {
+    if (!files.length) return '';
+    if (!pool.length) {
+      pool = files.slice();
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      if (pool.length > 1 && pool[0] === last) pool.push(pool.shift());
+    }
+    last = pool.shift();
+    return last;
+  };
+}
+
+// content-stat supporting chips. Reads Stat-Point-1…6 into pill chips shown
+// beneath the animated readout; Stat-Points-Label sets the small eyebrow above
+// them. Returns '' when none are authored (the row hides itself via :empty).
+function buildStatPointsHtml(slide) {
+  const chips = [];
+  for (let i = 1; i <= 6; i++) {
+    const raw = slide[`Stat-Point-${i}`];
+    if (!raw) break;
+    const text = String(raw).trim();
+    if (!text) continue;
+    chips.push(`      <span class="stat-chip"><span class="stat-chip__dot" aria-hidden="true"></span>${escHtml(text)}</span>`);
+  }
+  if (!chips.length) return '';
+  const label = escHtml((slide['Stat-Points-Label'] || '').trim());
+  const labelHtml = label ? `      <span class="stat-chips__label">${label}</span>\n` : '';
+  return '\n' + labelHtml + chips.join('\n') + '\n    ';
+}
+
 // ---------------------------------------------------------------------------
 // FQ question number (count FQ slides seen so far, excluding SCORE slide)
 // ---------------------------------------------------------------------------
@@ -1099,7 +1142,21 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     ? resolveImagePath(slide, 'Image-File', templateId, imageCatalog)
     : '';
 
-  const { value: statValue, label: statLabel } = splitStat(onScreen, slideTitle);
+  // content-stat: authored Stat-* fields win, else parse On-Screen-Text
+  // ("27% Lift in approval…"). The numeric magnitude drives the animated
+  // count-up; a trailing unit like % renders beside it.
+  const statParsed  = splitStat(onScreen, slideTitle);
+  const rawStatVal  = String(slide['Stat-Value'] || statParsed.value || '').trim();
+  const statNumMatch = rawStatVal.match(/-?\d[\d,.]*/);
+  const statValueNum = statNumMatch ? statNumMatch[0].replace(/,/g, '') : rawStatVal;
+  const statUnit    = (slide['Stat-Unit'] !== undefined && String(slide['Stat-Unit']).trim() !== '')
+    ? String(slide['Stat-Unit']).trim()
+    : (statNumMatch ? rawStatVal.replace(statNumMatch[0], '').trim() : '');
+  const statSub     = String(slide['Stat-Sub'] || slide['Stat-Label'] || statParsed.label || '').trim();
+  const statMode    = String(slide['Stat-Mode'] || 'count').trim();
+  const statFrom    = String(slide['Stat-From'] || '0').trim();
+  const statLead    = String(slide['Stat-Lead'] || slide['Caption-Text'] || '').trim();
+  const statPayoff  = String(slide['Stat-Payoff'] || '').trim();
   const clicks = extractTriggers(slide, slideId);
 
   // content-quote tokens
@@ -1170,8 +1227,14 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     IMG_POS:        String(slide['Image-Position'] || 'center').replace(/[";{}<>]/g, '').trim(),
     IMG_SCALE:      String(slide['Image-Scale'] || '1').replace(/[^0-9.]/g, '') || '1',
     // Stat template
-    STAT_VALUE:     escHtml(statValue),
-    STAT_LABEL:     escHtml(statLabel),
+    STAT_VALUE:      escAttr(statValueNum),
+    STAT_UNIT:       escHtml(statUnit),
+    STAT_SUB:        escHtml(statSub),
+    STAT_MODE:       escAttr(statMode),
+    STAT_FROM:       escAttr(statFrom),
+    STAT_LEAD:       escHtml(statLead),
+    STAT_PAYOFF:     escHtml(statPayoff),
+    STAT_POINTS_HTML: buildStatPointsHtml(slide),
     // Quote template
     QUOTE_TEXT:               escHtml(quoteText),
     QUOTE_ATTRIBUTION_NAME:   escHtml(quoteAttributionName),
@@ -1205,6 +1268,8 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     CORRECT_ANSWER:  String(parseInt(slide['Correct-Answer'], 10) || 1),
     REVIEW_SLIDE:    slide['Review-Slide'] || '',
     QUESTION_NUMBER: String(fqQuestionNumber(allSlides, slideId)),
+    // final-quiz: random background photo assigned in the main loop ('' → scrim only)
+    FQ_BG_IMAGE:     slide._fqBgImage ? '../assets/images/FQ-images/' + slide._fqBgImage : '',
     // drag-match template (+ drag-match-left / drag-match-right image variants)
     MATCH_COL_LEFT:  escHtml(slide['Match-Col-Left']  || 'Term'),
     MATCH_COL_RIGHT: escHtml(slide['Match-Col-Right'] || 'Match'),
@@ -1275,6 +1340,9 @@ async function main() {
     console.log(`Image catalog: empty — slides without Image-File will reference placeholder.jpg\n`);
   }
 
+  // Random background photo assigned to each FQ question slide (build-time).
+  const fqBgPicker = makeFqBgPicker(path.join(imagesDir, 'FQ-images'));
+
   // Ensure output directories exist
   fs.mkdirSync(path.resolve(args.slidesDir), { recursive: true });
   fs.mkdirSync(path.resolve(args.dataDir),   { recursive: true });
@@ -1297,9 +1365,10 @@ async function main() {
       kcReviewMap[slideId] = [slide['Review-Slide']];
     }
 
-    // Track FQ question slides (not SCORE)
+    // Track FQ question slides (not SCORE) + assign each a random background photo.
     if ((/^FQ[_-]/i.test(slideId) && !/[_-]SCORE$/i.test(slideId)) || /^3FQ\d{2}$/i.test(slideId)) {
       fqQuestionIds.push(slideId);
+      slide._fqBgImage = fqBgPicker();
     }
 
     // Single-slide mode (--slide): keep iterating so the aggregate data files

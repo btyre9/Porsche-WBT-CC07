@@ -9,7 +9,17 @@
   <link rel="stylesheet" href="../assets/css/animations.css">
   <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
   <style>
+    /* ── Random background photo (assigned per slide at build) + scrim ─────── */
+    .fq-bg { position: absolute; inset: 0; z-index: 0; }
+    .fq-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .fq-scrim {
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(180deg,
+        rgba(14,15,17,0.80) 0%, rgba(14,15,17,0.64) 45%, rgba(14,15,17,0.82) 100%);
+    }
     .fq-layout {
+      position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -119,6 +129,12 @@
 <body>
 
 <div class="slide" data-slide-id="3FQ02">
+
+  <!-- Random background photo (path assigned per slide by generate-slides.js) -->
+  <div class="fq-bg">
+    <img src="../assets/images/FQ-images/SP20O17OX0061_layout.jpg" alt="" onerror="this.style.display='none'">
+  </div>
+  <div class="fq-scrim"></div>
 
   <div class="fq-layout">
 

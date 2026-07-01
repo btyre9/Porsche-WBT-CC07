@@ -81,13 +81,25 @@ function writePlaceholderVtt(label, text, outputPath, durationSec, audioPath) {
   const safeText = (text || label).trim();
   const totalSec = getAudioDuration(audioPath, safeText);
   const chunks   = chunkText(safeText, 10);
-  const secEach  = totalSec / chunks.length;
+
+  // Allocate each line a share of the REAL audio duration proportional to its
+  // word count, so a long line stays on screen longer than a short one — much
+  // closer to the actual speaking pace than an equal split. The exact authored
+  // text is preserved (no transcription), so spelling/branding stays correct.
+  const wordCounts = chunks.map(c => Math.max(1, c.trim().split(/\s+/).filter(Boolean).length));
+  const totalWords = wordCounts.reduce((a, b) => a + b, 0) || 1;
 
   const lines = ['WEBVTT', ''];
+  let cursor = 0;
   chunks.forEach((chunk, idx) => {
-    const start = idx * secEach;
-    const end   = Math.min((idx + 1) * secEach, totalSec) - 0.05;
-    lines.push(`${toTimestamp(start)} --> ${toTimestamp(Math.max(start + 0.5, end))}`);
+    const start = cursor;
+    // Last chunk ends exactly at the audio end to avoid rounding drift.
+    const end   = (idx === chunks.length - 1)
+      ? totalSec
+      : start + (wordCounts[idx] / totalWords) * totalSec;
+    cursor = end;
+    const dispEnd = Math.max(start + 0.4, end - 0.05);
+    lines.push(`${toTimestamp(start)} --> ${toTimestamp(dispEnd)}`);
     lines.push(chunk);
     lines.push('');
   });
