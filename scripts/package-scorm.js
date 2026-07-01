@@ -15,6 +15,14 @@ const fs      = require('fs');
 const path    = require('path');
 const { execSync } = require('child_process');
 
+// Prefer python3 (modern macOS has no bare `python`); fall back to python.
+function PICK_PY() {
+  for (const c of ['python3', 'python']) {
+    try { require('child_process').execSync(c + ' --version', { stdio: 'ignore' }); return c; } catch (e) {}
+  }
+  throw new Error('No python interpreter found (tried python3, python).');
+}
+
 // We use the built-in zlib + archiver pattern via a simple recursive zip.
 // No extra dependencies needed — uses Node.js built-in zlib.
 
@@ -54,7 +62,7 @@ print('Size: %.1f MB' % (out.stat().st_size / 1024 / 1024))
   const tmpScript = path.join(ROOT, 'output', '_zip_tmp.py');
   fs.writeFileSync(tmpScript, script, 'utf8');
   try {
-    const out = execSync('python "' + tmpScript + '"', { encoding: 'utf8' });
+    const out = execSync(PICK_PY() + ' "' + tmpScript + '"', { encoding: 'utf8' });
     console.log(out.trim());
   } finally {
     fs.unlinkSync(tmpScript);
@@ -99,6 +107,12 @@ if (!fs.existsSync(SRC)) {
   console.error('Run the compile step first (dashboard → Compile, or npm run compile).');
   process.exit(1);
 }
+
+// LMS rejects zips containing .svg files (admin-blocklisted as a security risk).
+// Inline every SVG reference as a data URI and strip the .svg files before
+// zipping. See scripts/inline-svgs.js.
+execSync('node "' + path.join(__dirname, 'inline-svgs.js') + '" "' + SRC + '"', { stdio: 'inherit' });
+console.log('');
 
 if (tryNodeZip()) {
   zipWithAdmZip();
