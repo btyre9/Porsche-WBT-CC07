@@ -116,23 +116,23 @@ Voiceover-CLICK-Hotspot4: Look at what is behind you before you hit record. Clut
 Voiceover-CLICK-Hotspot5: Shop noise is real, so speak up and slow down. Enunciate technical terms. Pause between points so the customer's brain can keep up. You know this car cold. They are seeing it for the first time.
 Item-Hotspot1-Eyebrow: Appearance
 Item-Hotspot1-Title: Look the Part
-Item-Hotspot1-Pos: 27%, 56%
+Item-Hotspot1-Pos: 28.2%, 67.1%
 Item-Hotspot1-Body: <p>Clean uniform, sharp grooming, professional posture — the same standards you would meet in person. For many customers, this video <em>is</em> the in-person.</p>
 Item-Hotspot2-Eyebrow: Lighting
 Item-Hotspot2-Title: Light on Your Face
-Item-Hotspot2-Pos: 31%, 21%
+Item-Hotspot2-Pos: 39.0%, 17.7%
 Item-Hotspot2-Body: <p>Put the light on your face, not behind you. Standing in front of a bay door at noon turns you into a silhouette. Your expression is most of what makes a video feel personal.</p>
 Item-Hotspot3-Eyebrow: Camera
 Item-Hotspot3-Title: Hold It Steady
-Item-Hotspot3-Pos: 51%, 62%
+Item-Hotspot3-Pos: 59.4%, 42.4%
 Item-Hotspot3-Body: <p>Walking around the car? Use a gimbal. Standing still? Hold the phone with both hands. Shaky footage is distracting and the message gets lost.</p>
 Item-Hotspot4-Eyebrow: Background
 Item-Hotspot4-Title: Mind the Background
-Item-Hotspot4-Pos: 80%, 32%
+Item-Hotspot4-Pos: 24.1%, 23.9%
 Item-Hotspot4-Body: <p>Check what is behind you before you record. Clutter, oily rags, another customer's car — it is all on camera. A clean, organised bay says, "This is how I treat your car."</p>
 Item-Hotspot5-Eyebrow: Audio
 Item-Hotspot5-Title: Speak Up, Slow Down
-Item-Hotspot5-Pos: 45%, 30%
+Item-Hotspot5-Pos: 38.7%, 36.9%
 Item-Hotspot5-Body: <p>Shop noise is real — speak up and slow down. Enunciate technical terms and pause between points. You know this car cold; they are seeing it for the first time.</p>
 Image-File: 1S06.webp
 Hotspot-1-X: 22
@@ -177,6 +177,7 @@ Image-File: 1S07.webp
 
 ## Slide 08 — Knowledge Check 1
 Slide-ID: 2KC01
+Image-File: 2KC01.webp
 Template-ID: knowledge-check
 Slide-Title: Knowledge Check
 Caption-Text: Let's check your understanding.
@@ -193,6 +194,9 @@ Choice-4: A statement of the total cost of all possible repairs
 
 ## Slide 09 — Knowledge Check 2
 Slide-ID: 2KC02
+Image-File: 2KC02.webp
+Image-Scale: 1.27
+Image-Position: 5.2% 53.4%
 Template-ID: knowledge-check
 Slide-Title: Knowledge Check
 Caption-Text: Let's check your understanding.
@@ -303,6 +307,9 @@ Card-Image-Desc-Permanence: A smartphone message being screenshotted and forward
 
 ## Slide 14 — Knowledge Check 3
 Slide-ID: 2KC03
+Image-File: 2KC03.webp
+Image-Scale: 1.116
+Image-Position: 0.0% 100.0%
 Template-ID: knowledge-check
 Slide-Title: Knowledge Check
 Caption-Text: Let's check your understanding.
@@ -319,6 +326,9 @@ Choice-4: Forward the question to the service advisor and let them handle it
 
 ## Slide 15 — Knowledge Check 4
 Slide-ID: 2KC04
+Image-File: 2KC04.webp
+Image-Scale: 1
+Image-Position: 100.0% 0.0%
 Template-ID: knowledge-check
 Slide-Title: Knowledge Check
 Caption-Text: Let's check your understanding.
@@ -344,6 +354,10 @@ Notes: closing chosen — standard module wrap-up before final quiz.
 Status: Draft
 Voiceover-INTRO: Digital is not a side channel anymore — it is part of every Porsche customer relationship. You now have the tools to make video updates that lift approval of recommended work. You can text professionally without crossing lines. You can write emails customers will actually read. And you know which channel fits which message. In the next module, you will keep building on that foundation. If you'd like to review any of the earlier slides before taking the final quiz, click the menu button near the top left of the screen. That opens the slide menu, where you can select any completed slide to revisit it. When you're ready, click the Final Quiz option at the bottom of that same menu to begin. You'll need to score eighty percent or higher to pass.
 Image-File: 1S12.webp
+Image-Overlay: #000000 0.07
+Image-Matte: 0
+Image-Scale: 1.258
+Image-Position: 7.5% 28.0%
 
 ## Slide 17 — Final Quiz Question 1
 Slide-ID: 3FQ01
