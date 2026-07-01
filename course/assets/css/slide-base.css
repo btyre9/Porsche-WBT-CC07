@@ -599,3 +599,22 @@ img[data-img-adjust] {
   0%   { background-position: 100% 0; }
   100% { background-position:   0% 0; }
 }
+
+/* ─── Cover-factor zoom model (img-fit.js) ────────────────────────────────── */
+/*
+ * Opt-in via class="img-fit" on a panel image. img-fit.js measures the image,
+ * sets --img-cover (the cover/contain ratio) and adds .img-fit-ready. Then:
+ *   --img-scale = 1   → contain × cover-factor = cover (identical to before)
+ *   --img-scale < 1   → reveals the whole image (letterbox), then black bars
+ *   --img-scale > 1   → zoom in past cover
+ * Before the script runs (or with JS off), the template's own cover + scale
+ * rule stays in effect — no visual change.
+ */
+img.img-fit.img-fit-ready {
+  object-fit: contain;
+  transform: scale(calc(var(--img-cover, 1) * var(--img-scale, 1)));
+  /* Anchor the zoom at the framed point (--img-pos). With object-position also
+     set to --img-pos, scale 1 is mathematically identical to object-fit: cover
+     for ANY position — so existing framing is preserved exactly. */
+  transform-origin: var(--img-pos, center);
+}

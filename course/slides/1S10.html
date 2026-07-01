@@ -13,10 +13,42 @@
     .slide {
       background: #0D0D0F;
       display: flex;
-      flex-direction: column;
-      padding: 64px 100px 56px 100px;
-      gap: 40px;
+      flex-direction: row;
       overflow: hidden;
+    }
+
+    /* ── Left image panel (3:4 portrait) ──────────────────────────────────── */
+    .image-panel {
+      width: 690px;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .image-panel img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: var(--img-pos, center top);
+      transform: scale(var(--img-scale, 1));
+      transform-origin: center;
+    }
+    .image-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, transparent 60%, #0D0D0F 100%);
+      pointer-events: none;
+    }
+
+    /* ── Right content area ────────────────────────────────────────────────── */
+    .content-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 64px 100px 56px 72px;
+      gap: 32px;
     }
 
     /* ── Header ──────────────────────────────────────────────────────────── */
@@ -64,14 +96,14 @@
       font-weight: var(--pds-font-weight-bold);
       letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.30);
+      color: var(--pds-brand-gold);   /* v4 premium accent — Porsche gold */
       margin-bottom: 14px;
       flex-shrink: 0;
     }
 
-    /* ── Items pool (left) ───────────────────────────────────────────────── */
+    /* ── Items pool (left of match zone) ────────────────────────────────── */
     .items-col {
-      width: 440px;
+      width: 380px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
@@ -87,32 +119,26 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      height: 72px;
+      height: 68px;
       padding: 0 22px;
-      background: #191921;
-      border: 1.5px solid rgba(255,255,255,0.09);
-      border-radius: 6px;
+      /* v4 frosted glass — simulated (backdrop-filter is disabled under transform-scale) */
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015)), rgba(65,65,70,0.30);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 4px 20px rgba(0,0,0,0.35);
       cursor: grab;
       user-select: none;
       transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, opacity 0.25s;
     }
     .match-item:hover {
-      border-color: rgba(23,139,255,0.50);
-      background: #1E1E28;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+      border-color: rgba(23,139,255,0.55);
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)), rgba(65,65,70,0.42);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 30px rgba(0,0,0,0.50);
     }
     .match-item:active { cursor: grabbing; }
-    .match-item.is-dragging {
-      opacity: 0.35;
-      box-shadow: none;
-    }
-    .match-item.is-placed {
-      visibility: hidden;
-      pointer-events: none;
-    }
-    .match-item.is-locked {
-      cursor: default;
-    }
+    .match-item.is-dragging { opacity: 0.35; box-shadow: none; }
+    .match-item.is-placed { visibility: hidden; pointer-events: none; }
+    .match-item.is-locked { cursor: default; }
 
     .drag-handle {
       display: flex;
@@ -141,11 +167,11 @@
     .match-divider {
       width: 1px;
       background: rgba(255,255,255,0.07);
-      margin: 32px 64px 0 64px;
+      margin: 32px 48px 0 48px;
       flex-shrink: 0;
     }
 
-    /* ── Targets column (right) ──────────────────────────────────────────── */
+    /* ── Targets column (right of match zone) ───────────────────────────── */
     .targets-col {
       flex: 1;
       min-width: 0;
@@ -163,21 +189,19 @@
       position: relative;
       display: flex;
       align-items: stretch;
-      min-height: 72px;
-      border-radius: 6px;
-      border: 1.5px dashed rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.02);
+      min-height: 68px;
+      border-radius: 12px;
+      border: 1.5px dashed rgba(255,255,255,0.16);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005)), rgba(65,65,70,0.12);
       overflow: hidden;
       transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
     }
-    /* Hover-while-dragging: white edge-glow (no error implication).
-       Mirrors .anim-edge-glow from animations.css, scoped to this state. */
     .match-target.is-over {
       --edge-glow-color: #ffffff;
       --edge-glow-speed: 2.4s;
       --edge-glow-width: 2px;
-      --edge-glow-radius: 8px;
-      --edge-glow-bg-radius: 6px;
+      --edge-glow-radius: 14px;
+      --edge-glow-bg-radius: 12px;
       --edge-glow-base: rgba(255,255,255,0.35);
       overflow: visible;
       border-color: transparent;
@@ -190,8 +214,7 @@
       border-radius: var(--edge-glow-radius);
       padding: var(--edge-glow-width);
       background: conic-gradient(from var(--edge-glow-angle, 0deg),
-          transparent 0%,
-          transparent 55%,
+          transparent 0%, transparent 55%,
           color-mix(in srgb, var(--edge-glow-color) 55%, transparent) 75%,
           var(--edge-glow-color) 88%,
           color-mix(in srgb, var(--edge-glow-color) 55%, transparent) 95%,
@@ -224,15 +247,14 @@
       border-style: solid;
     }
 
-    /* Drop slot (left side of target — where the answer chip appears) */
     .drop-slot {
-      width: 200px;
+      width: 180px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       border-right: 1px dashed rgba(255,255,255,0.10);
-      padding: 0 18px;
+      padding: 0 16px;
       transition: border-color 0.18s;
     }
     .match-target.is-correct .drop-slot {
@@ -242,9 +264,7 @@
       justify-content: flex-start;
       gap: 10px;
     }
-    .match-target.is-over .drop-slot {
-      border-right-color: rgba(255,255,255,0.22);
-    }
+    .match-target.is-over .drop-slot { border-right-color: rgba(255,255,255,0.22); }
 
     .drop-hint {
       font-size: 11px;
@@ -256,18 +276,10 @@
     .match-target.is-over .drop-hint { color: rgba(255,255,255,0.92); }
     .match-target.is-correct .drop-hint { display: none; }
 
-    .answer-chip {
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
+    .answer-chip { display: none; align-items: center; gap: 10px; }
     .match-target.is-correct .answer-chip { display: flex; }
 
-    .check-mark {
-      font-size: 15px;
-      color: #09D087;
-      flex-shrink: 0;
-    }
+    .check-mark { font-size: 15px; color: #09D087; flex-shrink: 0; }
     .answer-text {
       font-size: var(--pds-font-size-sm);
       font-weight: var(--pds-font-weight-bold);
@@ -275,10 +287,9 @@
       line-height: 1.3;
     }
 
-    /* Definition text */
     .target-definition {
       flex: 1;
-      padding: 20px 28px;
+      padding: 18px 24px;
       font-size: var(--pds-font-size-sm);
       color: rgba(255,255,255,0.68);
       line-height: 1.55;
@@ -296,7 +307,7 @@
       height: 28px;
     }
     .progress-track {
-      width: 320px;
+      width: 280px;
       height: 3px;
       background: rgba(255,255,255,0.09);
       border-radius: 2px;
@@ -310,13 +321,8 @@
       transition: width 0.4s cubic-bezier(0,0,0.2,1), background 0.3s ease;
     }
     .progress-fill.is-complete { background: #09D087; }
-    .progress-label {
-      font-size: 12px;
-      color: rgba(255,255,255,0.35);
-      letter-spacing: 0.04em;
-    }
+    .progress-label { font-size: 12px; color: rgba(255,255,255,0.35); letter-spacing: 0.04em; }
 
-    /* ── Shake animation ─────────────────────────────────────────────────── */
     @keyframes shake {
       0%   { transform: translateX(0); }
       18%  { transform: translateX(-9px); }
@@ -326,64 +332,67 @@
       100% { transform: translateX(0); }
     }
 
-    /* ── Entrance animations ─────────────────────────────────────────────── */
-    opacity: 1;
-      transform: translateY(14px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-    .anim-block.is-visible { opacity: 1; transform: none; }
-
   </style>
 </head>
 <body>
 
 <div class="slide" data-slide-id="1S10">
 
-  <header class="slide-header">
-    <div class="red-accent anim-block" id="el-accent"></div>
-    <h1 class="slide-title anim-block" id="el-title">Match the Channel to the Message</h1>
-    <p class="slide-instruction anim-block" id="el-instruction">Drag each scenario to the channel that fits it best.</p>
-  </header>
-
-  <div class="match-zone is-locked" id="match-zone">
-    <div class="items-col">
-      <p class="col-label">{{MATCH_COL_LEFT}}</p>
-      <div class="items-pool" id="items-pool" role="list" aria-label="Terms to match"></div>
-    </div>
-    <div class="match-divider" aria-hidden="true"></div>
-    <div class="targets-col">
-      <p class="col-label">{{MATCH_COL_RIGHT}}</p>
-      <div class="targets-list" id="targets-list" role="list" aria-label="Drop targets"></div>
-    </div>
+  <!-- Left: portrait image panel -->
+  <div class="image-panel">
+    <img class="img-fit" data-img-adjust src="../assets/images/placeholders/911-GT3-S-C.jpg" alt="" style="--img-pos:center top;--img-scale:1;" onerror="this.style.display='none'">
+    <div class="image-scrim"></div>
   </div>
 
-  <div class="match-footer">
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-fill"></div>
+  <!-- Right: content + drag interaction -->
+  <div class="content-area">
+
+    <header class="slide-header">
+      <div class="red-accent anim-block" id="el-accent"></div>
+      <h1 class="slide-title anim-block" id="el-title">Match the Channel to the Message</h1>
+      <p class="slide-instruction anim-block" id="el-instruction">Drag each scenario to the channel that fits it best.</p>
+    </header>
+
+    <div class="match-zone is-locked" id="match-zone">
+      <div class="items-col">
+        <p class="col-label">Scenario</p>
+        <div class="items-pool" id="items-pool" role="list" aria-label="Terms to match"></div>
+      </div>
+      <div class="match-divider" aria-hidden="true"></div>
+      <div class="targets-col">
+        <p class="col-label">Best channel</p>
+        <div class="targets-list" id="targets-list" role="list" aria-label="Drop targets"></div>
+      </div>
     </div>
-    <span class="progress-label" id="progress-label">0 of {{TOTAL_PAIRS}} matched</span>
+
+    <div class="match-footer">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <span class="progress-label" id="progress-label">0 of 5 matched</span>
+    </div>
+
   </div>
 
 </div>
 
 <script>
-var MATCH_DATA = {{MATCH_DATA_JSON}};
-var TOTAL_PAIRS = {{TOTAL_PAIRS}};
+var MATCH_DATA = [{"id":"m1","item":"Letting the customer know their car is ready","target":"Text — short, factual, confirmable"},{"id":"m2","item":"Explaining a major repair with visual evidence","target":"Video — show the part and explain what you found"},{"id":"m3","item":"Sending an itemized estimate the customer needs to review","target":"Email — written record, attachments, easy to reference"},{"id":"m4","item":"Telling a customer the repair will cost more than the estimate","target":"Phone call — bad news belongs to a real voice, not a screen"},{"id":"m5","item":"First contact with a customer you have never met","target":"Phone call — never start a relationship over text"}];
+var TOTAL_PAIRS = 5;
 </script>
 
 <script src="../assets/vendor/gsap/gsap.min.js"></script>
 <script src="../assets/vendor/slide-pause.js"></script>
+<script src="../assets/vendor/img-fit.js"></script>
 <script>
 (function () {
 
-  /* ── Entrance animations ───────────────────────────────────────────────── */
   ['el-accent', 'el-title', 'el-instruction'].forEach(function (id, i) {
     var el = document.getElementById(id);
     if (!el) return;
     setTimeout(function () { el.classList.add('is-visible'); }, 80 + i * 120);
   });
 
-  /* ── Shuffle ────────────────────────────────────────────────────────────── */
   function shuffle(arr) {
     var a = arr.slice();
     for (var i = a.length - 1; i > 0; i--) {
@@ -393,7 +402,6 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     return a;
   }
 
-  /* ── Build DOM ──────────────────────────────────────────────────────────── */
   var pool    = document.getElementById('items-pool');
   var tgtList = document.getElementById('targets-list');
 
@@ -431,7 +439,6 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     tgtList.appendChild(el);
   });
 
-  /* ── State ──────────────────────────────────────────────────────────────── */
   var matchedCount = 0;
   var dragId = null;
   var matchLocked = true;
@@ -440,7 +447,7 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     var fill  = document.getElementById('progress-fill');
     var label = document.getElementById('progress-label');
     var pct   = (matchedCount / TOTAL_PAIRS) * 100;
-    if (fill)  {
+    if (fill) {
       fill.style.width = pct + '%';
       if (matchedCount === TOTAL_PAIRS) {
         fill.classList.add('is-complete');
@@ -455,14 +462,10 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     var chipText = tgt.querySelector('.answer-text');
     if (chipText && pair) chipText.textContent = pair.item;
     tgt.classList.add('is-correct');
-
     var srcItem = pool.querySelector('[data-id="' + droppedId + '"]');
     if (srcItem) srcItem.classList.add('is-placed');
-
     matchedCount++;
     updateProgress();
-
-    /* Notify player that this interaction ID has been visited */
     window.parent.postMessage({ type: 'sandbox-mark-interaction', id: droppedId }, '*');
   }
 
@@ -471,7 +474,6 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     setTimeout(function () { tgt.classList.remove('is-wrong'); }, 420);
   }
 
-  /* ── Drag & Drop ────────────────────────────────────────────────────────── */
   pool.addEventListener('dragstart', function (e) {
     if (matchLocked) { e.preventDefault(); return; }
     var item = e.target.closest('.match-item');
@@ -515,7 +517,6 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     }
   });
 
-  /* ── Keyboard support ───────────────────────────────────────────────────── */
   var selectedItemId = null;
 
   pool.addEventListener('keydown', function (e) {
@@ -526,17 +527,14 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
       e.preventDefault();
       var alreadySelected = item.classList.contains('kb-selected');
       document.querySelectorAll('.match-item.kb-selected').forEach(function (el) {
-        el.classList.remove('kb-selected');
-        el.style.outline = '';
+        el.classList.remove('kb-selected'); el.style.outline = '';
       });
       if (!alreadySelected) {
         selectedItemId = item.getAttribute('data-id');
         item.classList.add('kb-selected');
         item.style.outline = '2px solid var(--pds-accent)';
         item.style.outlineOffset = '2px';
-      } else {
-        selectedItemId = null;
-      }
+      } else { selectedItemId = null; }
     }
   });
 
@@ -549,26 +547,20 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
       e.preventDefault();
       var targetId = tgt.getAttribute('data-id');
       var srcItem  = pool.querySelector('[data-id="' + selectedItemId + '"]');
-
       if (selectedItemId === targetId) {
         handleCorrect(selectedItemId, tgt);
-      } else {
-        handleWrong(tgt);
-      }
-
+      } else { handleWrong(tgt); }
       if (srcItem) { srcItem.classList.remove('kb-selected'); srcItem.style.outline = ''; }
       selectedItemId = null;
     }
   });
 
-  /* ── INTRO lock ─────────────────────────────────────────────────────────── */
   var zone = document.getElementById('match-zone');
 
   function unlockZone() {
-    if (!zone) return;
+    if (!zone || !matchLocked) return;
     matchLocked = false;
     zone.classList.remove('is-locked');
-    /* Keep full brightness; use a subtle position-only unlock motion. */
     document.querySelectorAll('.match-item').forEach(function (el, i) {
       el.style.transform = 'translateX(-18px)';
       el.style.transition = 'transform 0.4s ease, border-color 0.2s, background 0.2s, box-shadow 0.2s';
@@ -581,14 +573,19 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     });
   }
 
+  var introMsg = false;
   window.addEventListener('message', function (e) {
-    if (!e.data) return;
-    if (e.data.type === 'player-intro-state' && !e.data.locked) unlockZone();
+    if (!e.data || e.data.type !== 'player-intro-state') return;
+    introMsg = true;
+    if (!e.data.locked) unlockZone();
   });
+
+  // Fallback: the current player never emits 'player-intro-state', so unlock
+  // shortly after load. Next stays gated via sandbox-lock-next until complete.
+  setTimeout(function () { if (!introMsg) unlockZone(); }, 300);
 
   try { if (!window.parent || !window.parent.CourseRuntime) unlockZone(); } catch (_) { unlockZone(); }
 
-  /* ── Register interaction IDs with player ───────────────────────────────── */
   window.parent.postMessage({
     type: 'sandbox-configure-interactions',
     requiredIds: MATCH_DATA.map(function (p) { return p.id; }),

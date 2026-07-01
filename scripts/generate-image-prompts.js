@@ -116,6 +116,8 @@ const TEMPLATE_FRAMING = {
   'tab-panel':           { aspect: '16:9', note: 'Large centered hero image that fills the stage behind the tab modals; one strong subject, balanced composition, reads well large. Modals open over a dimmed version, so avoid critical detail dead-center.' },
   'closing':             { aspect: '16:9', note: 'Aspirational, atmospheric full-bleed closing image. Emotive, brand-defining, space for a short sign-off line.' },
   'scenario-branch':     { aspect: '16:9', note: 'Realistic situational scene that sets up a decision. Authentic, candid, neutral.' },
+  'drag-match-left':     { aspect: '3:4',  note: 'Vertical image filling a full-height supporting rail beside the drag-and-drop columns. One clear subject with the focal point in the upper two-thirds; simple, uncluttered background; no text overlaid on the image itself.' },
+  'drag-match-right':    { aspect: '3:4',  note: 'Vertical image filling a full-height supporting rail beside the drag-and-drop columns. One clear subject with the focal point in the upper two-thirds; simple, uncluttered background; no text overlaid on the image itself.' },
 };
 const DEFAULT_FRAMING = { aspect: '16:9', note: 'Clear single subject with moderate negative space for adjacent text.' };
 

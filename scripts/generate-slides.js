@@ -105,6 +105,8 @@ const TEMPLATE_PREFERRED_RATIO = {
   'learning-objectives':            3/4,
   'step-sequence':                  4/3,
   'bar-chart-modal':                4/3,
+  'drag-match-left':                4/5,
+  'drag-match-right':               4/5,
 };
 
 const MAIN_IMAGE_TEMPLATES = new Set([
@@ -123,6 +125,8 @@ const MAIN_IMAGE_TEMPLATES = new Set([
   'bar-chart-modal',
   'tab-panel',
   'scenario-branch',
+  'drag-match-left',
+  'drag-match-right',
 ]);
 
 const IMAGE_SLOT_RATIO = {
@@ -913,6 +917,39 @@ function buildKCChoicesHtml(slide) {
 }
 
 // ---------------------------------------------------------------------------
+// Drag-match pairs (drag-match / drag-match-left / drag-match-right templates).
+// Storyboard fields:
+//   Match-Col-Left:  left column header (the draggable terms)
+//   Match-Col-Right: right column header (the drop targets / definitions)
+//   Match-1 … Match-N:  "left term | right definition"  (pipe-separated) — the
+//     canonical format. Split fields Match-N-Item / Match-N-Target are also
+//     accepted for backward compatibility.
+// Each pair gets a stable per-slide id (m1…mN) used as the drag data-id and as
+// the interaction id registered with the player (lockNextUntilComplete). A
+// correct drop requires item.id === target.id. Pairs stop at the first gap.
+// ---------------------------------------------------------------------------
+
+function buildMatchData(slide) {
+  const pairs = [];
+  for (let i = 1; i <= 12; i++) {
+    const raw = slide[`Match-${i}`];
+    let item, target;
+    if (raw) {
+      const parts = String(raw).split('|').map(s => s.trim());
+      item   = parts[0] || '';
+      target = parts.slice(1).join(' | ').trim();
+    } else {
+      item   = String(slide[`Match-${i}-Item`]   || '').trim();
+      target = String(slide[`Match-${i}-Target`] || '').trim();
+    }
+    if (!item && !target) break;   // no more pairs
+    if (!item || !target) continue; // malformed single pair — skip
+    pairs.push({ id: `m${i}`, item, target });
+  }
+  return pairs;
+}
+
+// ---------------------------------------------------------------------------
 // Stat value / label split
 // e.g. "94% Customer Satisfaction" → { value: "94%", label: "Customer Satisfaction" }
 // e.g. "Service excellence starts here" → { value: slide title, label: text }
@@ -1168,6 +1205,11 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     CORRECT_ANSWER:  String(parseInt(slide['Correct-Answer'], 10) || 1),
     REVIEW_SLIDE:    slide['Review-Slide'] || '',
     QUESTION_NUMBER: String(fqQuestionNumber(allSlides, slideId)),
+    // drag-match template (+ drag-match-left / drag-match-right image variants)
+    MATCH_COL_LEFT:  escHtml(slide['Match-Col-Left']  || 'Term'),
+    MATCH_COL_RIGHT: escHtml(slide['Match-Col-Right'] || 'Match'),
+    MATCH_DATA_JSON: /^drag-match(-left|-right)?$/.test(templateId) ? JSON.stringify(buildMatchData(slide)) : '[]',
+    TOTAL_PAIRS:     String(buildMatchData(slide).length),
     // scenario-branch template
     SETUP_TEXT:      escHtml(slide['Setup-Text'] || ''),
     CUSTOMER_LINE:   escHtml(slide['Customer-Line'] || ''),
@@ -1329,6 +1371,18 @@ async function main() {
       rendered = /<\/body>/i.test(rendered)
         ? rendered.replace(/<\/body>/i, `${inject}\n</body>`)
         : rendered + `\n${inject}\n`;
+    }
+
+    // Safeguard: no template placeholder may survive into a generated slide.
+    // A leftover {{TOKEN}} means the template gained a field the generator does
+    // not fill (exactly the drag-match regression). Fail loudly and skip the
+    // write so a broken slide never ships — the whole run exits non-zero.
+    const leftover = rendered.match(/\{\{[A-Z0-9_]+\}\}/g);
+    if (leftover) {
+      const unique = Array.from(new Set(leftover)).join(', ');
+      console.error(`  ERROR  ${slideId} — unfilled template placeholder(s): ${unique} — add these to buildTokens()`);
+      errors++;
+      continue;
     }
 
     // Write slide file

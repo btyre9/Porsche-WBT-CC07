@@ -218,27 +218,24 @@ Image-File: 1S09.webp
 
 ## Slide 12 — Match the Channel to the Message
 Slide-ID: 1S10
-Template-ID: drag-match
+Template-ID: drag-match-right
 Slide-Title: Match the Channel to the Message
 Caption-Text: The right channel is half the message. Match each scenario to the right tool.
 On-Screen-Text: Drag each scenario to the channel that fits it best.
-Image: A split-frame collage of four service scenes — a technician filming, a phone showing a text bubble, an email composition window, and a phone-to-ear handoff. Cohesive premium lighting across all four, all in a Porsche service environment.
-Notes: drag-match chosen — active recall of channel-to-scenario pairings. Five pairs covering the four channels (text, video, email, phone). Distractors live in the wrong assumption that text or email can carry any message.
+Image: A Porsche service technician at the service drive choosing how to reach a customer — phone in hand mid-decision, calm and deliberate. Premium service environment, portrait framing with the technician in the upper two-thirds.
+Notes: drag-match-right chosen — active recall of channel-to-scenario pairings with a supporting image rail. Five pairs covering the four channels (text, video, email, phone). Distractors live in the wrong assumption that text or email can carry any message.
 Status: Draft
 Voiceover-INTRO: The right channel is half the message. Bad news on text is a complaint waiting to happen. A long technical estimate by text just gets lost. Drag each scenario to the channel that fits it best.
-Match-Col-Left: Scenario
-Match-Col-Right: Best Channel
 Image-File: 1S10.webp
-Match-1-Item: Letting the customer know their car is ready
-Match-1-Target: Text — short, factual, confirmable
-Match-2-Item: Explaining a major repair with visual evidence
-Match-2-Target: Video — show the part and explain what you found
-Match-3-Item: Sending an itemized estimate the customer needs to review
-Match-3-Target: Email — written record, attachments, easy to reference
-Match-4-Item: Telling a customer the repair will cost more than the estimate
-Match-4-Target: Phone call — bad news belongs to a real voice, not a screen
-Match-5-Item: First contact with a customer you have never met
-Match-5-Target: Phone call — never start a relationship over text
+Image-Position: center top
+Image-Scale: 1
+Match-Col-Left: Scenario
+Match-Col-Right: Best channel
+Match-1: Letting the customer know their car is ready | Text — short, factual, confirmable
+Match-2: Explaining a major repair with visual evidence | Video — show the part and explain what you found
+Match-3: Sending an itemized estimate the customer needs to review | Email — written record, attachments, easy to reference
+Match-4: Telling a customer the repair will cost more than the estimate | Phone call — bad news belongs to a real voice, not a screen
+Match-5: First contact with a customer you have never met | Phone call — never start a relationship over text
 
 ## Slide 13 — Four Mistakes That Quietly Erode Trust
 Slide-ID: 1S11

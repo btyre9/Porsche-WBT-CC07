@@ -29,7 +29,7 @@
 
     /* ── Right image panel (3:4 portrait) ──────────────────────────────────── */
     .image-panel {
-      width: 450px;
+      width: 690px;
       flex-shrink: 0;
       position: relative;
       overflow: hidden;
@@ -40,7 +40,9 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center top;
+      object-position: var(--img-pos, center top);
+      transform: scale(var(--img-scale, 1));
+      transform-origin: center;
     }
     .image-scrim {
       position: absolute;
@@ -90,7 +92,7 @@
       font-weight: var(--pds-font-weight-bold);
       letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.30);
+      color: var(--pds-brand-gold);   /* v4 premium accent — Porsche gold */
       margin-bottom: 14px;
       flex-shrink: 0;
     }
@@ -109,17 +111,19 @@
       gap: 16px;
       height: 68px;
       padding: 0 22px;
-      background: #191921;
-      border: 1.5px solid rgba(255,255,255,0.09);
-      border-radius: 6px;
+      /* v4 frosted glass — simulated (backdrop-filter is disabled under transform-scale) */
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015)), rgba(65,65,70,0.30);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 4px 20px rgba(0,0,0,0.35);
       cursor: grab;
       user-select: none;
       transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, opacity 0.25s;
     }
     .match-item:hover {
-      border-color: rgba(23,139,255,0.50);
-      background: #1E1E28;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+      border-color: rgba(23,139,255,0.55);
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)), rgba(65,65,70,0.42);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 30px rgba(0,0,0,0.50);
     }
     .match-item:active { cursor: grabbing; }
     .match-item.is-dragging { opacity: 0.35; box-shadow: none; }
@@ -154,9 +158,9 @@
       display: flex;
       align-items: stretch;
       min-height: 68px;
-      border-radius: 6px;
-      border: 1.5px dashed rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      border: 1.5px dashed rgba(255,255,255,0.16);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005)), rgba(65,65,70,0.12);
       overflow: hidden;
       transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
     }
@@ -164,8 +168,8 @@
       --edge-glow-color: #ffffff;
       --edge-glow-speed: 2.4s;
       --edge-glow-width: 2px;
-      --edge-glow-radius: 8px;
-      --edge-glow-bg-radius: 6px;
+      --edge-glow-radius: 14px;
+      --edge-glow-bg-radius: 12px;
       --edge-glow-base: rgba(255,255,255,0.35);
       overflow: visible;
       border-color: transparent;
@@ -300,7 +304,7 @@
 
   <!-- Right: portrait image panel -->
   <div class="image-panel">
-    <img src="{{IMAGE_PATH}}" alt="" onerror="this.style.display='none'">
+    <img class="img-fit" data-img-adjust src="{{IMAGE_PATH}}" alt="" style="--img-pos:{{IMG_POS}};--img-scale:{{IMG_SCALE}};" onerror="this.style.display='none'">
     <div class="image-scrim"></div>
   </div>
 
@@ -313,6 +317,7 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
 
 <script src="../assets/vendor/gsap/gsap.min.js"></script>
 <script src="../assets/vendor/slide-pause.js"></script>
+<script src="../assets/vendor/img-fit.js"></script>
 <script>
 (function () {
 
@@ -487,7 +492,7 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
   var zone = document.getElementById('match-zone');
 
   function unlockZone() {
-    if (!zone) return;
+    if (!zone || !matchLocked) return;
     matchLocked = false;
     zone.classList.remove('is-locked');
     document.querySelectorAll('.match-item').forEach(function (el, i) {
@@ -502,10 +507,16 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     });
   }
 
+  var introMsg = false;
   window.addEventListener('message', function (e) {
-    if (!e.data) return;
-    if (e.data.type === 'player-intro-state' && !e.data.locked) unlockZone();
+    if (!e.data || e.data.type !== 'player-intro-state') return;
+    introMsg = true;
+    if (!e.data.locked) unlockZone();
   });
+
+  // Fallback: the current player never emits 'player-intro-state', so unlock
+  // shortly after load. Next stays gated via sandbox-lock-next until complete.
+  setTimeout(function () { if (!introMsg) unlockZone(); }, 300);
 
   try { if (!window.parent || !window.parent.CourseRuntime) unlockZone(); } catch (_) { unlockZone(); }
 
