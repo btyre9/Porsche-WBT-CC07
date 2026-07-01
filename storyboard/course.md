@@ -309,10 +309,10 @@ Template-ID: closing
 Slide-Title: Module 7 Complete
 Caption-Text: Digital is now part of every Porsche customer relationship — and you own it.
 On-Screen-Text: You can now build trust through every digital channel — video, text, email — with the same brand standard you bring to the bay.
-Image: A Porsche technician closing a customer's signed estimate on a tablet, smiling, with a 911 on the lift behind him. Warm lighting, end-of-day mood, sense of a completed handoff.
+Image: A Porsche technician closing a customer's signed estimate on a tablet, smiling, with a dark Agate Grey Metallic 2022 Porsche 718 Cayman (982 generation) parked behind him — seen from a rear three-quarter angle so its correct rear PORSCHE wordmark and 718 Cayman model script read clearly, riding on silver five-spoke wheels. Warm lighting, end-of-day mood, sense of a completed handoff.
 Notes: closing chosen — standard module wrap-up before final quiz.
 Status: Draft
-Voiceover-INTRO: Digital is not a side channel anymore — it is part of every Porsche customer relationship. You now have the tools to make video updates that lift approval of recommended work. You can text professionally without crossing lines. You can write emails customers will actually read. And you know which channel fits which message. In the next module, you will keep building on that foundation. When you're ready, click the next button to start the Quiz. You will need to score 80% or more to pass.
+Voiceover-INTRO: Digital is not a side channel anymore — it is part of every Porsche customer relationship. You now have the tools to make video updates that lift approval of recommended work. You can text professionally without crossing lines. You can write emails customers will actually read. And you know which channel fits which message. In the next module, you will keep building on that foundation. If you'd like to review any of the earlier slides before taking the final quiz, click the menu button near the top left of the screen. That opens the slide menu, where you can select any completed slide to revisit it. When you're ready, click the Final Quiz option at the bottom of that same menu to begin. You'll need to score eighty percent or higher to pass.
 Image-File: 1S12.webp
 
 ## Slide 17 — Final Quiz Question 1
