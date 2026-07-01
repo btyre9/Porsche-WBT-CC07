@@ -1901,7 +1901,7 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
     let active = false;
     let markers = [];   // [{ el, label, popover, x, y }]
     let overlay = null;
-    let dragging = false, dragIdx = -1, startClientX = 0, startClientY = 0, startX = 0, startY = 0;
+    let dragging = false, dragIdx = -1, grabOffX = 0, grabOffY = 0;
 
     function parseVar(el, name) {
       const m = String(el.style.getPropertyValue(name) || '').match(/(-?\d+(?:\.\d+)?)/);
@@ -1955,32 +1955,49 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
     }
     function dropOverlay() { if (overlay) { overlay.remove(); overlay = null; } }
 
+    // Map a parent-window mouse event into hotspot-stage percentage coords —
+    // the same space as each marker's --hs-x/--hs-y. Handles the slide's internal
+    // transform:scale (via getBoundingClientRect) AND any iframe display scaling
+    // (via the internal-vs-displayed size ratio). Returns null if unavailable.
+    function evToStagePct(e) {
+      let doc; try { doc = previewIframe.contentDocument; } catch (_) { return null; }
+      const stage = doc && doc.getElementById('hotspot-stage');
+      const win = previewIframe.contentWindow;
+      if (!stage || !win) return null;
+      const ir = previewIframe.getBoundingClientRect();
+      if (!ir.width || !ir.height) return null;
+      const internalX = (e.clientX - ir.left) * (win.innerWidth  / ir.width);
+      const internalY = (e.clientY - ir.top)  * (win.innerHeight / ir.height);
+      const sr = stage.getBoundingClientRect(); // iframe-internal coords
+      if (!sr.width || !sr.height) return null;
+      return { x: ((internalX - sr.left) / sr.width) * 100, y: ((internalY - sr.top) / sr.height) * 100 };
+    }
+
     function onDown(e) {
       e.preventDefault();
-      const r = previewIframe.getBoundingClientRect();
-      const x = ((e.clientX - r.left) / r.width) * 100;
-      const y = ((e.clientY - r.top) / r.height) * 100;
-      // Grab the nearest marker within ~7% of the click point.
+      const p = evToStagePct(e);
+      if (!p) return;
+      // Grab the nearest marker within ~9% of the click (stage-relative).
       let best = -1, bestD = Infinity;
       markers.forEach((m, i) => {
-        const d = Math.hypot(m.x - x, m.y - y);
+        const d = Math.hypot(m.x - p.x, m.y - p.y);
         if (d < bestD) { bestD = d; best = i; }
       });
-      if (best < 0 || bestD > 7) { dragIdx = -1; return; }
+      if (best < 0 || bestD > 9) { dragIdx = -1; return; }
       dragIdx = best;
       dragging = true;
-      startClientX = e.clientX; startClientY = e.clientY;
-      startX = markers[best].x; startY = markers[best].y;
+      grabOffX = markers[best].x - p.x;   // keep the grab point under the cursor
+      grabOffY = markers[best].y - p.y;
       showOnly(best);
       if (overlay) overlay.style.cursor = 'grabbing';
     }
     function onMove(e) {
       if (!dragging || dragIdx < 0) return;
-      const r = previewIframe.getBoundingClientRect();
+      const p = evToStagePct(e);
+      if (!p) return;
       const m = markers[dragIdx];
-      // Marker follows the cursor (drag right → +x), clamped inside the stage.
-      m.x = Math.max(2, Math.min(98, startX + ((e.clientX - startClientX) / r.width) * 100));
-      m.y = Math.max(3, Math.min(97, startY + ((e.clientY - startClientY) / r.height) * 100));
+      m.x = Math.max(2, Math.min(98, p.x + grabOffX));
+      m.y = Math.max(3, Math.min(97, p.y + grabOffY));
       applyLive(m);
     }
     function onUp() { if (dragging) { dragging = false; if (overlay) overlay.style.cursor = 'grab'; } }
