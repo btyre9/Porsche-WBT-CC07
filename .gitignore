@@ -4,3 +4,7 @@ node_modules/
 *.zip
 .DS_Store
 **/.DS_Store
+
+# macOS junk
+._*
+.DS_Store
