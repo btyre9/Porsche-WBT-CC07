@@ -9,20 +9,39 @@
   <link rel="stylesheet" href="../assets/css/animations.css">
   <script>(function(){function s(){document.documentElement.style.setProperty('--scale',Math.min(window.innerWidth/1920,window.innerHeight/920));}s();window.addEventListener('resize',s);})();</script>
   <style>
-    .split-media-panel {
-      width: 100%;
-      height: 620px;
-      overflow: hidden;
-      border-radius: var(--pds-radius-xl);
-      box-shadow: var(--pds-shadow-card);
+    /* Full-bleed media: the image runs edge-to-edge vertically (flush with the
+       player's top and bottom bars) and to the right edge of the slide. Text
+       keeps its normal breathing room on the left. */
+    .slide__split {
+      padding: 0;
+      align-items: stretch;
+      gap: 0;
     }
-    .split-media-panel img,
-    .split-media-panel video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      display: block;
+    .slide__split--text {
+      /* generous breathing room: 140px from the left edge, 80px gap before
+         the full-bleed image. NOTE: plain px values on purpose — --col-gap is
+         a percentage and calc(% * px) is invalid CSS, which silently killed
+         this entire declaration in an earlier version. */
+      padding: var(--pds-slide-pad-y) 80px var(--pds-slide-pad-y) 140px;
+      justify-content: center;
+    }
+    .slide__split--media {
+      height: 100% !important;
+      border-radius: 0;
+      align-items: stretch;
+    }
+    .slide__split--media img,
+    .slide__split--media video {
+      border-radius: 0;
+    }
+    /* soft blend so the photo doesn't hard-cut against the text column */
+    .slide__split--media::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(13,13,15,0.55) 0%, rgba(13,13,15,0) 22%);
+      pointer-events: none;
+      z-index: 1;
     }
   </style>
 </head>
@@ -41,7 +60,7 @@
     </div>
 
     <!-- Right: image/video -->
-    <div class="slide__split--media anim-fade-left" style="--anim-delay: 0.25s; height: 620px;">
+    <div class="slide__split--media anim-fade-left" style="--anim-delay: 0.25s;">
       <img data-img-adjust src="{{IMAGE_PATH}}" alt="" style="--img-pos:{{IMG_POS}};--img-scale:{{IMG_SCALE}};" onerror="this.style.display='none'">
     </div>
 

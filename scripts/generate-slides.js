@@ -91,6 +91,7 @@ function loadImageCatalog(imagesDir) {
 //   3:4  ≈ 0.75  portrait rail
 const TEMPLATE_PREFERRED_RATIO = {
   'hero-title':                     16/9,
+  'step-sequence-image':            3/4,
   'hotspot':                        16/9,
   'video-scenario':                 16/9,
   'content-stat':                   16/9,
@@ -122,6 +123,7 @@ const MAIN_IMAGE_TEMPLATES = new Set([
   'learning-objectives',
   'knowledge-check',
   'step-sequence',
+  'step-sequence-image',
   'bar-chart-modal',
   'tab-panel',
   'scenario-branch',
@@ -333,11 +335,13 @@ function buildLearningObjectivesHtml(slide, slideId) {
   return items.map(({ n, text }) => {
     const id  = objectiveElementId(slideId, n);
     const num = String(n).padStart(2, '0');
+    // Text lives in data-text (typed in character-by-character by the template's
+    // typewriter tick); .obj-body starts empty and .kt-caret trails until done.
     return (
-      `        <div class="anim-scale-up" id="${id}"\n` +
+      `        <div class="obj-row" id="${id}" data-text="${escAttr(text)}"\n` +
       `          style="display: flex; align-items: flex-start; gap: 20px; color: white;">\n` +
-      `          <span style="flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #D5001C; font-size: 18px; font-weight: 700; color: #D5001C;">${num}</span>\n` +
-      `          <span style="font-size: 22px; line-height: 32px; font-weight: 400;">${escHtml(text)}</span>\n` +
+      `          <span class="obj-num" style="flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #D5001C; font-size: 18px; font-weight: 700; color: #D5001C;">${num}</span>\n` +
+      `          <span class="obj-type" style="font-size: 22px; line-height: 32px; font-weight: 400;"><span class="obj-body"></span><span class="kt-caret is-hidden" aria-hidden="true"></span></span>\n` +
       `        </div>`
     );
   }).join('\n');
@@ -967,9 +971,27 @@ function splitStat(onScreenText, slideTitle) {
 // closure yielding the next filename from a freshly shuffled pool (no adjacent
 // repeats); '' when the folder is empty/missing.
 function makeFqBgPicker(fqImagesDir) {
-  const files = fs.existsSync(fqImagesDir)
-    ? fs.readdirSync(fqImagesDir).filter(f => /\.(jpe?g|png|webp)$/i.test(f))
+  const isImg = f => /\.(jpe?g|png|webp)$/i.test(f);
+  let files = fs.existsSync(fqImagesDir)
+    ? fs.readdirSync(fqImagesDir).filter(isImg)
     : [];
+  // New-setup fallback: a freshly scaffolded module has an empty FQ-images
+  // folder. Seed it from the canonical shared pool in <projects>/image-repo/
+  // FQ-images so every module's final quiz gets its random backgrounds and
+  // the files ship inside the SCORM package.
+  if (!files.length) {
+    const sharedPool = path.resolve(fqImagesDir, '..', '..', '..', '..', '..', 'image-repo', 'FQ-images');
+    if (fs.existsSync(sharedPool)) {
+      try {
+        fs.mkdirSync(fqImagesDir, { recursive: true });
+        for (const f of fs.readdirSync(sharedPool).filter(isImg)) {
+          fs.copyFileSync(path.join(sharedPool, f), path.join(fqImagesDir, f));
+        }
+        files = fs.readdirSync(fqImagesDir).filter(isImg);
+        console.log(`  auto-image  FQ-images seeded from shared pool (${files.length} photos)`);
+      } catch (e) { /* fall through — picker degrades to no background */ }
+    }
+  }
   let pool = [];
   let last = null;
   return function next() {
@@ -1203,8 +1225,8 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     TILE_INIT_SCRIPT:  templateId === 'tile-explore' ? buildTileInitScript(clicks) : '',
     // step-sequence: small eyebrow label + dynamic step cards + nav dots
     EYEBROW:        escHtml(slide['Eyebrow'] || ''),
-    STEPS_HTML:        templateId === 'step-sequence' ? buildStepsHtml(slide, slideId) : '',
-    STEP_NAV_HTML:     templateId === 'step-sequence' ? buildStepNavHtml(slide) : '',
+    STEPS_HTML:        (templateId === 'step-sequence' || templateId === 'step-sequence-image') ? buildStepsHtml(slide, slideId) : '',
+    STEP_NAV_HTML:     (templateId === 'step-sequence' || templateId === 'step-sequence-image') ? buildStepNavHtml(slide) : '',
     TOTAL_STEPS:       (function(){ var n=0; for(var i=1;i<=15;i++){ if(!slide['Step-Title-'+i]) break; n++; } return String(n); }()),
     // video-scenario: clip sources, dual-clip flag, summary VO, pause-quiz JSON
     VIDEO_FILE_A:        slide['Video-File-A'] ? `../assets/video/${slide['Video-File-A']}` : '',

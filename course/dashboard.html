@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Porsche WBT — AI Creator Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/pds-tokens.css">
   <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
@@ -40,6 +42,10 @@
       <span class="badge status-badge online" id="status-badge">Pipeline Ready</span>
       <button class="toolbar-btn icon-only" id="btn-theme-toggle" title="Toggle light / dark theme" aria-label="Toggle theme">
         <i class="pi pi-moon theme-icon"></i>
+      </button>
+      <button class="toolbar-btn" id="btn-git-push" title="Commit all changes in this module and push to its GitHub remote. Shows what will be pushed first.">
+        <i class="pi pi-upload toolbar-btn-icon"></i>
+        <span class="toolbar-btn-label">Push to GitHub</span>
       </button>
       <button class="toolbar-btn danger" id="btn-stop-server" title="Stop the local dashboard server process">
         <i class="pi pi-stop toolbar-btn-icon"></i>
@@ -132,7 +138,10 @@
           </div>
         </div>
 
-        <textarea class="storyboard-textarea" id="storyboard-editor" spellcheck="false" placeholder="# Course: Explaining Technical Issues…"></textarea>
+        <div class="sb-editor-wrap">
+          <div class="sb-backdrop" aria-hidden="true"><div class="sb-backdrop-inner" id="sb-backdrop-inner"></div></div>
+          <textarea class="storyboard-textarea" id="storyboard-editor" spellcheck="false" placeholder="# Course: Explaining Technical Issues…"></textarea>
+        </div>
 
         <div class="prompt-copier-container">
           <label for="ai-scope-prompt" class="prompt-scope-label">AI Direction &amp; Module Target Scope</label>
@@ -171,6 +180,11 @@
           </button>
           <button class="pipeline-btn" id="btn-pipeline-package">
             <i class="pi pi-save pipeline-icon"></i>
+            <span class="pipeline-label">Package SCORM</span>
+            <span class="pipeline-sub">LMS zip deliverable</span>
+          </button>
+          <button class="pipeline-btn" id="btn-pipeline-audit">
+            <i class="pi pi-edit"></i>
             <span class="pipeline-label">Package SCORM</span>
             <span class="pipeline-sub">LMS zip deliverable</span>
           </button>

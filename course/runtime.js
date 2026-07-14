@@ -132,6 +132,25 @@
       return loc || "";
     },
 
+    // Learner's display name from the LMS. SCORM 1.2 exposes it as
+    // cmi.core.student_name (usually "Last, First"); SCORM 2004 as
+    // cmi.learner_name (usually "First Last"). Returns "First Last" or "".
+    getLearnerName: function () {
+      var raw = this.version === "2004"
+        ? this.getValue("cmi.learner_name")
+        : this.getValue("cmi.core.student_name");
+      raw = (raw || "").trim();
+      if (!raw) return "";
+      // Reformat "Last, First [Middle]" → "First [Middle] Last".
+      var comma = raw.indexOf(",");
+      if (comma !== -1) {
+        var last = raw.slice(0, comma).trim();
+        var first = raw.slice(comma + 1).trim();
+        if (first && last) return first + " " + last;
+      }
+      return raw;
+    },
+
     setLocation: function (slideId) {
       if (!this.api) return;
       if (this.version === "2004") this.setValue("cmi.location", slideId);
@@ -2377,7 +2396,9 @@
         var answered = state.finalAnswered;
         var total    = state.finalTotal > 0 ? state.finalTotal : (answered > 0 ? answered : 10);
         return { correct: state.finalCorrect, answered: answered, total: total };
-      }
+      },
+
+      getLearnerName: function () { return scorm.getLearnerName(); }
     };
 
     // Dev mode setup

@@ -97,6 +97,68 @@
     .score-panel { display: none; }
     .score-layout.is-pass .score-panel--pass { display: contents; }
     .score-layout.is-fail .score-panel--fail { display: contents; }
+
+    /* ── Completion certificate (shown after a pass) ───────────────────────── */
+    .cert-stage {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 32px;
+      background: rgba(8, 8, 10, 0.92);
+    }
+    .cert-stage[hidden] { display: none; }
+    .cert-toolbar { display: flex; gap: 16px; }
+    .certificate {
+      position: relative;
+      height: 840px;                 /* design px — scales with the slide */
+      aspect-ratio: 692 / 983;
+      container-type: inline-size;   /* lets overlay text size to the cert width */
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    }
+    .certificate > img { width: 100%; height: 100%; display: block; }
+    /* Name sits on the blank line; date sits below the course title. Tune these
+       top:% / font cqw values if the certificate art ever changes. */
+    .cert-name {
+      position: absolute;
+      left: 0; right: 0; top: 36.5%;
+      transform: translateY(-100%);
+      text-align: center;
+      font-family: var(--pds-font-family);
+      font-weight: var(--pds-font-weight-semibold);
+      font-size: 4cqw;
+      color: #1d1d1f;
+    }
+    /* Date sits centered on the gold seal in the lower-right of the certificate. */
+    .cert-date {
+      position: absolute;
+      left: 80.8%; top: 74%;
+      transform: translate(-50%, -50%);
+      width: 20%;
+      text-align: center;
+      font-family: var(--pds-font-family);
+      font-weight: var(--pds-font-weight-semibold);
+      font-size: 1.9cqw;
+      line-height: 1.2;
+      color: #5a4a1c;
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #cert-stage, #cert-stage * { visibility: visible; }
+      #cert-stage {
+        position: fixed; inset: 0;
+        background: #fff; padding: 0;
+        display: flex !important;
+      }
+      .cert-toolbar { display: none !important; }
+      .certificate { height: auto; width: 100%; max-width: 740px; box-shadow: none; }
+      @page { size: portrait; margin: 12mm; }
+    }
 </style>
 </head>
 <body>
@@ -113,7 +175,7 @@
       <div class="score-detail" id="score-detail">Loading results…</div>
 
       <!-- PASS panel -->
-      <div class="score-panel score-panel--pass" style="display:contents;">
+      <div class="score-panel score-panel--pass">
         <p class="score-message" id="pass-message">
           Congratulations! You have passed this module.
         </p>
@@ -124,14 +186,14 @@
           <button class="score-btn score-btn--ghost" id="review-btn-pass" type="button">
             ↩ Review Module
           </button>
-          <button class="score-btn score-btn--primary" onclick="window.print()">
+          <button class="score-btn score-btn--primary" id="go-cert" type="button">
             ↓ Go to Certificate
           </button>
         </div>
       </div>
 
       <!-- FAIL panel -->
-      <div class="score-panel score-panel--fail" style="display:contents;">
+      <div class="score-panel score-panel--fail">
         <p class="score-message" id="fail-message">
           Practice makes perfect! Review the module and try the Final Quiz again when you're ready.
         </p>
@@ -147,6 +209,19 @@
 
     </div>
 
+  </div>
+
+  <!-- Completion certificate — revealed when the learner clicks "Go to Certificate" -->
+  <div class="cert-stage" id="cert-stage" hidden>
+    <div class="cert-toolbar">
+      <button class="score-btn score-btn--ghost" id="cert-back" type="button">← Back to Results</button>
+      <button class="score-btn score-btn--primary" id="cert-print" type="button">↓ Print / Save as PDF</button>
+    </div>
+    <div class="certificate" id="certificate">
+      <img src="../assets/images/certificate-template.jpg" alt="Porsche Web-Based Training Certificate">
+      <div class="cert-name" id="cert-name">Porsche Technician</div>
+      <div class="cert-date" id="cert-date"></div>
+    </div>
   </div>
 
 </div>
@@ -277,6 +352,33 @@ var SandboxRuntime = (function () {
   if (reviewBtnPass) reviewBtnPass.addEventListener('click', onReviewModule);
   var reviewBtnFail = document.getElementById('review-btn-fail');
   if (reviewBtnFail) reviewBtnFail.addEventListener('click', onReviewModule);
+
+  // ── Completion certificate ────────────────────────────────────────────────
+  // Pull the learner's name from the LMS via SCORM (CourseRuntime.getLearnerName).
+  // Falls back to a generic label for local preview or if the LMS supplies none.
+  var TECH_NAME = 'Porsche Technician';
+  try {
+    var CRname = window.parent && window.parent.CourseRuntime;
+    if (CRname && CRname.getLearnerName) {
+      var lmsName = CRname.getLearnerName();
+      if (lmsName) TECH_NAME = lmsName;
+    }
+  } catch (_) {}
+  var certStage  = document.getElementById('cert-stage');
+  var certNameEl = document.getElementById('cert-name');
+  var certDateEl = document.getElementById('cert-date');
+  if (certNameEl) certNameEl.textContent = TECH_NAME;
+  if (certDateEl) {
+    certDateEl.textContent = new Date().toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+  var goCertBtn = document.getElementById('go-cert');
+  if (goCertBtn) goCertBtn.addEventListener('click', function () { if (certStage) certStage.hidden = false; });
+  var certBackBtn = document.getElementById('cert-back');
+  if (certBackBtn) certBackBtn.addEventListener('click', function () { if (certStage) certStage.hidden = true; });
+  var certPrintBtn = document.getElementById('cert-print');
+  if (certPrintBtn) certPrintBtn.addEventListener('click', function () { window.print(); });
 })();
 </script>
 
