@@ -1,6 +1,7 @@
 {
   "meta": {
     "id": "module-id-here",
+    "course_code": "CC07",
     "title": "Digital Communication Excellence",
     "version": "1.0.0",
     "language": "en-US",
