@@ -97,6 +97,91 @@
     .score-panel { display: none; }
     .score-layout.is-pass .score-panel--pass { display: contents; }
     .score-layout.is-fail .score-panel--fail { display: contents; }
+
+    /* ── Completion certificate (shown after a pass) ───────────────────────── */
+    .cert-stage {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 32px;
+      background: rgba(8, 8, 10, 0.92);
+    }
+    .cert-stage[hidden] { display: none; }
+    .cert-toolbar { display: flex; gap: 16px; }
+    .certificate {
+      position: relative;
+      height: 840px;                 /* design px — scales with the slide */
+      aspect-ratio: 692 / 983;
+      container-type: inline-size;   /* lets overlay text size to the cert width */
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    }
+    .certificate > img { width: 100%; height: 100%; display: block; }
+    /* Name sits on the blank line; date sits below the course title. Tune these
+       top:% / font cqw values if the certificate art ever changes. */
+    .cert-name {
+      position: absolute;
+      left: 0; right: 0; top: 36.5%;
+      transform: translateY(-100%);
+      text-align: center;
+      font-family: var(--pds-font-family);
+      font-weight: var(--pds-font-weight-semibold);
+      font-size: 4cqw;
+      color: #1d1d1f;
+    }
+    /* Date sits centered on the gold seal in the lower-right of the certificate. */
+    .cert-date {
+      position: absolute;
+      left: 80.8%; top: 74%;
+      transform: translate(-50%, -50%);
+      width: 20%;
+      text-align: center;
+      font-family: var(--pds-font-family);
+      font-weight: var(--pds-font-weight-semibold);
+      font-size: 1.9cqw;
+      line-height: 1.2;
+      color: #5a4a1c;
+    }
+    /* Course title + module code (+ PALMS course number when present), centered
+       in the open space below the printed "Porsche Training Course" line.
+       Tune top:% / font cqw if the certificate art changes. */
+    .cert-course {
+      position: absolute;
+      left: 8%; right: 8%; top: 45%;
+      text-align: center;
+      font-family: var(--pds-font-family);
+      color: #1d1d1f;
+    }
+    .cert-course .cert-title {
+      font-weight: var(--pds-font-weight-semibold);
+      font-size: 2.6cqw;
+      line-height: 1.25;
+    }
+    .cert-course .cert-code,
+    .cert-course .cert-palms {
+      margin-top: 0.5em;
+      font-size: 1.55cqw;
+      letter-spacing: 0.04em;
+      color: #6b6b70;
+    }
+    .cert-course .cert-palms { margin-top: 0.15em; }
+    @media print {
+      body * { visibility: hidden; }
+      #cert-stage, #cert-stage * { visibility: visible; }
+      #cert-stage {
+        position: fixed; inset: 0;
+        background: #fff; padding: 0;
+        display: flex !important;
+      }
+      .cert-toolbar { display: none !important; }
+      .certificate { height: auto; width: 100%; max-width: 740px; box-shadow: none; }
+      @page { size: portrait; margin: 12mm; }
+    }
 </style>
 </head>
 <body>
@@ -124,7 +209,7 @@
           <button class="score-btn score-btn--ghost" id="review-btn-pass" type="button">
             ↩ Review Module
           </button>
-          <button class="score-btn score-btn--primary" onclick="window.print()">
+          <button class="score-btn score-btn--primary" id="go-cert" type="button">
             ↓ Go to Certificate
           </button>
         </div>
@@ -147,6 +232,24 @@
 
     </div>
 
+  </div>
+
+  <!-- Completion certificate — revealed when the learner clicks "Go to Certificate" -->
+  <div class="cert-stage" id="cert-stage" hidden>
+    <div class="cert-toolbar">
+      <button class="score-btn score-btn--ghost" id="cert-back" type="button">← Back to Results</button>
+      <button class="score-btn score-btn--primary" id="cert-print" type="button">↓ Print / Save as PDF</button>
+    </div>
+    <div class="certificate" id="certificate">
+      <img src="../assets/images/certificate-template.jpg" alt="Porsche Web-Based Training Certificate">
+      <div class="cert-name" id="cert-name">Porsche Technician</div>
+      <div class="cert-course" id="cert-course">
+        <div class="cert-title" id="cert-title"></div>
+        <div class="cert-code" id="cert-code"></div>
+        <div class="cert-palms" id="cert-palms"></div>
+      </div>
+      <div class="cert-date" id="cert-date"></div>
+    </div>
   </div>
 
 </div>
@@ -277,6 +380,69 @@ var SandboxRuntime = (function () {
   if (reviewBtnPass) reviewBtnPass.addEventListener('click', onReviewModule);
   var reviewBtnFail = document.getElementById('review-btn-fail');
   if (reviewBtnFail) reviewBtnFail.addEventListener('click', onReviewModule);
+
+  // ── Completion certificate ────────────────────────────────────────────────
+  // Pull the learner's name from the LMS via SCORM (CourseRuntime.getLearnerName).
+  // Falls back to a generic label for local preview or if the LMS supplies none.
+  var TECH_NAME = 'Porsche Technician';
+  try {
+    var CRname = window.parent && window.parent.CourseRuntime;
+    if (CRname && CRname.getLearnerName) {
+      var lmsName = CRname.getLearnerName();
+      if (lmsName) TECH_NAME = lmsName;
+    }
+  } catch (_) {}
+  var certStage  = document.getElementById('cert-stage');
+  var certNameEl = document.getElementById('cert-name');
+  var certDateEl = document.getElementById('cert-date');
+  if (certNameEl) certNameEl.textContent = TECH_NAME;
+  if (certDateEl) {
+    certDateEl.textContent = new Date().toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+  // Course title + module code + PALMS course number. Prefer the runtime getters;
+  // fall back to reading course.data.json directly so these still appear on older
+  // runtimes. Each line stays empty (hidden) until its value is available.
+  var certTitleEl = document.getElementById('cert-title');
+  var certCodeEl  = document.getElementById('cert-code');
+  var certPalmsEl = document.getElementById('cert-palms');
+  function setCourseMeta(title, code, palms) {
+    if (certTitleEl && title) certTitleEl.textContent = title;
+    if (certCodeEl  && code)  certCodeEl.textContent  = 'Course Code: ' + code;
+    if (certPalmsEl && palms) certPalmsEl.textContent = 'PALMS Course No. ' + palms;
+  }
+  function codeFromId(id) {
+    var mm = String(id || '').match(/cc(\d+)/i);
+    return mm ? ('CC' + mm[1]) : '';
+  }
+  var gotMeta = false;
+  try {
+    var CRmeta = window.parent && window.parent.CourseRuntime;
+    if (CRmeta && CRmeta.getCourseTitle) {
+      var ct = CRmeta.getCourseTitle() || '';
+      var cc = (CRmeta.getCourseCode && CRmeta.getCourseCode()) || '';
+      var cp = (CRmeta.getPalmsId && CRmeta.getPalmsId()) || '';
+      if (ct || cc || cp) { setCourseMeta(ct, cc, cp); gotMeta = true; }
+    }
+  } catch (_) {}
+  if (!gotMeta && window.fetch) {
+    fetch('../data/course.data.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var m = (d && d.meta) || {};
+        var title = (m.title && !/^\[?Module Title Here\]?$/.test(m.title)) ? m.title : '';
+        setCourseMeta(title, m.course_code || codeFromId(m.id), m.palms_id || '');
+      })
+      .catch(function () {});
+  }
+
+  var goCertBtn = document.getElementById('go-cert');
+  if (goCertBtn) goCertBtn.addEventListener('click', function () { if (certStage) certStage.hidden = false; });
+  var certBackBtn = document.getElementById('cert-back');
+  if (certBackBtn) certBackBtn.addEventListener('click', function () { if (certStage) certStage.hidden = true; });
+  var certPrintBtn = document.getElementById('cert-print');
+  if (certPrintBtn) certPrintBtn.addEventListener('click', function () { window.print(); });
 })();
 </script>
 
