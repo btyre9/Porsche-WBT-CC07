@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnVtt = document.getElementById('btn-pipeline-vtt');
   const btnCues = document.getElementById('btn-pipeline-cues');
   const btnPackage = document.getElementById('btn-pipeline-package');
+  const btnAudit = document.getElementById('btn-pipeline-audit');
   const btnScormTest = document.getElementById('btn-scorm-test');
   const btnUpdateSlide = document.getElementById('btn-update-slide');
   const btnUpdateSlideVoice = document.getElementById('btn-update-slide-voice');
@@ -67,6 +68,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const statusBadge = document.getElementById('status-badge');
   const btnStopServer = document.getElementById('btn-stop-server');
+  const btnGitPush = document.getElementById('btn-git-push');
+  if (btnGitPush) btnGitPush.addEventListener('click', async () => {
+    btnGitPush.disabled = true;
+    try {
+      const st = await (await fetch('/api/git/status')).json();
+      if (!st.repo) { appendConsole('[GIT] This module is not a git repository. Run: git init (or npm run init-repo).\n'); return; }
+      if (!st.remote) {
+        appendConsole('[GIT] No GitHub remote configured yet. One-time setup in a terminal at the module folder:\n' +
+          '      git remote add origin https://github.com/<you>/<repo>.git\n' +
+          '      (create the repo on github.com first, or use: gh repo create)\n');
+        return;
+      }
+      if (st.bigFiles && st.bigFiles.length) {
+        appendConsole('[GIT] Push blocked — files over GitHub\'s 100 MB limit:\n      ' + st.bigFiles.join('\n      ') + '\n      Add them to .gitignore or use Git LFS.\n');
+        return;
+      }
+      const n = st.changes.length;
+      const preview = st.changes.slice(0, 12).join('\n') + (n > 12 ? `\n… and ${n - 12} more` : '');
+      if (n && !confirm(`Push ${n} changed file(s) on branch "${st.branch}" to\n${st.remote}\n\n${preview}\n\nProceed?`)) return;
+      if (!n && !confirm(`No new changes — push existing commits on "${st.branch}" to ${st.remote}?`)) return;
+      const msg = n ? (prompt('Commit message:', `Update ${st.branch} via WBT dashboard`) || '') : '';
+      if (n && !msg) return;
+      const res = await fetch('/api/git/push', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg }) });
+      const reader = res.body.getReader(); const dec = new TextDecoder();
+      while (true) { const { done, value } = await reader.read(); if (done) break; appendConsole(dec.decode(value)); }
+    } catch (e) {
+      appendConsole('[GIT] ' + e.message + '\n');
+    } finally { btnGitPush.disabled = false; }
+  });
   const toastContainer = document.getElementById('toast-container');
 
   let originalStoryboardContent = '';
@@ -75,6 +105,70 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // 1. Storyboard Studio Integration
   // =========================================================================
+
+
+  // ── Storyboard mirror highlighting + auto-jump ────────────────────────────
+  const sbBackdropInner = document.getElementById('sb-backdrop-inner');
+  let __sbLastRendered = null;
+  const SB_ESC = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function sbClassify(line) {
+    if (/^##\s+Slide\b/.test(line)) return 'sb-head';
+    if (/^(Slide-ID|Template-ID|Status):/.test(line)) return 'sb-id';
+    if (/^Voiceover-/.test(line)) return 'sb-vo';
+    if (/^(VO-Cue|Anim|Pause-|Cue-)/.test(line)) return 'sb-cue';
+    if (/^(Image|Video|Poster)[\w-]*:/.test(line) || /^[\w-]*(Image|-File|Poster)[\w-]*:/.test(line)) return 'sb-img';
+    return '';
+  }
+  function renderSbBackdrop(force) {
+    if (!sbBackdropInner) return;
+    const src = storyboardEditor.value;
+    if (!force && src === __sbLastRendered) return;
+    __sbLastRendered = src;
+    const out = [];
+    for (const line of src.split('\n')) {
+      const cls = sbClassify(line);
+      let html = SB_ESC(line);
+      const m = line.match(/^([A-Za-z][\w-]*):(.*)$/);
+      if (m && cls !== 'sb-head') html = '<span class="sb-key">' + SB_ESC(m[1] + ':') + '</span>' + SB_ESC(m[2]);
+      out.push('<div class="sb-line' + (cls ? ' ' + cls : '') + '">' + (html || '​') + '</div>');
+    }
+    sbBackdropInner.innerHTML = out.join('');
+    sbSyncScroll();
+  }
+  function sbSyncScroll() {
+    if (!sbBackdropInner) return;
+    // match the textarea's inner text column exactly (scrollbar eats width,
+    // so right/left wrap points would otherwise drift)
+    const w = storyboardEditor.clientWidth;
+    if (w && sbBackdropInner.__w !== w) { sbBackdropInner.__w = w; sbBackdropInner.style.width = w + 'px'; }
+    sbBackdropInner.style.transform = 'translate(' + (-storyboardEditor.scrollLeft) + 'px,' + (-storyboardEditor.scrollTop) + 'px)';
+  }
+  if (sbBackdropInner) {
+    storyboardEditor.addEventListener('scroll', sbSyncScroll);
+    storyboardEditor.addEventListener('input', () => renderSbBackdrop());
+    // Catch programmatic value changes (loads, merges, Set Image, markers...)
+    setInterval(() => renderSbBackdrop(), 700);
+    if (window.ResizeObserver) new ResizeObserver(() => sbSyncScroll()).observe(storyboardEditor);
+    renderSbBackdrop(true);
+  }
+  // Scroll the storyboard editor to a slide's block and flash its heading.
+  function jumpToSlideInStoryboard(slideId) {
+    if (!sbBackdropInner || !slideId) return;
+    renderSbBackdrop();
+    const lines = storyboardEditor.value.split('\n');
+    let idLine = lines.findIndex(l => new RegExp('^Slide-ID:\\s*' + slideId + '\\s*$').test(l));
+    if (idLine === -1) return;
+    // prefer the "## Slide" heading just above the Slide-ID line
+    let target = idLine;
+    for (let i = idLine; i >= Math.max(0, idLine - 3); i--) {
+      if (/^##\s+Slide\b/.test(lines[i])) { target = i; break; }
+    }
+    const el = sbBackdropInner.children[target];
+    if (!el) return;
+    storyboardEditor.scrollTop = Math.max(0, el.offsetTop - 10);
+    sbSyncScroll();
+    el.classList.remove('sb-flash'); void el.offsetWidth; el.classList.add('sb-flash');
+  }
 
   async function loadStoryboard() {
     try {
@@ -153,19 +247,45 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('focus', reloadStoryboardIfClean);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) reloadStoryboardIfClean(); });
 
+
+  // Adopt the server's post-merge text: if the save was merged with concurrent
+  // disk changes, update the editor and report any per-field conflicts.
+  function adoptSaveResult(data, fallbackText) {
+    const finalText = (typeof data.content === 'string') ? data.content : fallbackText;
+    if (data.merged) {
+      storyboardEditor.value = finalText;
+      appendConsole('>>> Save merged with concurrent changes on disk (nothing overwritten).\n');
+      for (const c of data.conflicts || []) appendConsole('    [MERGE] ' + c + '\n');
+      if ((data.conflicts || []).length) showToast('Save merged — see console for details', 'info');
+    }
+    originalStoryboardContent = finalText;
+    unsavedIndicator.classList.remove('active');
+    return finalText;
+  }
+
+
+  // Warn loudly when an image was saved to a slide whose template can't show it
+  function warnIfTemplateIgnoresImage(data) {
+    if (data && data.templateWarning) {
+      appendConsole('[IMAGE WARNING] ' + data.templateWarning + '\n');
+      showToast(data.templateWarning, 'error');
+    }
+    return data;
+  }
+
   async function saveStoryboard() {
-    if (!(await prepareEditorBase())) return;
+    // Note: no prepare/overwrite prompt needed — the server three-way merges
+    // concurrent disk changes on save, so nothing can be clobbered.
     try {
       const content = storyboardEditor.value;
       const res = await fetch('/api/storyboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content, base: originalStoryboardContent })
       });
       const data = await res.json();
       if (data.success) {
-        originalStoryboardContent = content;
-        unsavedIndicator.classList.remove('active');
+        adoptSaveResult(data, content);
         appendConsole('>>> Storyboard successfully saved to storyboard/course.md\n');
         
         // Auto-compile if enabled. Reload the preview afterward so baked-in
@@ -463,14 +583,28 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnVtt) btnVtt.addEventListener('click', () => triggerPipeline('/api/generate-vtt', btnVtt));
   if (btnCues) btnCues.addEventListener('click', () => triggerPipeline('/api/extract-vo-cues', btnCues));
   btnPackage.addEventListener('click', () => triggerPipeline('/api/package', btnPackage));
+  if (btnAudit) btnAudit.addEventListener('click', () => triggerPipeline('/api/audit', btnAudit));
   if (btnScormTest) btnScormTest.addEventListener('click', () => window.open('/scorm-test', 'scorm-harness'));
 
   // Single-slide updates — scoped to the slide selected in the preview drawer.
+  /* The slide-scoped pipeline buttons are unavailable until a slide is chosen.
+     They are marked aria-disabled rather than disabled on purpose: a natively
+     disabled button swallows the click with no event at all, which reads to the
+     user as "the button is broken". Left clickable, the guard in
+     updateSelectedSlide() can explain why nothing happened. */
+  function setSlideActionsAvailable(available) {
+    [btnUpdateSlide, btnUpdateSlideVoice].forEach(function (btn) {
+      if (!btn) return;
+      btn.disabled = false;
+      btn.setAttribute('aria-disabled', available ? 'false' : 'true');
+    });
+  }
+
   function updateSelectedSlide(withVoice, buttonEl) {
     const slideId = slideSelector.value;
     if (!slideId) {
-      appendConsole('[UPDATE] Select a slide in the preview first.\n');
-      showToast('Select a slide to update first.', 'error');
+      appendConsole('[UPDATE] No slide selected — pick one in the preview dropdown first.\n');
+      showToast('Select a slide in the preview first, then click again.', 'error');
       return;
     }
     appendConsole(`>>> Updating ${slideId}${withVoice ? ' (with voice regeneration)' : ' (layout only)'}...\n`);
@@ -591,16 +725,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!slideId) {
       previewIframe.src = 'about:blank';
       stopSlideIntroAudio();
-      if (btnUpdateSlide) btnUpdateSlide.disabled = true;
-      if (btnUpdateSlideVoice) btnUpdateSlideVoice.disabled = true;
+      setSlideActionsAvailable(false);
       if (btnSetImage) btnSetImage.disabled = true;
       return;
     }
 
     btnPreviewMode.disabled = false;
     btnPreviewEdit.disabled = false;
-    if (btnUpdateSlide) btnUpdateSlide.disabled = false;
-    if (btnUpdateSlideVoice) btnUpdateSlideVoice.disabled = false;
+    setSlideActionsAvailable(true);
     // Image assets exist only for content slides — quiz/score slides have none.
     if (btnSetImage) btnSetImage.disabled = !slideSupportsImage(slideId);
     
@@ -906,6 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) throw new Error(data.error || `Server returned ${res.status}`);
+      warnIfTemplateIgnoresImage(data);
 
       appendConsole(`[IMAGE SUCCESS] Saved ${data.name} (${formatBytes(webp.size)}) → ${data.field}. Recompiling slide...\n`);
       if (data.removed && data.removed.length) {
@@ -1074,6 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const slideId = slideSelector.value;
     updateIframeSrc(slideId);
     updateNavButtons();
+    jumpToSlideInStoryboard(slideId);   // storyboard follows the selected slide
   });
 
   // Preview is permanent center stage now — no show/hide toggle. The hidden
@@ -1862,12 +1996,11 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
         const res = await fetch('/api/storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: text })
+          body: JSON.stringify({ content: text, base: originalStoryboardContent })
         });
         const data = await res.json();
         if (!data.success) { appendConsole(`[ADJUST] Save failed: ${data.error}\n`); return; }
-        originalStoryboardContent = text;
-        unsavedIndicator.classList.remove('active');
+        text = adoptSaveResult(data, text);
         appendConsole(`>>> Saved ${slideId}${card ? ' · ' + card.label : ''}: ${posField} ${posVal}, ${scaleField} ${scaleVal}${fxLog}. Recompiling...\n`);
       } catch (err) { appendConsole(`[ADJUST] Save error: ${err.message}\n`); return; }
       teardown();
@@ -2051,11 +2184,11 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
         const res = await fetch('/api/storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: text })
+          body: JSON.stringify({ content: text, base: originalStoryboardContent })
         });
         const data = await res.json();
         if (!data.success) { appendConsole(`[MARKERS] Save failed: ${data.error}\n`); return; }
-        originalStoryboardContent = text;
+        text = adoptSaveResult(data, text);
         unsavedIndicator.classList.remove('active');
         appendConsole(`>>> Saved ${moved.length} marker position(s) on ${slideId}. Recompiling...\n`);
       } catch (err) { appendConsole(`[MARKERS] Save error: ${err.message}\n`); return; }
@@ -2239,11 +2372,10 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
     async function persist(text, msg) {
       storyboardEditor.value = text;
       try {
-        const res = await fetch('/api/storyboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text }) });
+        const res = await fetch('/api/storyboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text, base: originalStoryboardContent }) });
         const data = await res.json();
         if (!data.success) { appendConsole(`[VIGNETTE] Save failed: ${data.error}\n`); return false; }
-        originalStoryboardContent = text;
-        unsavedIndicator.classList.remove('active');
+        text = adoptSaveResult(data, text);
         appendConsole(msg);
         return true;
       } catch (err) { appendConsole(`[VIGNETTE] Save error: ${err.message}\n`); return false; }

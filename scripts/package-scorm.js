@@ -1,7 +1,7 @@
 /**
  * package-scorm.js
  *
- * Zips output/course/ into output/porsche-cc01-scorm.zip for SCORM Cloud upload.
+ * Zips output/course/ into output/porsche-cc07-scorm.zip for SCORM Cloud upload.
  * Excludes hidden directories (.git, .claude, etc.) and editor sidecars.
  *
  * Usage (after sync):
@@ -28,7 +28,7 @@ function PICK_PY() {
 
 const ROOT   = path.resolve(__dirname, '..');
 const SRC    = path.join(ROOT, 'output', 'course');
-const OUT    = path.join(ROOT, 'output', 'porsche-cc01-scorm.zip');
+const OUT    = path.join(ROOT, 'output', 'porsche-cc07-scorm.zip');
 
 // Check that ADM-zip or similar is available, otherwise use python fallback
 function tryNodeZip() {
@@ -120,5 +120,5 @@ if (tryNodeZip()) {
   zipWithPython();
 }
 
-console.log('\nOutput: output/porsche-cc01-scorm.zip');
+console.log('\nOutput: output/porsche-cc07-scorm.zip');
 console.log('Ready to upload to SCORM Cloud.');

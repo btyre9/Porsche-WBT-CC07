@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Porsche WBT — AI Creator Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/pds-tokens.css">
   <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
@@ -40,6 +42,10 @@
       <span class="badge status-badge online" id="status-badge">Pipeline Ready</span>
       <button class="toolbar-btn icon-only" id="btn-theme-toggle" title="Toggle light / dark theme" aria-label="Toggle theme">
         <i class="pi pi-moon theme-icon"></i>
+      </button>
+      <button class="toolbar-btn" id="btn-git-push" title="Commit all changes in this module and push to its GitHub remote. Shows what will be pushed first.">
+        <i class="pi pi-upload toolbar-btn-icon"></i>
+        <span class="toolbar-btn-label">Push to GitHub</span>
       </button>
       <button class="toolbar-btn danger" id="btn-stop-server" title="Stop the local dashboard server process">
         <i class="pi pi-stop toolbar-btn-icon"></i>
@@ -92,19 +98,13 @@
           <button class="btn btn-secondary btn-xs" id="btn-img-adjust" title="Position, scale, matte/haze, color overlay & vignette — all in one tool. Saves to the storyboard"><i class="pi pi-adjust"></i><span class="btn-label">Adjust Image</span></button>
           <button class="btn btn-secondary btn-xs" id="btn-hotspot-drag" title="Hotspot slides only: drag markers (callout + line follow) to reposition them so callouts don't block the image. Saves marker positions to the storyboard."><i class="pi pi-adjust"></i><span class="btn-label">Drag Markers</span></button>
           <span class="stage-controls-sep"></span>
-          <button class="btn btn-secondary btn-xs" id="btn-update-slide" title="Recompile just this slide's HTML — fast, no audio regeneration" disabled><i class="pi pi-refresh"></i><span class="btn-label">Update Slide</span></button>
-          <button class="btn btn-secondary btn-xs" id="btn-update-slide-voice" title="Regenerate this slide's audio + captions + cues, then recompile (hits the TTS API — use when narration changed)" disabled><i class="pi pi-microphone"></i><span class="btn-label">+ Voice</span></button>
+          <button class="btn btn-secondary btn-xs" id="btn-update-slide" title="Recompile just this slide's HTML — fast, no audio regeneration" aria-disabled="true"><i class="pi pi-refresh"></i><span class="btn-label">Update Slide</span></button>
+          <button class="btn btn-secondary btn-xs" id="btn-update-slide-voice" title="Regenerate this slide's audio + captions + cues, then recompile (hits the TTS API — use when narration changed)" aria-disabled="true"><i class="pi pi-microphone"></i><span class="btn-label">+ Voice</span></button>
           <label class="auto-compile-toggle" title="Auto-compile after saving the storyboard">
             <input type="checkbox" id="chk-auto-compile">
             <span class="toggle-label">Auto-Compile</span>
           </label>
         </div>
-      </div>
-      <div class="stage-hints">
-        <span class="shortcut-hint"><kbd>Space</kbd> Play/Pause</span>
-        <span class="shortcut-hint"><kbd>←</kbd> Prev</span>
-        <span class="shortcut-hint"><kbd>→</kbd> Next</span>
-        <span class="shortcut-hint"><kbd>⌘S</kbd> Save</span>
       </div>
     </section>
 
@@ -132,7 +132,10 @@
           </div>
         </div>
 
-        <textarea class="storyboard-textarea" id="storyboard-editor" spellcheck="false" placeholder="# Course: Explaining Technical Issues…"></textarea>
+        <div class="sb-editor-wrap">
+          <div class="sb-backdrop" aria-hidden="true"><div class="sb-backdrop-inner" id="sb-backdrop-inner"></div></div>
+          <textarea class="storyboard-textarea" id="storyboard-editor" spellcheck="false" placeholder="# Course: Explaining Technical Issues…"></textarea>
+        </div>
 
         <div class="prompt-copier-container">
           <label for="ai-scope-prompt" class="prompt-scope-label">AI Direction &amp; Module Target Scope</label>
@@ -171,6 +174,11 @@
           </button>
           <button class="pipeline-btn" id="btn-pipeline-package">
             <i class="pi pi-save pipeline-icon"></i>
+            <span class="pipeline-label">Package SCORM</span>
+            <span class="pipeline-sub">LMS zip deliverable</span>
+          </button>
+          <button class="pipeline-btn" id="btn-pipeline-audit">
+            <i class="pi pi-edit"></i>
             <span class="pipeline-label">Package SCORM</span>
             <span class="pipeline-sub">LMS zip deliverable</span>
           </button>

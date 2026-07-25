@@ -17,7 +17,11 @@
     "init-module": "node scripts/init-module.js",
     "init-repo": "node scripts/init-repo.js",
     "sync-from-template": "node scripts/sync-from-template.js",
-    "sync-template": "node scripts/sync-template.js"
+    "sync-template": "node scripts/sync-template.js",
+    "new-module": "node scripts/new-module.js",
+    "lint-storyboard": "node scripts/lint-storyboard.js",
+    "hub": "node scripts/hub-server.js",
+    "audit": "node scripts/audit-module.js"
   },
   "devDependencies": {
     "browser-sync": "^3.0.4",

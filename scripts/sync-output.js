@@ -114,7 +114,7 @@ const playerResult = copyDir(
   path.join(SRC,  'player'),
   path.join(DEST, 'player')
 );
-console.log('✓  (%d files)', playerResult.copied);
+console.log('✓  (%d files)', (playerResult && playerResult.copied) || 0);
 
 // 5. runtime.js → player/runtime.js (with ./ → ../ path fix, overwrites the copy above)
 process.stdout.write('  runtime.js ');

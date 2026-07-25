@@ -1,4 +1,4 @@
-# Course: Digital Communication Excellence
+# Course: Customer Communications 7 - Digital Communication Excellence
 
 ## Slide 01 — Title
 Slide-ID: 1S01

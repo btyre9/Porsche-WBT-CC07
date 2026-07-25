@@ -1,0 +1,218 @@
+{
+  "generated": "2026-07-25T02:14:28.725Z",
+  "module": "Porsche-WBT-CC07",
+  "errors": 1,
+  "warnings": 34,
+  "flags": [
+    {
+      "slide": "1S01",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Title\")"
+    },
+    {
+      "slide": "1S02",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Learning Objectives\")"
+    },
+    {
+      "slide": "1S03",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Why Video Updates Move the Needle\")"
+    },
+    {
+      "slide": "1S04",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"The Digital Landscape\")"
+    },
+    {
+      "slide": "1S05",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Your Three Digital Channels\")"
+    },
+    {
+      "slide": "1S06",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Inside a Quality Video Update\")"
+    },
+    {
+      "slide": "1S07",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"What Goes Into the Script\")"
+    },
+    {
+      "slide": "2KC01",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Knowledge Check 1\")"
+    },
+    {
+      "slide": "2KC02",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Knowledge Check 2\")"
+    },
+    {
+      "slide": "1S08",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Texting Without Eroding Trust\")"
+    },
+    {
+      "slide": "1S09",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Writing an Email a Customer Will Trust\")"
+    },
+    {
+      "slide": "1S10",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Match the Channel to the Message\")"
+    },
+    {
+      "slide": "1S11",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Four Mistakes That Quietly Erode Trust\")"
+    },
+    {
+      "slide": "2KC03",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Knowledge Check 3\")"
+    },
+    {
+      "slide": "2KC04",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Knowledge Check 4\")"
+    },
+    {
+      "slide": "1S12",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Module 7 Complete\")"
+    },
+    {
+      "slide": "3FQ01",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 1\")"
+    },
+    {
+      "slide": "3FQ02",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 2\")"
+    },
+    {
+      "slide": "3FQ03",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 3\")"
+    },
+    {
+      "slide": "3FQ04",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 4\")"
+    },
+    {
+      "slide": "3FQ05",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 5\")"
+    },
+    {
+      "slide": "3FQ06",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 6\")"
+    },
+    {
+      "slide": "3FQ07",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 7\")"
+    },
+    {
+      "slide": "3FQ08",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 8\")"
+    },
+    {
+      "slide": "3FQ09",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 9\")"
+    },
+    {
+      "slide": "3FQ10",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Final Quiz Question 10\")"
+    },
+    {
+      "slide": "3FQ-SCORE",
+      "check": "DRAFT",
+      "severity": "warn",
+      "msg": "still marked Status: Draft (\"Quiz Score\")"
+    },
+    {
+      "slide": "(module)",
+      "check": "LMS",
+      "severity": "warn",
+      "msg": "course.data.json meta.id is still \"module-id-here\" — run init-module"
+    },
+    {
+      "slide": "1S04",
+      "check": "LINT",
+      "severity": "warn",
+      "msg": "[S11] 1S04 (line 60) two passive slides in a row (\"content-stat\" then \"content-split\"). Convert one to an interactive template."
+    },
+    {
+      "slide": "1S01",
+      "check": "LINT",
+      "severity": "warn",
+      "msg": "[S11] 1S01 (line 3) 4 passive slides within 12 consecutive content slides (max 2). Window starts here."
+    },
+    {
+      "slide": "(module)",
+      "check": "LMS",
+      "severity": "error",
+      "msg": "imsmanifest.xml still contains XXXX — run init-module"
+    },
+    {
+      "slide": "(package)",
+      "check": "LMS",
+      "severity": "warn",
+      "msg": "output/ is older than course/ — re-run Package before uploading"
+    },
+    {
+      "slide": "1S05",
+      "check": "STORY",
+      "severity": "warn",
+      "msg": "slide shows 1S05-Video.webp but the storyboard block has no Image-File — regenerating would replace the art with a placeholder"
+    },
+    {
+      "slide": "1S11",
+      "check": "STORY",
+      "severity": "warn",
+      "msg": "slide shows 1S11-AllCaps.webp but the storyboard block has no Image-File — regenerating would replace the art with a placeholder"
+    },
+    {
+      "slide": "3FQ-SCORE",
+      "check": "STORY",
+      "severity": "warn",
+      "msg": "slide shows certificate-template.jpg but the storyboard block has no Image-File — regenerating would replace the art with a placeholder"
+    }
+  ]
+}

@@ -87,7 +87,19 @@ Every image assigned to a slide must have a corresponding storyboard field. The 
 | tab-panel | `Item-<Label>-Image` | `Item-Feature-Image: 1S05a.jpg` |
 | accordion-content | `Image-File` | `Image-File: 1S05.jpg` (single right-rail image, not per-item) |
 | tile-explore | `Image-{Label}` | `Image-Enthusiast: 1S07.jpg` |
-| all others | `Image-File` | `Image-File: 1S04.jpg` |
+| all other image-capable templates | `Image-File` | `Image-File: 1S04.jpg` |
+
+**Templates with NO slide-level image slot** — do **not** set `Image-File` on these; the layout is text/interaction-only and any assigned image will silently never display (the Set Image tool and `npm run audit` both warn about this):
+
+| Template | Why no image |
+|---|---|
+| step-sequence | Full-width numbered steps fill the slide |
+| card-explore / tile-explore | Images live on the cards/tiles (per-item fields above), not the slide |
+| drag-match (plain) | Full-width matching board (use drag-match-left/right for an image rail) |
+| final-quiz / quiz-score | Assessment layouts |
+| video-scenario | The video IS the visual |
+
+The machine-readable version of this list lives in `scripts/lib/template-capabilities.js`.
 
 When a requested image file does not exist yet, the generator prints an `auto-image` line and uses a real preview placeholder file from `course/assets/images/placeholders/` whose aspect ratio fits the template's requirements. Treat each `auto-image` line as a draft placeholder to replace before shipping. A `WARN` line means no catalog fallback was available.
 

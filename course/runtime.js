@@ -132,6 +132,25 @@
       return loc || "";
     },
 
+    // Learner's display name from the LMS. SCORM 1.2 exposes it as
+    // cmi.core.student_name (usually "Last, First"); SCORM 2004 as
+    // cmi.learner_name (usually "First Last"). Returns "First Last" or "".
+    getLearnerName: function () {
+      var raw = this.version === "2004"
+        ? this.getValue("cmi.learner_name")
+        : this.getValue("cmi.core.student_name");
+      raw = (raw || "").trim();
+      if (!raw) return "";
+      // Reformat "Last, First [Middle]" → "First [Middle] Last".
+      var comma = raw.indexOf(",");
+      if (comma !== -1) {
+        var last = raw.slice(0, comma).trim();
+        var first = raw.slice(comma + 1).trim();
+        if (first && last) return first + " " + last;
+      }
+      return raw;
+    },
+
     setLocation: function (slideId) {
       if (!this.api) return;
       if (this.version === "2004") this.setValue("cmi.location", slideId);
@@ -478,7 +497,7 @@
 
   function updateAudioUi() {
     var hasAudio = !!state.audio;
-    $("btn-playpause").disabled = !hasAudio;
+    $("btn-playpause").disabled = !hasAudio || !!(state.audio && state.audio.ended);
     setAudioProgressEnabled(hasAudio);
 
     if (!hasAudio) {
@@ -525,6 +544,9 @@
     state.nextLockedByAudio = false;
     updateNavButtons();
     if (wasAudioLocked && !state.nextLockedByInteraction && !state.nextLockedByInteractionAudio) pulseNextButton();
+    /* Narration finished. Slides that gate interaction on the intro VO (e.g.
+       video-scenario locking its play CTA) listen for ended:true to unlock. */
+    postMessageToSlide({ type: "player-play-state", playing: false, ended: true });
   }
 
   function onAudioMeta() {
@@ -547,7 +569,11 @@
         clearTimeout(state.audioStartTimer);
         state.audioStartTimer = null;
       }
-      if (state.audio.ended) state.audio.currentTime = 0;
+      // Narration plays once per slide. The play button must not rewind and
+      // replay it: on slides with their own media that means the intro VO
+      // talking over the learner's video. Replaying a slide is what the
+      // player's reset button is for.
+      if (state.audio.ended) { updateAudioUi(); return; }
       state.pendingAudioStart = false;
       disarmAudioUnlockListeners();
       attemptStartAudioPlayback();
@@ -624,6 +650,9 @@
       state.audio.addEventListener("timeupdate", onAudioTimeUpdate);
       state.audio.addEventListener("seeked", onAudioSeeked);
       state.audio.addEventListener("ended", onAudioEnded);
+      // If the narration cannot load, treat it as finished: otherwise Next stays
+      // locked and slides that gate on the intro VO never become interactive.
+      state.audio.addEventListener("error", onAudioEnded);
       var needsClickUnlock = isModuleFirstSlide(slides[i]) && !state.audioStartPromptShown[slides[i].id];
       if (needsClickUnlock) {
         setAudioStartOverlayVisible(true);
@@ -1037,6 +1066,7 @@
       btn.classList.remove("active");
       overlay.classList.add("hidden");
     }
+    postMessageToSlide({ type: "cc-state", on: state.ccEnabled });
   }
 
   function parseVttTimestamp(value) {
@@ -2103,6 +2133,24 @@
     window.addEventListener("message", function (e) {
       if (!e.data || typeof e.data.type !== "string") return;
       switch (e.data.type) {
+        case "sandbox-request-narration": {
+          // A slide asking, on load, whether it may let the learner interact yet.
+          // The question is NOT 'is audio playing right now' — at slide load the
+          // narration exists but has not started (pendingAudioStart / autoplay
+          // gating), which used to report 'not playing' and open the gate early.
+          // What a gating slide needs to know is: is there narration still to come?
+          var hasNarration = !!state.audio;
+          var narrationDone = !hasNarration || !!state.audio.ended;
+          postMessageToSlide({
+            type: "player-play-state",
+            playing: hasNarration && !narrationDone,
+            ended: narrationDone
+          });
+          break;
+        }
+        case "sandbox-request-cc":
+          postMessageToSlide({ type: "cc-state", on: state.ccEnabled });
+          break;
         case "sandbox-lock-next":
           state.nextLockedByInteraction = true;
           updateNavButtons();
@@ -2312,6 +2360,15 @@
 
     // Public API for slides to call into
     window.CourseRuntime = {
+      // Authoritative audio state for assets/js/audio-governor.js — never let
+      // callers infer speed/mute by reading button labels out of the DOM.
+      getAudioSettings: function () {
+        return {
+          rate: state.playbackRates[state.playbackRateIndex],
+          muted: !!state.muted,
+          captionsEnabled: !!state.ccEnabled
+        };
+      },
       // Knowledge checks: slides can trigger the KC modal
       openKnowledgeCheck: openKC,
 
@@ -2377,7 +2434,9 @@
         var answered = state.finalAnswered;
         var total    = state.finalTotal > 0 ? state.finalTotal : (answered > 0 ? answered : 10);
         return { correct: state.finalCorrect, answered: answered, total: total };
-      }
+      },
+
+      getLearnerName: function () { return scorm.getLearnerName(); }
     };
 
     // Dev mode setup

@@ -22,7 +22,10 @@ const { exec, spawn } = require('child_process');
 const PORT = process.env.PORT || 8085;
 const MODULE_ROOT = path.resolve(__dirname, '..');          // this module's root
 const PROJECTS_DIR = path.resolve(__dirname, '..', '..');   // parent that holds all module folders
-const TEMPLATE_DIR = path.join(PROJECTS_DIR, 'Porsche-WBT-Template');
+// Prefer the shared engine folder (single source of truth) if it exists;
+// fall back to the legacy full template.
+const ENGINE_DIR = path.join(PROJECTS_DIR, 'engine');
+const TEMPLATE_DIR = fs.existsSync(ENGINE_DIR) ? ENGINE_DIR : path.join(PROJECTS_DIR, 'Porsche-WBT-Template');
 const COURSE_DIR = path.resolve(__dirname, '..', 'course');
 const STORYBOARD_DIR = path.resolve(__dirname, '..', 'storyboard');
 const MATERIALS_DIR = path.join(COURSE_DIR, 'assets', 'materials');
@@ -86,8 +89,12 @@ function runCommandStream(command, res, cwd = path.resolve(__dirname, '..')) {
   });
 }
 
-// Single-quote a string for safe interpolation into a /bin/sh command.
+// Quote a string for safe interpolation into a shell command — platform-aware:
+// POSIX /bin/sh uses single quotes; Windows cmd.exe needs double quotes.
 function shq(s) {
+  if (process.platform === 'win32') {
+    return '"' + String(s).replace(/"/g, '""') + '"';
+  }
   return "'" + String(s).replace(/'/g, "'\\''") + "'";
 }
 
@@ -160,6 +167,89 @@ function removeStaleSlideImages(imagesDir, baseName, keepName) {
   return removed;
 }
 
+// ── Storyboard three-way merge ───────────────────────────────────────────────
+// Splits course.md into a preamble + "## Slide ..." blocks keyed by Slide-ID,
+// then merges base (what the editor loaded), mine (the editor's save), and
+// theirs (what's on disk now) block-by-block; same-block collisions merge
+// field-by-field. On a true same-field conflict, MINE wins and the conflict is
+// reported (the losing value survives in storyboard/.backups/).
+function sbParse(text) {
+  const lines = text.split('\n');
+  const blocks = []; let pre = []; let cur = null;
+  for (const line of lines) {
+    if (/^##\s+Slide\s/.test(line)) { cur = { head: line, lines: [] }; blocks.push(cur); continue; }
+    if (!cur) { pre.push(line); continue; }
+    cur.lines.push(line);
+  }
+  for (const b of blocks) {
+    const m = b.lines.join('\n').match(/^Slide-ID:\s*(\S+)/m);
+    b.id = m ? m[1] : b.head;
+    b.text = b.head + '\n' + b.lines.join('\n');
+  }
+  return { pre: pre.join('\n'), blocks };
+}
+
+function sbMergeFields(baseT, mineT, theirsT, id, conflicts) {
+  const parse = t => {
+    const map = new Map(); const order = [];
+    for (const line of (t || '').split('\n')) {
+      const m = line.match(/^([A-Za-z][\w-]*):\s*(.*)$/);
+      const key = m ? m[1] : '·' + order.length; // non-field lines keep position
+      map.set(key, line); order.push(key);
+    }
+    return { map, order };
+  };
+  const B = parse(baseT), M = parse(mineT), T = parse(theirsT);
+  const keys = [...M.order];
+  for (const k of T.order) if (!M.map.has(k) && !k.startsWith('·')) keys.push(k); // fields added on disk
+  const out = [];
+  for (const k of keys) {
+    const b = B.map.get(k), m = M.map.get(k), t = T.map.get(k);
+    if (m === undefined) { // not in mine: added by theirs, or deleted by me
+      if (b === undefined) out.push(t);                    // new on disk → keep
+      else if (t !== b) { out.push(t); conflicts.push(`${id}: field "${k}" — you deleted it but it changed on disk; kept the disk version`); }
+      continue;                                            // deleted by me, unchanged on disk → stays deleted
+    }
+    if (t === undefined || t === b) { out.push(m); continue; }   // disk untouched → mine
+    if (m === b || m === t) { out.push(t); continue; }           // I didn't touch it → theirs
+    out.push(m);                                                 // both changed differently → MINE wins
+    conflicts.push(`${id}: field "${k}" — kept YOUR version; the other edit is in storyboard/.backups/`);
+  }
+  return out.join('\n');
+}
+
+function mergeStoryboards(base, mine, theirs) {
+  const conflicts = [];
+  const B = sbParse(base), M = sbParse(mine), T = sbParse(theirs);
+  const bMap = new Map(B.blocks.map(x => [x.id, x.text]));
+  const tMap = new Map(T.blocks.map(x => [x.id, x.text]));
+  const mIds = new Set(M.blocks.map(x => x.id));
+  // preamble
+  let pre;
+  if (T.pre === B.pre) pre = M.pre;
+  else if (M.pre === B.pre || M.pre === T.pre) pre = T.pre;
+  else { pre = M.pre; conflicts.push('header/preamble: kept your version'); }
+  const out = [pre];
+  for (const blk of M.blocks) {
+    const b = bMap.get(blk.id), t = tMap.get(blk.id);
+    if (t === undefined) {
+      if (b !== undefined && b !== blk.text)
+        conflicts.push(`${blk.id}: slide was removed on disk but you edited it; kept your slide`);
+      out.push(blk.text);                                   // new in mine, or deleted on disk (keep mine)
+    } else if (t === b || t === blk.text) out.push(blk.text);
+    else if (blk.text === b) out.push(t);                   // only disk changed → take disk
+    else out.push(sbMergeFields(b, blk.text, t, blk.id, conflicts));
+  }
+  // slides that exist on disk but not in mine
+  for (const blk of T.blocks) {
+    if (mIds.has(blk.id)) continue;
+    if (!bMap.has(blk.id)) { out.push(blk.text); conflicts.push(`${blk.id}: new slide from disk merged in`); }
+    else if (bMap.get(blk.id) !== blk.text) { out.push(blk.text); conflicts.push(`${blk.id}: you deleted this slide but it changed on disk; kept it — delete again if intended`); }
+    // else: deleted by me, unchanged on disk → stays deleted
+  }
+  return { text: out.join('\n'), conflicts };
+}
+
 // Find a free TCP port to launch the new module's own dashboard on.
 function findFreePort(start, cb) {
   let port = start;
@@ -167,7 +257,7 @@ function findFreePort(start, cb) {
     const srv = net.createServer();
     srv.once('error', () => { port += 1; if (port > start + 50) return cb(null); tryPort(); });
     srv.once('listening', () => { srv.close(() => cb(port)); });
-    srv.listen(port, '127.0.0.1');
+    srv.listen(port); // all interfaces — see hub-server findFreePort note
   };
   tryPort();
 }
@@ -255,7 +345,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // POST /api/storyboard -> Writes storyboard/course.md
+  // POST /api/storyboard -> Writes storyboard/course.md with LOST-UPDATE PROTECTION.
+  //
+  // Body: { content, base? }. `base` is the text the client loaded before editing.
+  // If the on-disk file still equals `base`, the save is a plain write. If the
+  // disk changed underneath the editor (Set Image, Extract Cues, another tab,
+  // an AI agent...), the server performs a THREE-WAY MERGE per slide block —
+  // per field when both sides touched the same slide — so neither side's work
+  // is clobbered. On a true same-field conflict the client's value wins and the
+  // conflict is reported. A timestamped backup of the previous disk state is
+  // written to storyboard/.backups/ before EVERY write, so nothing is ever lost.
   if (pathname === '/api/storyboard' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
@@ -263,9 +362,29 @@ const server = http.createServer((req, res) => {
       try {
         const payload = JSON.parse(body);
         const courseMdPath = path.join(STORYBOARD_DIR, 'course.md');
-        fs.writeFileSync(courseMdPath, payload.content, 'utf8');
+        const disk = fs.existsSync(courseMdPath) ? fs.readFileSync(courseMdPath, 'utf8') : '';
+
+        // Backup current disk state (rotate last 25)
+        try {
+          const bdir = path.join(STORYBOARD_DIR, '.backups');
+          fs.mkdirSync(bdir, { recursive: true });
+          if (disk) {
+            fs.writeFileSync(path.join(bdir, `course-${new Date().toISOString().replace(/[:.]/g, '-')}.md`), disk);
+            const old = fs.readdirSync(bdir).filter(f => f.startsWith('course-')).sort();
+            while (old.length > 25) fs.unlinkSync(path.join(bdir, old.shift()));
+          }
+        } catch (_) { /* backups are best-effort */ }
+
+        let finalText = payload.content;
+        let merged = false;
+        let conflicts = [];
+        if (typeof payload.base === 'string' && disk !== payload.base && disk !== payload.content) {
+          const r = mergeStoryboards(payload.base, payload.content, disk);
+          finalText = r.text; merged = true; conflicts = r.conflicts;
+        }
+        fs.writeFileSync(courseMdPath, finalText, 'utf8');
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify({ success: true, merged, conflicts, content: finalText }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
@@ -428,6 +547,22 @@ const server = http.createServer((req, res) => {
         res.write(`[ERROR] Copy failed: ${e.message}\n>>> The partial folder was removed.\n`);
         return res.end();
       }
+      // Seed per-module content the engine folder intentionally doesn't carry
+      // (content dirs, starter storyboard, course.data.json skeleton).
+      try {
+        for (const d of ['storyboard', 'course/slides', 'course/data',
+                         'course/assets/images/placeholders', 'course/assets/audio/vo', 'output']) {
+          fs.mkdirSync(path.join(target, d), { recursive: true });
+        }
+        const seed = (src, dst) => {
+          if (fs.existsSync(src) && !fs.existsSync(dst)) fs.copyFileSync(src, dst);
+        };
+        seed(path.join(TEMPLATE_DIR, 'scripts', 'skeleton', 'course.data.json'), path.join(target, 'course', 'data', 'course.data.json'));
+        seed(path.join(TEMPLATE_DIR, 'scripts', 'skeleton', 'kc-review.json'),   path.join(target, 'course', 'data', 'kc-review.json'));
+        seed(path.join(TEMPLATE_DIR, 'storyboard', 'Module-Storyboard-Template.md'), path.join(target, 'storyboard', 'course.md'));
+      } catch (e) {
+        res.write(`[WARN] Seeding starter content failed: ${e.message}\n`);
+      }
       res.write('>>> Template copied. Installing dependencies + stamping module identity...\n');
 
       const localCmd =
@@ -587,13 +722,30 @@ const server = http.createServer((req, res) => {
       if (aborted) { try { fs.unlinkSync(tmp); } catch (_) {} return; }
       try {
         fs.renameSync(tmp, dest);
+        // Guardrail: warn when this slide's template has no slide-level image
+        // slot — the file saves, but the layout will never display it.
+        let templateWarning = null;
+        if (!cardLabel) {
+          try {
+            const { templateTakesSlideImage } = require('./lib/template-capabilities');
+            const md = fs.readFileSync(path.join(STORYBOARD_DIR, 'course.md'), 'utf8');
+            const block = md.split(/^##\s+Slide\s/m).find(b => new RegExp('^Slide-ID:\\s*' + slideId + '\\s*$', 'm').test(b)) || '';
+            const tpl = (block.match(/^Template-ID:\s*(\S+)/m) || [])[1];
+            if (tpl && !templateTakesSlideImage(tpl)) {
+              templateWarning = `Template "${tpl}" has NO slide-level image slot — this image will not appear on the slide. ` +
+                (tpl === 'card-explore' || tpl === 'tile-explore'
+                  ? 'Use the per-card image targets instead.'
+                  : 'This layout is intentionally text/interaction-only.');
+            }
+          } catch (_) { /* capability check is best-effort */ }
+        }
         const storyboardUpdated = setStoryboardField(slideId, storyboardField, filename);
         // image-prompts.json tracks one image per slide — only sync slide-level saves.
         if (!cardLabel) setPromptImageFile(slideId, filename);
         // Drop the old <base>.jpg (or other raster) now that <base>.webp is canonical.
         const removed = removeStaleSlideImages(imagesDir, baseName, filename);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, name: filename, field: storyboardField, storyboardUpdated, removed }));
+        res.end(JSON.stringify({ success: true, name: filename, field: storyboardField, storyboardUpdated, removed, templateWarning }));
       } catch (err) {
         try { fs.unlinkSync(tmp); } catch (_) {}
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -657,6 +809,67 @@ const server = http.createServer((req, res) => {
       const courseMdPath = path.join(STORYBOARD_DIR, 'course.md');
       const promptInstructionPath = path.join(STORYBOARD_DIR, 'prompt_instruction.json');
       const baseline = fs.existsSync(courseMdPath) ? fs.readFileSync(courseMdPath, 'utf8') : '';
+      // ── Mimic mode ────────────────────────────────────────────────────────
+      // If the AI Direction contains "mimic CC01" / "mimic module CC01" /
+      // "mimic Porsche-WBT-CC01", extract that module's Template-ID sequence
+      // and inject it as a template plan the authoring agent must follow.
+      const mimicMatch = String(payload.scope || '').match(/mimic\s+(?:module\s+)?(?:porsche-wbt-)?([a-z]{2}\d+[\w]*)/i);
+      if (mimicMatch) {
+        const srcCode = mimicMatch[1].toUpperCase();
+        const candidates = fs.readdirSync(PROJECTS_DIR)
+          .filter(d => d.toLowerCase() === `porsche-wbt-${srcCode.toLowerCase()}`);
+        const srcSb = candidates.length
+          ? path.join(PROJECTS_DIR, candidates[0], 'storyboard', 'course.md') : null;
+        if (srcSb && fs.existsSync(srcSb)) {
+          const seq = [];
+          let sid = null;
+          for (const line of fs.readFileSync(srcSb, 'utf8').split(/\r?\n/)) {
+            const s = line.match(/^Slide-ID:\s*(\S+)/);      if (s) sid = s[1];
+            const t = line.match(/^Template-ID:\s*(\S+)/);   if (t && sid) { seq.push({ slide: sid, template: t[1] }); sid = null; }
+          }
+          // Lint the SOURCE module's storyboard so a flawed rhythm isn't
+          // copied blindly (e.g. S11 passive-pacing violations).
+          let srcLint = [];
+          try {
+            const srcDir = path.join(PROJECTS_DIR, candidates[0]);
+            const lintScript = fs.existsSync(path.join(srcDir, 'scripts', 'lint-storyboard.js'))
+              ? path.join(srcDir, 'scripts', 'lint-storyboard.js')
+              : path.join(__dirname, 'lint-storyboard.js');
+            const out = require('child_process').execSync(
+              `node "${lintScript}" --file "${srcSb}"`,
+              { cwd: srcDir, encoding: 'utf8' });
+            srcLint = out.split('\n').filter(l => l.includes('⚠')).map(l => l.trim());
+          } catch (e) { srcLint = ['(source lint could not run: ' + e.message + ')']; }
+          payload.template_plan = {
+            mimic_source: srcCode,
+            sequence: seq,
+            source_lint_warnings: srcLint,
+            rules: [
+              srcLint.length
+                ? 'WARNING: the source module\'s own storyboard has lint findings (see source_lint_warnings). Follow the sequence, but FIX these violations in the new module — e.g. swap one of two adjacent passive templates for an interactive one — while staying as close to the source order as possible.'
+                : 'Source sequence passed lint cleanly.',
+              'Use these templates in this exact order — this OVERRIDES normal template selection.',
+              'Content must still be authored fresh for this module; only the layout sequence is copied.',
+              'If this module needs MORE slides than the plan: extend by inserting extra slides immediately after the closest-matching position, choosing templates per the instructional-designer skill and never violating S12 (no identical templates back-to-back).',
+              'If it needs FEWER: drop slides from the middle content blocks, keeping the opening (hero-title, learning-objectives), all KC pairs at topic boundaries, closing, final quiz, and score.',
+              'Assessment structure is fixed regardless: 4 knowledge checks, 10 final-quiz questions.',
+            ],
+          };
+        } else {
+          payload.template_plan = { error: `Mimic requested but module ${srcCode} was not found next to this one. Choose templates normally.` };
+        }
+      }
+
+      // Bake standing directives into every generation request so the
+      // authoring agent applies them without being asked (see skills/instructional-designer).
+      const SKILL_PATH = path.join(PROJECTS_DIR, 'skills', 'instructional-designer', 'SKILL.md');
+      const CATALOG_PATH = path.join(PROJECTS_DIR, 'image-repo', 'image-catalog.json');
+      payload.agent_directives = [
+        `MANDATORY FIRST STEP: Read and apply the "instructional-designer" skill at ${SKILL_PATH} (or .claude/skills/instructional-designer/ if installed) for ALL template selection, VO writing, pacing, and image decisions. Do not choose templates before reading it.`,
+        `Before writing an Image: prompt for any slide, search ${CATALOG_PATH} for a reusable image matching the slide meaning and the template's aspect ratio; if found, copy it from image-repo into this module's course/assets/images/ and set Image-File accordingly (note provenance in Notes). Never reuse a real image twice in one module; placeholders exempt. Only write Image: generation prompts for slots with no catalog match.`,
+        'After writing course.md, run `npm run lint-storyboard` and fix all findings (S12 consecutive templates, S11 passive pacing, IMG reuse) before finishing.',
+      ];
+      if (!fs.existsSync(SKILL_PATH)) payload.agent_directives.push('NOTE: skill file not found at the path above — check .claude/skills/instructional-designer/ or ask the user where it was moved.');
       fs.writeFileSync(promptInstructionPath, JSON.stringify(payload, null, 2), 'utf8');
 
       res.writeHead(200, {
@@ -666,6 +879,16 @@ const server = http.createServer((req, res) => {
         'Connection': 'keep-alive'
       });
       res.write('>>> Generation request queued. Waiting for the AI agent to write course.md...\n');
+      if (payload.template_plan) {
+        const tp = payload.template_plan;
+        if (tp.error) {
+          res.write(`>>> [MIMIC] ${tp.error}\n`);
+        } else {
+          res.write(`>>> [MIMIC] Using template sequence from ${tp.mimic_source} (${tp.sequence.length} slides).\n`);
+          for (const w of tp.source_lint_warnings || [])
+            res.write(`>>> [MIMIC WARNING] Source module has lint finding — agent instructed to fix it: ${w}\n`);
+        }
+      }
 
       let settled = false;
       let watcher = null;
@@ -833,6 +1056,77 @@ const server = http.createServer((req, res) => {
   // POST /api/extract-vo-cues -> Extracts VO cues for GSAP sync
   if (pathname === '/api/extract-vo-cues' && req.method === 'POST') {
     runCommandStream('node scripts/extract-vo-cues.js', res);
+    return;
+  }
+
+  // POST /api/audit -> Full module audit: drafts, placeholder fields, missing
+  // media/VO/captions, unfinished video slides, lint, SCORM/LMS readiness.
+  if (pathname === '/api/audit' && req.method === 'POST') {
+    runCommandStream('node scripts/audit-module.js', res);
+    return;
+  }
+
+  // ── Git push-to-remote ──────────────────────────────────────────────────────
+  // GET  /api/git/status -> { repo, remote, branch, changes:[...], bigFiles:[...] }
+  // POST /api/git/push   -> { message? } — stage all, commit, push (streamed)
+  if (pathname === '/api/git/status' && req.method === 'GET') {
+    const { execFile } = require('child_process');
+    const git = (args, cb) => execFile('git', args, { cwd: MODULE_ROOT, maxBuffer: 8*1024*1024 },
+      (err, out) => cb(err, (out || '').trim()));
+    git(['rev-parse', '--is-inside-work-tree'], (err) => {
+      if (err) return (res.writeHead(200, {'Content-Type':'application/json'}),
+        res.end(JSON.stringify({ repo: false })));
+      git(['remote', 'get-url', 'origin'], (e2, remote) => {
+        git(['rev-parse', '--abbrev-ref', 'HEAD'], (e3, branch) => {
+          git(['status', '--porcelain'], (e4, st) => {
+            const changes = st ? st.split('\n') : [];
+            // flag not-ignored files >95 MB (GitHub hard limit is 100 MB)
+            const bigFiles = [];
+            try {
+              const listed = require('child_process').execFileSync('git',
+                ['ls-files', '-com', '--exclude-standard'], { cwd: MODULE_ROOT, maxBuffer: 32*1024*1024 })
+                .toString().trim().split('\n');
+              for (const f of listed) {
+                try { const sz = fs.statSync(path.join(MODULE_ROOT, f)).size;
+                  if (sz > 95*1024*1024) bigFiles.push(`${f} (${(sz/1048576).toFixed(0)} MB)`);
+                } catch (_) {}
+              }
+            } catch (_) {}
+            res.writeHead(200, {'Content-Type':'application/json'});
+            res.end(JSON.stringify({ repo: true, remote: e2 ? null : remote, branch, changes, bigFiles }));
+          });
+        });
+      });
+    });
+    return;
+  }
+  if (pathname === '/api/git/push' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      let msg = 'WBT dashboard push';
+      try { const p = JSON.parse(body || '{}'); if (p.message) msg = String(p.message); } catch (_) {}
+      // safety: refuse if a non-ignored file would exceed GitHub's limit
+      try {
+        const listed = require('child_process').execFileSync('git',
+          ['ls-files', '-com', '--exclude-standard'], { cwd: MODULE_ROOT, maxBuffer: 32*1024*1024 })
+          .toString().trim().split('\n');
+        const big = listed.filter(f => {
+          try { return fs.statSync(path.join(MODULE_ROOT, f)).size > 95*1024*1024; } catch (_) { return false; }
+        });
+        if (big.length) {
+          res.writeHead(200, {'Content-Type':'text/plain; charset=utf-8'});
+          return res.end('[ERROR] Push blocked — these files exceed GitHub\'s 100 MB limit:\n  ' +
+            big.join('\n  ') + '\nAdd them to .gitignore (or use Git LFS), then push again.\n');
+        }
+      } catch (_) {}
+      runCommandStream(
+        'git add -A && ' +
+        `git diff --cached --quiet || git commit -m ${shq(msg)} && ` +
+        'git push -u origin HEAD',
+        res, MODULE_ROOT
+      );
+    });
     return;
   }
 
