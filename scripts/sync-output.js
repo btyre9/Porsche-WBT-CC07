@@ -46,6 +46,8 @@ function copyDir(src, dest) {
   let skipped = 0;
 
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    // Skip macOS AppleDouble sidecars — they must never reach the build.
+    if (entry.name.startsWith('._') || entry.name === '.DS_Store') continue;
     const srcPath  = path.join(src,  entry.name);
     const destPath = path.join(dest, entry.name);
 

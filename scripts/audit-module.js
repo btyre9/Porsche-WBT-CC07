@@ -111,6 +111,11 @@ function findAsset(name) {
     path.join(IMAGES, name), path.join(IMAGES, 'FQ-images', name),
     path.join(IMAGES, 'placeholders', name),
     path.join(ASSETS, 'video', name), path.join(ASSETS, 'media', name),
+      // Audio-VO-File / Audio-File values live under assets/audio/*, which this
+      // lookup used to skip entirely — every audio reference read as missing.
+      path.join(ASSETS, 'audio', 'vo', name), path.join(ASSETS, 'audio', 'sfx', name),
+      path.join(ASSETS, 'audio', 'vo', 'pre-made', name),
+      path.join(ASSETS, 'audio', 'interaction', name), path.join(ASSETS, 'audio', name),
   ];
   return cands.find(exists) || null;
 }
@@ -195,7 +200,7 @@ try {
   if (exists(OUT_DIR)) {
     // svg files inside output (LMS blocklists .svg)
     const svgs = [];
-    (function walk(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (/\.svg$/i.test(e.name)) svgs.push(f); } })(OUT_DIR);
+    (function walk(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (/\.svg$/i.test(e.name) && !e.name.startsWith('._')) svgs.push(f); } })(OUT_DIR);
     if (svgs.length) add('(package)', 'LMS', 'error', `${svgs.length} .svg file(s) inside output/course — LMS will reject the zip (inline-svgs step didn't run)`);
     // staleness: newest file under course/ vs output/course/
     const newest = d => { let m = 0; (function w(x) { for (const e of fs.readdirSync(x, { withFileTypes: true })) { const f = path.join(x, e.name); if (e.isDirectory()) w(f); else m = Math.max(m, fs.statSync(f).mtimeMs); } })(d); return m; };
@@ -286,7 +291,9 @@ function readIf(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { retu
   for (const id of declared) {
     const txt = readIf(slideHtmlPath(id));
     if (!txt) continue;
-    const left = [...new Set((txt.match(/\{\{[A-Z0-9_]+\}\}/g) || []))];
+    // Slides carry a "PLACEHOLDER REFERENCE" comment block documenting the
+    // template's tokens; those mentions are documentation, not unfilled markup.
+    const left = [...new Set((stripComments(txt).match(/\{\{[A-Z0-9_]+\}\}/g) || []))];
     if (left.length) add(id, 'TEMPLATE', 'error', `compiled slide still contains unfilled ${left.join(', ')}`);
   }
 }
@@ -296,7 +303,16 @@ for (const id of declared) {
   const txt = readIf(slideHtmlPath(id));
   if (!txt) continue;
 
-  const inline = [...txt.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n');
+  // Only real JS is syntax-checked. Slides also carry <script type="application/json">
+  // data blocks (animation cues, dialogue data) — parsing those as JS reports a
+  // bogus "every interaction is dead" error on a perfectly good slide.
+  const inline = [...txt.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)]
+    .filter(m => !/\bsrc=/.test(m[1]))
+    .filter(m => {
+      const t = (m[1].match(/\btype\s*=\s*["']([^"']+)["']/) || [])[1];
+      return !t || /^(?:text|application)\/(?:java|ecma)script$|^module$/i.test(t.trim());
+    })
+    .map(m => m[2]).join('\n;\n');
   if (inline.trim()) {
     try {
       // Tokens may legitimately remain in a template file; not in a slide.
