@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "id": "module-id-here",
+    "title": "Digital Communication Excellence",
+    "version": "1.0.0",
+    "language": "en-US",
+    "pass_threshold": 80,
+    "vo_start_delay_ms": 1000
+  },
+  "slides": [
+    {
+      "id": "1S01",
+      "title": "Digital Communication Excellence",
+      "audio_vo": "assets/audio/vo/1S01-INTRO.mp3"
+    },
+    {
+      "id": "1S02",
+      "title": "What You'll Learn",
+      "audio_vo": "assets/audio/vo/1S02-INTRO.mp3"
+    },
+    {
+      "id": "1S03",
+      "title": "Why Video Updates Move the Needle",
+      "audio_vo": "assets/audio/vo/1S03-INTRO.mp3"
+    },
+    {
+      "id": "1S04",
+      "title": "The Digital Landscape",
+      "audio_vo": "assets/audio/vo/1S04-INTRO.mp3"
+    },
+    {
+      "id": "1S05",
+      "title": "Your Three Digital Channels",
+      "audio_vo": "assets/audio/vo/1S05-INTRO.mp3"
+    },
+    {
+      "id": "1S06",
+      "title": "Inside a Quality Video Update",
+      "audio_vo": "assets/audio/vo/1S06-INTRO.mp3"
+    },
+    {
+      "id": "1S07",
+      "title": "What Goes Into the Script",
+      "audio_vo": "assets/audio/vo/1S07-INTRO.mp3"
+    },
+    {
+      "id": "2KC01",
+      "title": "Knowledge Check",
+      "audio_vo": "assets/audio/vo/2KC01-INTRO.mp3"
+    },
+    {
+      "id": "2KC02",
+      "title": "Knowledge Check",
+      "audio_vo": "assets/audio/vo/2KC01-INTRO.mp3"
+    },
+    {
+      "id": "1S08",
+      "title": "Texting Without Eroding Trust",
+      "audio_vo": "assets/audio/vo/1S08-INTRO.mp3"
+    },
+    {
+      "id": "1S09",
+      "title": "Writing an Email a Customer Will Trust",
+      "audio_vo": "assets/audio/vo/1S09-INTRO.mp3"
+    },
+    {
+      "id": "1S10",
+      "title": "Match the Channel to the Message",
+      "audio_vo": "assets/audio/vo/1S10-INTRO.mp3"
+    },
+    {
+      "id": "1S11",
+      "title": "Four Mistakes That Quietly Erode Trust",
+      "audio_vo": "assets/audio/vo/1S11-INTRO.mp3"
+    },
+    {
+      "id": "2KC03",
+      "title": "Knowledge Check",
+      "audio_vo": "assets/audio/vo/2KC01-INTRO.mp3"
+    },
+    {
+      "id": "2KC04",
+      "title": "Knowledge Check",
+      "audio_vo": "assets/audio/vo/2KC01-INTRO.mp3"
+    },
+    {
+      "id": "1S12",
+      "title": "Module 7 Complete",
+      "audio_vo": "assets/audio/vo/1S12-INTRO.mp3"
+    },
+    {
+      "id": "3FQ01",
+      "title": "Final Assessment — Question 1"
+    },
+    {
+      "id": "3FQ02",
+      "title": "Final Assessment — Question 2"
+    },
+    {
+      "id": "3FQ03",
+      "title": "Final Assessment — Question 3"
+    },
+    {
+      "id": "3FQ04",
+      "title": "Final Assessment — Question 4"
+    },
+    {
+      "id": "3FQ05",
+      "title": "Final Assessment — Question 5"
+    },
+    {
+      "id": "3FQ06",
+      "title": "Final Assessment — Question 6"
+    },
+    {
+      "id": "3FQ07",
+      "title": "Final Assessment — Question 7"
+    },
+    {
+      "id": "3FQ08",
+      "title": "Final Assessment — Question 8"
+    },
+    {
+      "id": "3FQ09",
+      "title": "Final Assessment — Question 9"
+    },
+    {
+      "id": "3FQ10",
+      "title": "Final Assessment — Question 10"
+    },
+    {
+      "id": "3FQ-SCORE",
+      "title": "Module 7 Assessment Results"
+    }
+  ],
+  "quiz": {
+    "final_quiz": {
+      "passing_score": 80,
+      "questions": [
+        "3FQ01",
+        "3FQ02",
+        "3FQ03",
+        "3FQ04",
+        "3FQ05",
+        "3FQ06",
+        "3FQ07",
+        "3FQ08",
+        "3FQ09",
+        "3FQ10"
+      ]
+    }
+  }
+}
