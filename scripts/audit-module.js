@@ -135,6 +135,9 @@ for (const s of slides) {
 for (const s of slides) {
   const t = (s.fields['Template-ID'] || '').toLowerCase();
   if (t !== 'video-scenario' && t !== 'scenario-branch') continue;
+  // A hand-built slide's HTML is the source of truth — the storyboard's
+  // Template-ID is just a stale label there, so video wiring can't be inferred.
+  if (isHandBuilt(s)) continue;
   const id = s.fields['Slide-ID'];
   const html = path.join(SLIDES_DIR, `${id}.html`);
   if (exists(html)) {

@@ -39,6 +39,7 @@ function parseArgs(argv) {
     if (argv[i] === '--slide')      args.slide        = argv[++i];
     if (argv[i] === '--force')      args.force        = true;
     if (argv[i] === '--allow-handbuilt') args.allowHandbuilt = true;
+    if (argv[i] === '--unlock')     args.unlock       = true;
   }
   return args;
 }
@@ -1341,6 +1342,23 @@ function camelToWords(str) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+
+  // ── Module lock ───────────────────────────────────────────────────────────
+  // storyboard/.no-regen means the compiled slides and course.data.json are the
+  // source of truth for this module: its slides are hand-edited, and/or its
+  // storyboard Slide-IDs have drifted from the build. Compiling would overwrite
+  // the hand work and, where the ids differ, rewrite course.data.json to ids
+  // that orphan every live slide. Refuse before anything is written.
+  {
+    const lock = path.join(path.dirname(args.storyboard), '.no-regen');
+    if (fs.existsSync(lock) && !args.unlock) {
+      console.error(`\nREFUSING to compile — ${lock} is present.`);
+      console.error('This module is locked: its slides are the source of truth, so');
+      console.error('regenerating them would destroy hand-edited work.');
+      console.error('Read that file for the reason, then pass --unlock if you are certain.\n');
+      process.exit(1);
+    }
+  }
 
   // Validate storyboard
   const sbPath = path.resolve(args.storyboard);
