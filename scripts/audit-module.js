@@ -116,6 +116,10 @@ function findAsset(name) {
       path.join(ASSETS, 'audio', 'vo', name), path.join(ASSETS, 'audio', 'sfx', name),
       path.join(ASSETS, 'audio', 'vo', 'pre-made', name),
       path.join(ASSETS, 'audio', 'interaction', name), path.join(ASSETS, 'audio', name),
+      // Some modules keep media at the assets root, and CC05 uses assets/vid/
+      // rather than assets/video/ — searching only the canonical dirs reported
+      // present files as missing (e.g. CC12 1S16's looping hero video).
+      path.join(ASSETS, name), path.join(ASSETS, 'vid', name),
   ];
   return cands.find(exists) || null;
 }
