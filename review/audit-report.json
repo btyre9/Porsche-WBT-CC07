@@ -1,8 +1,8 @@
 {
-  "generated": "2026-07-26T14:48:33.186Z",
+  "generated": "2026-07-27T20:11:40.250Z",
   "module": "Porsche-WBT-CC07",
   "errors": 0,
-  "warnings": 61,
+  "warnings": 34,
   "flags": [
     {
       "slide": "1S01",
@@ -179,178 +179,16 @@
       "msg": "[S11] 1S01 (line 3) 4 passive slides within 12 consecutive content slides (max 2). Window starts here."
     },
     {
-      "slide": "._1S01-INTRO",
-      "check": "SYNC",
+      "slide": "(package)",
+      "check": "LMS",
       "severity": "warn",
-      "msg": "._1S01-INTRO.vtt has no cues"
+      "msg": "output/ is older than course/ — re-run Package before uploading"
     },
     {
-      "slide": "._1S02-INTRO",
+      "slide": "(module)",
       "check": "SYNC",
       "severity": "warn",
-      "msg": "._1S02-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S03-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S03-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S04-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S04-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S05-CLICK-Email",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S05-CLICK-Email.vtt has no cues"
-    },
-    {
-      "slide": "._1S05-CLICK-Text",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S05-CLICK-Text.vtt has no cues"
-    },
-    {
-      "slide": "._1S05-CLICK-Video",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S05-CLICK-Video.vtt has no cues"
-    },
-    {
-      "slide": "._1S05-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S05-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S06-CLICK-Hotspot1",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S06-CLICK-Hotspot1.vtt has no cues"
-    },
-    {
-      "slide": "._1S06-CLICK-Hotspot2",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S06-CLICK-Hotspot2.vtt has no cues"
-    },
-    {
-      "slide": "._1S06-CLICK-Hotspot3",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S06-CLICK-Hotspot3.vtt has no cues"
-    },
-    {
-      "slide": "._1S06-CLICK-Hotspot4",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S06-CLICK-Hotspot4.vtt has no cues"
-    },
-    {
-      "slide": "._1S06-CLICK-Hotspot5",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S06-CLICK-Hotspot5.vtt has no cues"
-    },
-    {
-      "slide": "._1S06-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S06-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S07-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S07-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S08-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S08-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S08-TAB-Permission",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S08-TAB-Permission.vtt has no cues"
-    },
-    {
-      "slide": "._1S08-TAB-Scope",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S08-TAB-Scope.vtt has no cues"
-    },
-    {
-      "slide": "._1S08-TAB-Timing",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S08-TAB-Timing.vtt has no cues"
-    },
-    {
-      "slide": "._1S08-TAB-Tone",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S08-TAB-Tone.vtt has no cues"
-    },
-    {
-      "slide": "._1S09-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S09-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S10-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S10-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S11-CLICK-AllCaps",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S11-CLICK-AllCaps.vtt has no cues"
-    },
-    {
-      "slide": "._1S11-CLICK-Casual",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S11-CLICK-Casual.vtt has no cues"
-    },
-    {
-      "slide": "._1S11-CLICK-Permanence",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S11-CLICK-Permanence.vtt has no cues"
-    },
-    {
-      "slide": "._1S11-CLICK-Stalking",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S11-CLICK-Stalking.vtt has no cues"
-    },
-    {
-      "slide": "._1S11-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S11-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._1S12-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._1S12-INTRO.vtt has no cues"
-    },
-    {
-      "slide": "._2KC01-INTRO",
-      "check": "SYNC",
-      "severity": "warn",
-      "msg": "._2KC01-INTRO.vtt has no cues"
+      "msg": "ffprobe not installed — caption/audio drift not checked"
     },
     {
       "slide": "1S05",

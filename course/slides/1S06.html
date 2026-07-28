@@ -155,6 +155,21 @@
     .hotspot.visited:not(.is-active) .hotspot-number { display: none; }
     .hotspot.visited:not(.is-active) .hotspot-check  { display: block; }
 
+    /* Ordered progression — markers must be opened 01, 02, 03 ... in sequence.
+       Only the next one in the sequence is reachable; the ones after it are
+       dimmed and inert so the number is a genuine instruction rather than a
+       label the learner can ignore. Already-visited markers stay clickable so
+       the learner can re-read an earlier popover. */
+    .hotspot.is-pending {
+      pointer-events: none;
+      opacity: 0.28;
+    }
+    .hotspot.is-pending .hotspot-dot::after { animation: none; opacity: 0; }
+
+    /* The pulse is the "you are here" cue, so it belongs on the next marker
+       only — not on every unvisited one, which would point five ways at once. */
+    .hotspot:not(.is-next) .hotspot-dot::after { animation: none; opacity: 0; }
+
     .hotspot-check {
       display: none;
       width: 18px;
@@ -341,10 +356,8 @@
 
     <!-- Header -->
     <header class="slide-header">
-      <div style="display:flex; align-items:flex-end; gap: var(--pds-space-lg);">
-        <h2 class="pds-heading-display anim-fade-up" style="--anim-delay: 0.10s;">Inside a Quality Video Update</h2>
-        <div class="pds-accent-bar anim-bar-grow" style="--anim-delay: 0.15s; margin-bottom: 8px;"></div>
-      </div>
+      <div class="pds-accent-bar anim-fade-up" style="--anim-delay: 0.05s;"></div>
+      <h2 class="pds-heading-display anim-fade-up" style="--anim-delay: 0.10s;">Inside a Quality Video Update</h2>
       <p class="pds-body anim-fade-up" style="--anim-delay: 0.20s;">Select each marker to see what makes a video look — and sound — like a Porsche technician.</p>
     </header>
 
@@ -524,6 +537,32 @@ var SandboxRuntime = (function () {
   var TOTAL_HS  = 5;
   var visited   = new Set();
   var unlocked  = false;
+  var completingLabel = null;   // the marker that completes the set; Next waits for its clip to end
+
+  function hasPlayer() {
+    try { return !!(window.parent && window.parent !== window && window.parent.CourseRuntime); }
+    catch (_) { return false; }
+  }
+  // Route hotspot audio through the player so it emits player-interaction-ended.
+  function playClickAudio(label, path) {
+    if (!path) return;
+    if (hasPlayer()) {
+      window.parent.postMessage({
+        type: 'sandbox-play-interaction', src: path, id: String(label),
+        pauseNarration: true, resumeNarration: false,
+        lockNext: false            // the slide-level sandbox-lock-next owns Next
+      }, '*');
+    } else {
+      try { new Audio(path).play().catch(function () {}); } catch (_) {}
+    }
+  }
+  // Release Next only once the completing marker's VO has finished playing.
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'player-interaction-ended') return;
+    if (completingLabel != null && String(e.data.id) === completingLabel) {
+      window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+    }
+  });
 
   // Entrance animations
   document.querySelectorAll('.anim-fade-up, .anim-bar-grow').forEach(function (el) {
@@ -572,10 +611,45 @@ var SandboxRuntime = (function () {
     if (active) drawConnector(active.dataset.hs);
   });
 
+  /* ── Ordered progression ────────────────────────────────────────────────
+     The markers are numbered 01..N on screen, so they must be opened in that
+     order. Sequence is taken from DOM order, which is what the printed numbers
+     are generated from — deliberately NOT from the data-hs label, which is
+     semantic and varies by slide ("Hotspot1", "Ring1", "Torque"...).
+
+     Reachable = the next unvisited marker, plus anything already visited so a
+     learner can go back and re-read. Everything beyond the next one is inert
+     and dimmed via .is-pending, and aria-disabled so it is not announced as an
+     available control. */
+  var order = Array.prototype.map.call(hotspots, function (h) { return h.dataset.hs; });
+
+  function nextKey() {
+    for (var i = 0; i < order.length; i++) {
+      if (!visited.has(order[i])) return order[i];
+    }
+    return null;                                  // all done
+  }
+
+  function refreshSequence() {
+    var next = nextKey();
+    hotspots.forEach(function (h) {
+      var key       = h.dataset.hs;
+      var isVisited = visited.has(key);
+      var isNext    = (key === next);
+      var reachable = isVisited || isNext;
+
+      h.classList.toggle('is-next', isNext && unlocked);
+      h.classList.toggle('is-pending', !reachable);
+      if (reachable) h.removeAttribute('aria-disabled');
+      else           h.setAttribute('aria-disabled', 'true');
+    });
+  }
+
   function unlockHotspots() {
     if (unlocked) return;
     unlocked = true;
     if (stage) stage.classList.remove('is-locked');
+    refreshSequence();
   }
 
   function clearActive() {
@@ -606,20 +680,24 @@ var SandboxRuntime = (function () {
       if (marker) marker.classList.add('visited');
 
       var audioPath = HS_AUDIO[key];
-      if (audioPath) {
-        SandboxRuntime.interactionAudio.src = audioPath;
-        SandboxRuntime.interactionAudio.play();
-      }
+      playClickAudio(key, audioPath);
 
+      // All markers visited → unlock Next, but only AFTER the final clip finishes
+      // (the last clicked clip must play before Next enables — see COURSE-RULES).
       if (visited.size >= TOTAL_HS) {
-        window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
+        if (audioPath && hasPlayer()) completingLabel = String(key);
+        else window.parent.postMessage({ type: 'sandbox-unlock-next' }, '*');
       }
+      refreshSequence();                          // advance the sequence one step
     }
   }
 
   hotspots.forEach(function (h) {
     h.addEventListener('click', function () {
       if (!unlocked) return;
+      // Out-of-sequence markers are inert (.is-pending kills pointer-events),
+      // but keyboard activation can still reach them — so gate here as well.
+      if (h.getAttribute('aria-disabled') === 'true') return;
       if (h.classList.contains('is-active')) {
         clearActive();
       } else {
@@ -639,6 +717,10 @@ var SandboxRuntime = (function () {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && unlocked) clearActive();
   });
+
+  // Mark the sequence before unlock too, so assistive tech never announces the
+  // later markers as available while the intro VO is still playing.
+  refreshSequence();
 
   // Unlock when INTRO VO ends — same fallback as accordion-content
   setTimeout(function () {

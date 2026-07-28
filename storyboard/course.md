@@ -205,7 +205,6 @@ Correct-Answer: 3
 Review-Slide: 1S03
 Notes: knowledge-check chosen — tests Objective 1, the business case for video from S03. Distractors target real misconceptions: that video is mandated (it is not), that video replaces the call (it complements it), and that video is faster (it usually is not — it is more effective).
 Status: Draft
-Voiceover-INTRO: Let's check your understanding. Select the best answer.
 Choice-1: Video updates are required by Porsche for all service work
 Choice-2: Video updates eliminate the need for a follow-up phone call
 Choice-3: Video shows the customer what you see, which lifts approval of recommended work by roughly 27%
@@ -337,7 +336,6 @@ Correct-Answer: 2
 Review-Slide: 1S10
 Notes: knowledge-check chosen — tests Objective 4, channel matching. Distractor 1 tests blind preference-following; 3 ignores urgency and engagement; 4 abandons proactivity. The right move is to honor their preference for the heads-up but use the better channel for the substance.
 Status: Draft
-Voiceover-INTRO: Let's check your understanding. Select the best answer.
 Choice-1: Text the full explanation because that is their stated preference
 Choice-2: Send a brief text saying the inspection is done, then record a video walkthrough of the findings
 Choice-3: Email the full diagnostic report and wait for them to read it

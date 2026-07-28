@@ -1,122 +1,14 @@
 # Module Audit — Porsche-WBT-CC07
 
-_7/26/2026, 10:48:33 AM_ — **0 error(s), 61 warning(s)**
+_7/27/2026, 4:11:57 PM_ — **0 error(s), 34 warning(s)**
 
-## ._1S01-INTRO
+## (module)
 
-- ⚠ **SYNC** — ._1S01-INTRO.vtt has no cues
+- ⚠ **SYNC** — ffprobe not installed — caption/audio drift not checked
 
-## ._1S02-INTRO
+## (package)
 
-- ⚠ **SYNC** — ._1S02-INTRO.vtt has no cues
-
-## ._1S03-INTRO
-
-- ⚠ **SYNC** — ._1S03-INTRO.vtt has no cues
-
-## ._1S04-INTRO
-
-- ⚠ **SYNC** — ._1S04-INTRO.vtt has no cues
-
-## ._1S05-CLICK-Email
-
-- ⚠ **SYNC** — ._1S05-CLICK-Email.vtt has no cues
-
-## ._1S05-CLICK-Text
-
-- ⚠ **SYNC** — ._1S05-CLICK-Text.vtt has no cues
-
-## ._1S05-CLICK-Video
-
-- ⚠ **SYNC** — ._1S05-CLICK-Video.vtt has no cues
-
-## ._1S05-INTRO
-
-- ⚠ **SYNC** — ._1S05-INTRO.vtt has no cues
-
-## ._1S06-CLICK-Hotspot1
-
-- ⚠ **SYNC** — ._1S06-CLICK-Hotspot1.vtt has no cues
-
-## ._1S06-CLICK-Hotspot2
-
-- ⚠ **SYNC** — ._1S06-CLICK-Hotspot2.vtt has no cues
-
-## ._1S06-CLICK-Hotspot3
-
-- ⚠ **SYNC** — ._1S06-CLICK-Hotspot3.vtt has no cues
-
-## ._1S06-CLICK-Hotspot4
-
-- ⚠ **SYNC** — ._1S06-CLICK-Hotspot4.vtt has no cues
-
-## ._1S06-CLICK-Hotspot5
-
-- ⚠ **SYNC** — ._1S06-CLICK-Hotspot5.vtt has no cues
-
-## ._1S06-INTRO
-
-- ⚠ **SYNC** — ._1S06-INTRO.vtt has no cues
-
-## ._1S07-INTRO
-
-- ⚠ **SYNC** — ._1S07-INTRO.vtt has no cues
-
-## ._1S08-INTRO
-
-- ⚠ **SYNC** — ._1S08-INTRO.vtt has no cues
-
-## ._1S08-TAB-Permission
-
-- ⚠ **SYNC** — ._1S08-TAB-Permission.vtt has no cues
-
-## ._1S08-TAB-Scope
-
-- ⚠ **SYNC** — ._1S08-TAB-Scope.vtt has no cues
-
-## ._1S08-TAB-Timing
-
-- ⚠ **SYNC** — ._1S08-TAB-Timing.vtt has no cues
-
-## ._1S08-TAB-Tone
-
-- ⚠ **SYNC** — ._1S08-TAB-Tone.vtt has no cues
-
-## ._1S09-INTRO
-
-- ⚠ **SYNC** — ._1S09-INTRO.vtt has no cues
-
-## ._1S10-INTRO
-
-- ⚠ **SYNC** — ._1S10-INTRO.vtt has no cues
-
-## ._1S11-CLICK-AllCaps
-
-- ⚠ **SYNC** — ._1S11-CLICK-AllCaps.vtt has no cues
-
-## ._1S11-CLICK-Casual
-
-- ⚠ **SYNC** — ._1S11-CLICK-Casual.vtt has no cues
-
-## ._1S11-CLICK-Permanence
-
-- ⚠ **SYNC** — ._1S11-CLICK-Permanence.vtt has no cues
-
-## ._1S11-CLICK-Stalking
-
-- ⚠ **SYNC** — ._1S11-CLICK-Stalking.vtt has no cues
-
-## ._1S11-INTRO
-
-- ⚠ **SYNC** — ._1S11-INTRO.vtt has no cues
-
-## ._1S12-INTRO
-
-- ⚠ **SYNC** — ._1S12-INTRO.vtt has no cues
-
-## ._2KC01-INTRO
-
-- ⚠ **SYNC** — ._2KC01-INTRO.vtt has no cues
+- ⚠ **LMS** — output/ is older than course/ — re-run Package before uploading
 
 ## 1S01
 

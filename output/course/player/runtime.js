@@ -206,8 +206,10 @@ window.__REVIEW_BUILD__ = false;
     audio: null,
     audioStartTimer: null,
     nextLockedByAudio: false,       // unlocked when primary VO ends
-    nextLockedByInteraction: false, // controlled by sandbox-lock/unlock-next messages
+    nextLockedByInteraction: false, // controlled by sandbox-lock/unlock-next + configure/mark-interaction messages
     nextLockedByInteractionAudio: false, // unlocked when click/response VO ends
+    requiredInteractionIds: [],     // ids a slide must mark before Next unlocks (sandbox-configure-interactions)
+    markedInteractionIds: {},       // ids marked so far (sandbox-mark-interaction)
     pendingKCReturn: null,          // { kcSlideId, reviewSlides } — active during review loop
     kcReviewConfig: {},             // loaded from kc-review.json
     pendingAudioStart: false,
@@ -497,6 +499,20 @@ window.__REVIEW_BUILD__ = false;
   }
 
   function updateAudioUi() {
+    /* An interaction clip (card / hotspot / tab VO) is the active speaker while
+       it runs, so the play button must govern IT, not the narration sitting
+       paused underneath. Without this the button is disabled exactly when a
+       card clip is talking — narration has ended — and the learner has no way
+       to stop it. */
+    var channel = state.interactionAudio;
+    if (channel) {
+      $("btn-playpause").disabled = false;
+      setAudioProgressEnabled(!!state.audio);
+      setPlayPauseVisual(!channel.paused);
+      if (state.audio) syncAudioProgress();
+      return;
+    }
+
     var hasAudio = !!state.audio;
     $("btn-playpause").disabled = !hasAudio || !!(state.audio && state.audio.ended);
     setAudioProgressEnabled(hasAudio);
@@ -547,11 +563,37 @@ window.__REVIEW_BUILD__ = false;
     if (wasAudioLocked && !state.nextLockedByInteraction && !state.nextLockedByInteractionAudio) pulseNextButton();
     /* Narration finished. Slides that gate interaction on the intro VO (e.g.
        video-scenario locking its play CTA) listen for ended:true to unlock. */
-    postMessageToSlide({ type: "player-play-state", playing: false, ended: true });
+    postPlayState(false, true);
   }
 
   function onAudioMeta() {
     syncAudioProgress();
+  }
+
+  /**
+   * Broadcast play/pause state to the current slide.
+   *
+   * Slides read this two different ways: the large majority check
+   * `e.data.state === 'paused'`, while a handful read `e.data.playing`. Only
+   * `playing` was ever sent, so ~226 slides across the twelve modules had a
+   * dead pause handler — their paused styling never applied and any logic
+   * gated on it never ran. Sending both fields fixes them all without editing
+   * every slide, and keeps the `playing` readers working unchanged.
+   *
+   * `state` must distinguish "ended" from "paused" even though no slide styles
+   * the difference. Slides gate their VO-finished detection on NOT being
+   * paused, precisely so that a learner hitting pause is not mistaken for the
+   * narration finishing; reporting the real end as "paused" would suppress
+   * that detection and leave cards and hotspots locked forever.
+   */
+  function postPlayState(playing, ended) {
+    var msg = {
+      type: "player-play-state",
+      playing: !!playing,
+      state: ended ? "ended" : (playing ? "playing" : "paused")
+    };
+    if (ended !== undefined) msg.ended = !!ended;
+    postMessageToSlide(msg);
   }
 
   function postMessageToSlide(msg) {
@@ -562,6 +604,18 @@ window.__REVIEW_BUILD__ = false;
   }
 
   function togglePlayPause() {
+    /* Interaction audio takes the button while it is live — see updateAudioUi().
+       Narration is already paused underneath and resumes on its own when the
+       clip ends, via maybeResumeNarrationAfterInteraction(). */
+    var channel = state.interactionAudio;
+    if (channel) {
+      if (channel.paused) channel.play().catch(function () {});
+      else channel.pause();
+      updateAudioUi();
+      postPlayState(!channel.paused);
+      return;
+    }
+
     if (!state.audio) return;
 
     if (state.audio.paused || state.pendingAudioStart || state.audioStartTimer) {
@@ -578,7 +632,7 @@ window.__REVIEW_BUILD__ = false;
       state.pendingAudioStart = false;
       disarmAudioUnlockListeners();
       attemptStartAudioPlayback();
-      postMessageToSlide({ type: "player-play-state", playing: true });
+      postPlayState(true);
       return;
     }
 
@@ -586,7 +640,7 @@ window.__REVIEW_BUILD__ = false;
     disarmAudioUnlockListeners();
     state.audio.pause();
     updateAudioUi();
-    postMessageToSlide({ type: "player-play-state", playing: false });
+    postPlayState(false);
   }
 
   function showSlide(i, forceReplay) {
@@ -609,6 +663,8 @@ window.__REVIEW_BUILD__ = false;
     // Reset slide-scoped locks on every slide change
     state.nextLockedByInteraction = false;
     state.nextLockedByInteractionAudio = false;
+    state.requiredInteractionIds = [];
+    state.markedInteractionIds = {};
     var slideAudio = resolveSlideAudioSrc(slides[i]);
     state.nextLockedByAudio = !!slideAudio && !state.devMode;
     var slideSrc = "../slides/" + slides[i].id + ".html";
@@ -872,6 +928,8 @@ window.__REVIEW_BUILD__ = false;
 
     if (shouldResume) maybeResumeNarrationAfterInteraction();
     else state.interactionAudioShouldResumeNarration = false;
+    // The clip no longer owns the play button — hand it back to narration.
+    if (current) updateAudioUi();
   }
 
   function normalizeInteractionClip(id, raw) {
@@ -970,6 +1028,7 @@ window.__REVIEW_BUILD__ = false;
     var pauseNarration = opts.pauseNarration !== false;
     var resumeNarration = opts.resumeNarration !== false;
     var lockNext = opts.lockNext !== false && !state.devMode;
+    var onEndedCb = typeof opts.onEnded === "function" ? opts.onEnded : null;
     var narrationWasPlaying = !!(
       state.audio &&
       !state.audio.paused &&
@@ -1007,6 +1066,12 @@ window.__REVIEW_BUILD__ = false;
       }
       if (allowResume !== false) maybeResumeNarrationAfterInteraction();
       else state.interactionAudioShouldResumeNarration = false;
+      // The clip no longer owns the play button — hand it back to narration.
+      updateAudioUi();
+      // Notify the slide the clip finished (natural end OR error). Interruption
+      // by a newer clip goes through stopInteractionAudio(), which never calls
+      // finish(), so this only fires when the clip actually stops on its own.
+      if (onEndedCb) { try { onEndedCb(); } catch (_e) {} }
     }
 
     function onEnded() { finish(true); }
@@ -1020,6 +1085,7 @@ window.__REVIEW_BUILD__ = false;
         try { channel.currentTime = start; } catch (_e) {}
       }
       channel.play().catch(function () { finish(false); });
+      updateAudioUi();                 // the clip now owns the play button
     }
 
     channel.volume = Number.isFinite(Number(opts.volume)) ? Math.max(0, Math.min(1, Number(opts.volume))) : 1;
@@ -2142,11 +2208,7 @@ window.__REVIEW_BUILD__ = false;
           // What a gating slide needs to know is: is there narration still to come?
           var hasNarration = !!state.audio;
           var narrationDone = !hasNarration || !!state.audio.ended;
-          postMessageToSlide({
-            type: "player-play-state",
-            playing: hasNarration && !narrationDone,
-            ended: narrationDone
-          });
+          postPlayState(hasNarration && !narrationDone, narrationDone);
           break;
         }
         case "sandbox-request-cc":
@@ -2161,6 +2223,58 @@ window.__REVIEW_BUILD__ = false;
           state.nextLockedByInteraction = false;
           updateNavButtons();
           if (wasInteractionLocked && !state.nextLockedByAudio && !state.nextLockedByInteractionAudio) pulseNextButton();
+          break;
+        case "sandbox-stop-narration":
+          // A slide (e.g. a KC on submit) permanently stops the intro VO so it
+          // can't finish or resume behind the interaction.
+          if (state.audio && !state.audio.paused) state.audio.pause();
+          state.interactionAudioShouldResumeNarration = false;
+          if (state.nextLockedByAudio) {
+            state.nextLockedByAudio = false;
+            updateNavButtons();
+          }
+          break;
+        case "sandbox-configure-interactions":
+          // A slide (e.g. 1S06 drag-to-match) declares the set of interactions
+          // that must be completed before Next unlocks.
+          state.requiredInteractionIds = Array.isArray(e.data.requiredIds)
+            ? e.data.requiredIds.map(String) : [];
+          state.markedInteractionIds = {};
+          if (e.data.lockNextUntilComplete && state.requiredInteractionIds.length && !state.devMode) {
+            state.nextLockedByInteraction = true;
+            updateNavButtons();
+          }
+          break;
+        case "sandbox-mark-interaction":
+          // The slide reports one required interaction as done.
+          if (e.data.id != null) state.markedInteractionIds[String(e.data.id)] = true;
+          var allInteractionsDone = state.requiredInteractionIds.length > 0 &&
+            state.requiredInteractionIds.every(function (id) { return state.markedInteractionIds[id]; });
+          if (allInteractionsDone && state.nextLockedByInteraction) {
+            state.nextLockedByInteraction = false;
+            updateNavButtons();
+            if (!state.nextLockedByAudio && !state.nextLockedByInteractionAudio) pulseNextButton();
+          }
+          break;
+        case "sandbox-play-interaction":
+          // A slide (e.g. step-sequence) asks the player to narrate a clip
+          // through the shared interaction-audio channel.
+          if (e.data.src) {
+            var interactionId = e.data.id;
+            playInteractionAudio({
+              src: e.data.src,
+              start: e.data.start,
+              end: e.data.end,
+              pauseNarration: e.data.pauseNarration,
+              resumeNarration: e.data.resumeNarration,
+              lockNext: e.data.lockNext,
+              volume: e.data.volume,
+              playbackRate: e.data.playbackRate,
+              onEnded: function () {
+                postMessageToSlide({ type: "player-interaction-ended", id: interactionId });
+              }
+            });
+          }
           break;
         case "sandbox-swap-audio":
           // Slide requests a mid-slide audio swap (e.g. a split-explore slide part 2).
@@ -2437,6 +2551,8 @@ window.__REVIEW_BUILD__ = false;
         return { correct: state.finalCorrect, answered: answered, total: total };
       },
 
+      // Learner name from the LMS (SCORM), for the completion certificate.
+      // Returns "First Last" or "" when unavailable (e.g. local preview).
       getLearnerName: function () { return scorm.getLearnerName(); }
     };
 

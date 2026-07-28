@@ -133,11 +133,31 @@
     return parts[0] || 0;
   }
 
-  /** assets/audio/vo/1S04-CLICK-OpenEnded.mp3 -> ./assets/captions/1S04-CLICK-OpenEnded.vtt */
+  /**
+   * Caption URL for a clip, anchored on the clip's OWN resolved url rather
+   * than on a path relative to the document.
+   *
+   * WHY: the dev shell is course/index.html, but the SCORM player shell is
+   * course/player/index.html. A document-relative "./assets/captions/" is
+   * therefore one level too deep in every package we ship, and every caption
+   * this module renders 404s in the LMS while narration captions work fine.
+   * runtime.js escapes the trap only because sync-output.js rewrites its
+   * "./" prefixes to "../" when it stages the player; this file is copied
+   * verbatim, so it cannot rely on that. The audio url already carries the
+   * right prefix, so re-anchoring on its /assets/ segment is correct from any
+   * mount point and needs no build-time rewriting.
+   *
+   *   http://host/course/assets/audio/vo/1S05-CLICK-Video.mp3
+   *     -> http://host/course/assets/captions/1S05-CLICK-Video.vtt
+   */
   function captionUrlFor(src) {
-    var file = String(src || "").split(/[?#]/)[0].split("/").pop();
-    var base = file.replace(/\.[^.]+$/, "");
-    return base ? CAPTION_DIR + encodeURIComponent(base) + ".vtt" : "";
+    var clean = String(src || "").split(/[?#]/)[0];
+    var base = clean.split("/").pop().replace(/\.[^.]+$/, "");
+    if (!base) return "";
+    var name = encodeURIComponent(base) + ".vtt";
+    var at = clean.lastIndexOf("/assets/");
+    if (at !== -1) return clean.slice(0, at) + "/assets/captions/" + name;
+    return CAPTION_DIR + name;                             // no /assets/ in the url
   }
 
   function loadCues(url) {
@@ -227,6 +247,7 @@
 
   function adopt(clip) {
     if (!clip || clip.tagName !== "AUDIO") return;         // <video> handles itself
+    if (clip.__govWarm) return;                            // the warm-keeper is not content
     if (governed) { if (governed.has(clip)) return; governed.add(clip); }
     else if (clip.__governed) { return; } else { clip.__governed = true; }
 
@@ -251,6 +272,91 @@
     clip.addEventListener("emptied", function () { releaseOverlay(clip); });
   }
 
+  /* ------------------------------------------------------------- warm-up */
+  /* WHY THIS EXISTS
+     Every VO clip in the course carries only 60-140 ms of silence before
+     speech starts (measured across all 746 clips; median ~105 ms). A cold
+     output device eats that margin and the first syllable with it —
+     Bluetooth is the worst case, because A2DP renegotiates the stream on
+     every start and can swallow 200-500 ms.
+
+     The clips and the player are both innocent: an element reports
+     readyState 4, fully buffered, and begins at currentTime 0. Delaying
+     play() therefore cannot help — it moves *when* playback starts, not
+     *where in the clip* sound becomes audible. What helps is never letting
+     the output device go idle, so narration starts into a stream that is
+     already running.
+
+     A looping clip of true digital silence does that, and does it on the
+     same output path the <audio> elements use. Volume stays at 1: a
+     zero-volume element is a candidate for being optimised away, and the
+     samples are already silent. */
+
+  var warmClip = null;
+
+  /** A one-second mono 8-bit WAV of pure silence, built in memory. */
+  function silentWavUrl() {
+    var rate = 8000, n = rate;                             // 1 s
+    var buf = new ArrayBuffer(44 + n);
+    var v = new DataView(buf);
+    function tag(off, s) {
+      for (var i = 0; i < s.length; i += 1) v.setUint8(off + i, s.charCodeAt(i));
+    }
+    tag(0, "RIFF");  v.setUint32(4, 36 + n, true);
+    tag(8, "WAVEfmt ");
+    v.setUint32(16, 16, true);                             // fmt chunk length
+    v.setUint16(20, 1, true);                              // PCM
+    v.setUint16(22, 1, true);                              // mono
+    v.setUint32(24, rate, true);                           // sample rate
+    v.setUint32(28, rate, true);                           // byte rate
+    v.setUint16(32, 1, true);                              // block align
+    v.setUint16(34, 8, true);                              // bits per sample
+    tag(36, "data"); v.setUint32(40, n, true);
+    for (var i = 0; i < n; i += 1) v.setUint8(44 + i, 128); // 8-bit zero level
+    return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+  }
+
+  function startWarmKeeper() {
+    if (warmClip) return;
+    var url = "";
+    try {
+      url = silentWavUrl();
+      warmClip = new Audio(url);
+      warmClip.__govWarm = true;      // excluded from adopt(): no captions, no rate, no mute
+      warmClip.loop = true;
+      var started = warmClip.play();
+      if (started && typeof started.catch === "function") {
+        // Not a real gesture after all; drop it and wait for the next one.
+        started.catch(function () { warmClip = null; URL.revokeObjectURL(url); });
+      }
+    } catch (err) {
+      warnOnce("could not start the output warm-keeper", err);
+      warmClip = null;
+      if (url) URL.revokeObjectURL(url);
+    }
+  }
+
+  var WARM_EVENTS = ["pointerdown", "keydown", "touchstart"];
+
+  function onWarmGesture() { startWarmKeeper(); }
+
+  /* Armed on the player document and on each slide document as it loads, and
+     never disarmed: startWarmKeeper() returns immediately once the clip is
+     running, so a stale listener costs one function call per gesture. That is
+     cheaper than tracking which iframe document a listener was attached to. */
+  function armWarmGestureListeners(target) {
+    if (!target || typeof target.addEventListener !== "function") return;
+    for (var i = 0; i < WARM_EVENTS.length; i += 1) {
+      target.addEventListener(WARM_EVENTS[i], onWarmGesture, true);
+    }
+  }
+
+  function slideDocument() {
+    var frame = byId("slide-frame");
+    try { return frame && frame.contentDocument; }
+    catch (err) { return null; }                            // cross-origin
+  }
+
   /* --------------------------------------------------------------- adapter */
   /* The single invasive part, deliberately isolated: wrap play() so clips are
      adopted no matter which of the three paths created them, or when. */
@@ -273,6 +379,8 @@
 
   function init() {
     installAdapter(window);                                // narration + interaction
+    armWarmGestureListeners(document);
+    armWarmGestureListeners(slideDocument());
 
     var frame = byId("slide-frame");
     if (frame) {
@@ -281,6 +389,7 @@
         live.length = 0;                                   // previous slide's clips are gone
         speaker = null;
         installAdapter(frame.contentWindow);
+        armWarmGestureListeners(slideDocument());
       });
     }
 
@@ -313,5 +422,10 @@
   }
 
   // Exposed for reuse/testing; also lets slides parse VTT without their own copy.
-  window.AudioGovernor = { parseVtt: parseVtt, captionUrlFor: captionUrlFor, sync: syncAll };
+  window.AudioGovernor = {
+    parseVtt: parseVtt,
+    captionUrlFor: captionUrlFor,
+    sync: syncAll,
+    isOutputWarm: function () { return !!warmClip && !warmClip.paused; }
+  };
 })(window, document);
