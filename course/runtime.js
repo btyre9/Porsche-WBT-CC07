@@ -2630,7 +2630,61 @@
       }
     }
 
+    // Dev: seed final-quiz results from ?score= so the score slide's pass and
+    // fail states can be checked without answering every question. Accepts a
+    // percentage ("90", "90%") or an explicit tally ("4/5"). Percentages are
+    // resolved against the real per-attempt question count set by
+    // initFinalQuiz(), so ?score=80 lands on the actual pass threshold.
+    seedFinalScoreFromUrl();
+
     showSlide(startIndex);
+  }
+
+  // Reads ?score= and fakes a completed final-quiz attempt. No-op when the
+  // param is absent, so this stays inert in a normal LMS launch.
+  function seedFinalScoreFromUrl() {
+    var raw = null;
+    try {
+      raw = new URLSearchParams(window.location.search || "").get("score");
+    } catch (_e) { return; }
+    if (!raw) return;
+
+    var total   = state.finalTotal > 0 ? state.finalTotal : 10;
+    var correct = null;
+
+    var tally = /^(\d+)\s*\/\s*(\d+)$/.exec(raw);
+    if (tally) {
+      correct = parseInt(tally[1], 10);
+      total   = parseInt(tally[2], 10);
+    } else if (/^\d+(\.\d+)?%?$/.test(raw)) {
+      // Floor, not round: a 5-question attempt only lands on 20% steps, and
+      // rounding up would push ?score=79 to 80% and silently pass a run meant
+      // to test the fail path. Flooring keeps the result at or below the ask.
+      correct = Math.floor((parseFloat(raw) / 100) * total);
+    }
+
+    if (correct === null || !isFinite(correct) || !(total > 0)) {
+      console.warn('[dev] ?score= expects "90", "90%" or "4/5" — got "' + raw + '"');
+      return;
+    }
+    correct = Math.max(0, Math.min(correct, total));
+
+    state.finalTotal    = total;
+    state.finalCorrect  = correct;
+    state.finalAnswered = total;
+
+    // A seeded attempt counts as completed, so the TOC unlocks and the score
+    // slide is reachable directly.
+    state.quizCompleted = true;
+    state.furthestSlide = (state.data && state.data.slides || []).length - 1;
+    updateTocLock();
+
+    var achieved = Math.round((correct / total) * 100);
+    console.info("[dev] seeded final quiz: " + correct + "/" + total +
+                 " (" + achieved + "%)" +
+                 (tally ? "" : " — " + total + " questions this attempt, so the" +
+                  " nearest achievable score at or below " + parseFloat(raw) +
+                  "% is " + achieved + "%"));
   }
 
   init().catch(function (e) {

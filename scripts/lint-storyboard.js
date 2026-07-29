@@ -57,11 +57,81 @@ const content = slides.filter(s => {
   return t && !ASSESSMENT_TEMPLATES.has(t);
 });
 
+// ── BODY: every interactive trigger needs a matching body field ──────────────
+// The parser reads `Item-<Label>-Body`. A trigger with no matching body compiles
+// to an HTML comment, so the tab/card/accordion opens showing only its headline —
+// silently, with no build error. `Tab-Body-<Label>` is a legacy name the parser
+// never reads and was the usual cause.
+// Only these three read Item-<Label>-Body (buildTabPanelPanelsHtml,
+// buildAccordionItemsHtml, buildHotspotPopoversHtml). card-explore and
+// tile-explore carry their panel copy in Card-Bullets-* / Tile-Bullets-*
+// instead, so they must NOT be flagged here.
+const BODY_TEMPLATES = new Set([
+  'tab-panel', 'accordion-content', 'accordion-content-image-left', 'hotspot',
+]);
+for (const s of content) {
+  const tpl = (s.fields['Template-ID'] || '').toLowerCase();
+  if (!BODY_TEMPLATES.has(tpl)) continue;
+
+  const legacy = Object.keys(s.fields).filter(k => /^(Tab|Card|Item)-Body-/.test(k));
+  if (legacy.length) {
+    warn('BODY', s, `${legacy.length} legacy body field(s) the parser ignores: ${legacy.join(', ')}. Rename to Item-<Label>-Body.`);
+  }
+
+  const labels = Object.keys(s.fields)
+    .map(k => (k.match(/^Voiceover-(?:CLICK|TAB)-(.+)$/) || [])[1])
+    .filter(Boolean);
+  const missing = labels.filter(l => !s.fields[`Item-${l}-Body`]);
+  if (missing.length) {
+    warn('BODY', s, `${tpl}: ${missing.length} of ${labels.length} panel(s) have no Item-<Label>-Body, so they will render headline-only: ${missing.join(', ')}.`);
+  }
+}
+
+// ── STEP: step-sequence slides need real step content ────────────────────────
+// buildStepsHtml reads `Step-Title-<N>` / `Step-Body-<N>` (1-based, unpadded) and
+// stops at the first gap. With none present it emits zero steps and the slide
+// renders "Step 1 of 0" — no build error. Note the authoring kit's §4.12 documents
+// `Step-NN-Title` / `Step-NN-Sig` / `Step-NN-Bullets`, none of which the parser
+// reads; this rule flags that spelling too.
+for (const s of content) {
+  const tpl = (s.fields['Template-ID'] || '').toLowerCase();
+  if (!tpl.startsWith('step-sequence')) continue;
+
+  const wrong = Object.keys(s.fields).filter(k => /^Step-\d+-(Title|Sig|Bullets|Body)$/.test(k));
+  if (wrong.length) {
+    warn('STEP', s, `${wrong.length} step field(s) use a spelling the parser ignores (${wrong.slice(0,3).join(', ')}${wrong.length>3?'…':''}). Use Step-Title-<N> and Step-Body-<N>.`);
+  }
+
+  const vo = Object.keys(s.fields).filter(k => /^Voiceover-STEP-\d+$/.test(k)).length;
+  let titles = 0;
+  for (let i = 1; i <= 15; i++) { if (s.fields[`Step-Title-${i}`]) titles++; else break; }
+  if (vo && !titles) {
+    warn('STEP', s, `${vo} Voiceover-STEP-* clip(s) but no Step-Title-1, so the slide will render "Step 1 of 0" with no steps.`);
+  } else if (titles && titles !== vo) {
+    warn('STEP', s, `${titles} step(s) defined but ${vo} Voiceover-STEP-* clip(s) — counts must match.`);
+  }
+  for (let i = 1; i <= titles; i++) {
+    if (!s.fields[`Step-Body-${i}`]) warn('STEP', s, `Step ${i} ("${s.fields[`Step-Title-${i}`]}") has no Step-Body-${i}, so it renders as a bare heading.`);
+  }
+}
+
 // ── S12: consecutive identical templates ────────────────────────────────────
+// tile-explore was superseded by card-explore because the two read as the same
+// layout to a learner. Alternating between them therefore does NOT satisfy the
+// no-repeat rule, so collapse them to one identity before comparing.
+const TEMPLATE_ALIAS = { 'tile-explore': 'card-explore' };
+const layoutId = (s) => {
+  const t = (s.fields['Template-ID'] || '').toLowerCase();
+  return TEMPLATE_ALIAS[t] || t;
+};
 for (let i = 1; i < content.length; i++) {
-  const a = (content[i - 1].fields['Template-ID'] || '').toLowerCase();
-  const b = (content[i].fields['Template-ID'] || '').toLowerCase();
-  if (a && a === b) warn('S12', content[i], `template "${b}" repeats back-to-back (previous: ${content[i - 1].fields['Slide-ID']}). Swap one for a different layout (tab-panel, accordion-content, card-explore...).`);
+  const a = layoutId(content[i - 1]);
+  const b = layoutId(content[i]);
+  if (!a || a !== b) continue;
+  const rawA = (content[i - 1].fields['Template-ID'] || '').toLowerCase();
+  const rawB = (content[i].fields['Template-ID'] || '').toLowerCase();
+  const via = rawA === rawB ? `"${rawB}"` : `"${rawA}" then "${rawB}" (the same layout — tile-explore is superseded by card-explore)`;
+  warn('S12', content[i], `template ${via} repeats back-to-back (previous: ${content[i - 1].fields['Slide-ID']}). Swap one for a genuinely different layout (tab-panel, accordion-content, step-sequence, drag-match...).`);
 }
 
 // ── S11: passive pacing ──────────────────────────────────────────────────────

@@ -112,8 +112,17 @@ const TEMPLATE_FRAMING = {
   'content-split':       { aspect: '4:5',  note: 'Vertical media for a right-hand column beside body text. Subject centered and well-contained with breathing room; not full-bleed.' },
   'card-explore':        { aspect: '1:1',  note: 'Square card thumbnail. Single clear subject, centered, simple background, instantly legible at small size.' },
   'hotspot':             { aspect: '16:9', note: 'Clean technical/product shot for interactive callouts. Even lighting, neutral or seamless background, the component sharp and fully visible with margin around it; no distracting elements.' },
-  'accordion-content':   { aspect: '16:9', note: 'Supporting editorial image alongside expandable process content. Clear single subject, moderate negative space.' },
-  'tab-panel':           { aspect: '16:9', note: 'Large centered hero image that fills the stage behind the tab modals; one strong subject, balanced composition, reads well large. Modals open over a dimmed version, so avoid critical detail dead-center.' },
+  'accordion-content':   { aspect: '3:4', note: 'Vertical image filling the accordion’s portrait rail, measured 680x920 (3:4) in the 1920x920 canvas. Compose a single contained subject for a tall crop — a 16:9 source loses well over half its width here.' },
+  // The tab-panel stage is a full-bleed strip, measured at 1920x691 in the
+  // 1920x920 canvas — roughly 2.8:1, not 16:9. Asking for 16:9 here produced
+  // images that lost ~30% of their height to object-fit:cover; a 4:3 source lost
+  // over half, which is how heads ended up cropped. (The 4:3 in
+  // generate-slides.js ASPECT_BY_TEMPLATE governs the per-tab
+  // Item-<Label>-Image, a different slot.)
+  'tab-panel':           { aspect: '25:9', note: 'Ultra-wide panoramic banner filling a full-bleed stage strip behind the tab modals — approximately 2.8:1 (1920x691, or 2560x920 for headroom). Compose horizontally with the subject and any faces in the vertical middle band; the top and bottom edges are the first thing lost. Modals open over a dimmed version, so avoid critical detail dead-center.' },
+  // .image-panel measured 690x920 in the 1920x920 canvas = exactly 3:4.
+  'drag-match-left':     { aspect: '3:4',  note: 'Vertical image filling one side of a two-column matching exercise, 690x920 (3:4). Single contained subject with breathing room, composed for a tall crop; not full-bleed.' },
+  'drag-match-right':    { aspect: '3:4',  note: 'Vertical image filling the right side of a two-column matching exercise, 690x920 (3:4). Single contained subject with breathing room, composed for a tall crop; not full-bleed.' },
   'closing':             { aspect: '16:9', note: 'Aspirational, atmospheric full-bleed closing image. Emotive, brand-defining, space for a short sign-off line.' },
   'scenario-branch':     { aspect: '16:9', note: 'Realistic situational scene that sets up a decision. Authentic, candid, neutral.' },
   'drag-match-left':     { aspect: '3:4',  note: 'Vertical image filling a full-height supporting rail beside the drag-and-drop columns. One clear subject with the focal point in the upper two-thirds; simple, uncluttered background; no text overlaid on the image itself.' },

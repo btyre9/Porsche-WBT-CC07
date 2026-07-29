@@ -225,10 +225,10 @@ Voiceover-TAB-Scope: Text is for short, factual updates. "Your Cayenne is ready 
 Voiceover-TAB-Timing: Only text during business hours unless the customer has specifically said otherwise. A nine PM text reads differently than a one PM text — even if the content is identical.
 Voiceover-TAB-Tone: Write in complete sentences. Skip emojis. No ALL CAPS — it reads as shouting. Tone is the hardest thing to carry in text, so leave nothing ambiguous.
 Image-File: 1S08.webp
-Tab-Body-Permission: Always ask before you text. Document the customer's channel preference in the system so it follows the vehicle.
-Tab-Body-Timing: Business hours only — unless the customer has explicitly told you they want updates anytime.
-Tab-Body-Tone: Complete sentences. No ALL CAPS. Minimal or zero emojis. Be unambiguous — text has no tone of voice.
-Tab-Body-Scope: Use text for short, confirmable updates. Switch to phone or video for anything complex or sensitive.
+Item-Permission-Body: Always ask before you text. Document the customer's channel preference in the system so it follows the vehicle.
+Item-Timing-Body: Business hours only — unless the customer has explicitly told you they want updates anytime.
+Item-Tone-Body: Complete sentences. No ALL CAPS. Minimal or zero emojis. Be unambiguous — text has no tone of voice.
+Item-Scope-Body: Use text for short, confirmable updates. Switch to phone or video for anything complex or sensitive.
 
 ## Slide 11 — Writing an Email a Customer Will Trust
 Slide-ID: 1S09

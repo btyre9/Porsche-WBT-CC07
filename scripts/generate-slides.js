@@ -101,8 +101,8 @@ const TEMPLATE_PREFERRED_RATIO = {
   'video-scenario':                 16/9,
   'content-stat':                   16/9,
   'closing':                        16/9,
-  'accordion-content':              4/5,
-  'accordion-content-image-left':   4/5,
+  'accordion-content':              3/4,
+  'accordion-content-image-left':   3/4,
   'tab-panel':                      4/3,
   'card-explore':                   4/3,
   'tile-explore':                   4/3,
@@ -111,8 +111,8 @@ const TEMPLATE_PREFERRED_RATIO = {
   'learning-objectives':            3/4,
   'step-sequence':                  4/3,
   'bar-chart-modal':                4/3,
-  'drag-match-left':                4/5,
-  'drag-match-right':               4/5,
+  'drag-match-left':                3/4,
+  'drag-match-right':               3/4,
 };
 
 const MAIN_IMAGE_TEMPLATES = new Set([
@@ -569,12 +569,17 @@ function buildStepsHtml(slide, slideId) {
   }
   if (!items.length) return '<!-- no steps -->';
   const total = items.length;
-  return items.map((s) =>
+  return items.map((s) =>    // .step-panel is the frosted-glass container the step-sequence stylesheet
+    // styles (simulated glass, since backdrop-filter is disabled under the
+    // slide's transform-scale). Without this wrapper the step copy sits directly
+    // on the background image and the frosted effect never appears.
     `      <div class="step-item" data-step="${s.n}" data-audio="${escAttr(s.audioPath)}" data-total="${total}">\n` +
-    `        <div class="step-number">${String(s.n).padStart(2, '0')}</div>\n` +
-    `        <div class="step-content">\n` +
-    `          <div class="step-title">${escHtml(s.title)}</div>\n` +
-    `          <ul class="bullet-list">\n${buildBulletListHtml(s.body)}\n          </ul>\n` +
+    `        <div class="step-panel">\n` +
+    `          <div class="step-number">${String(s.n).padStart(2, '0')}</div>\n` +
+    `          <div class="step-content">\n` +
+    `            <div class="step-title">${escHtml(s.title)}</div>\n` +
+    `            <ul class="bullet-list">\n${buildBulletListHtml(s.body)}\n            </ul>\n` +
+    `          </div>\n` +
     `        </div>\n` +
     `      </div>`
   ).join('\n');
