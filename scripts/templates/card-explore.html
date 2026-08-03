@@ -449,12 +449,18 @@ var SandboxRuntime = (function () {
 
   function onCardClick(cardEl, label) {
     if (!cardsUnlocked) return;
-    if (visited.has(label)) return; // already visited — allow replay but don't double-count
 
     document.querySelectorAll('.tile').forEach(function (t) {
       if (t !== cardEl) t.classList.remove('is-active');
     });
     cardEl.classList.add('is-active');
+
+    // Revisiting a card must still show its text — the old early return bailed
+    // before this point, leaving a visited card completely inert.
+    if (visited.has(label)) return;
+
+    // First visit only: the clip plays once per slide session. A revisit is for
+    // re-reading the card, not for hearing the narration again.
     visited.add(label);
     cardEl.classList.add('visited');
 
