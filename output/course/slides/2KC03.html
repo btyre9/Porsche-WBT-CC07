@@ -454,7 +454,15 @@ var SandboxRuntime = (function () {
     optionsList.classList.remove('is-vo-locked');
   }
   SandboxRuntime.voAudio.addEventListener('ended', unlockInteraction);
-  setTimeout(unlockInteraction, 15000); // fallback if audio never plays
+  // This slide may have no intro narration at all (the second question of each
+  // KC pair does not), in which case 'ended' never fires and the options would
+  // sit dead until the fallback below. Ask the player: it replies with
+  // ended:true when there is no narration still to come.
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'player-play-state' && e.data.ended) unlockInteraction();
+  });
+  try { window.parent.postMessage({ type: 'sandbox-request-narration' }, '*'); } catch (_) {}
+  setTimeout(unlockInteraction, 15000); // last-resort fallback
 
   // ── Shuffle options + re-assign A–D labels ────────────────────────────── //
   var CORRECT = 'A'; // updated after shuffle based on data-correct="true"

@@ -46,6 +46,22 @@ const SHARED_AUDIO_BASENAMES = new Set([
 const dryRun = process.argv.includes('--dry-run');
 const cleanMedia = process.argv.includes('--clean-media');
 
+// ── Module lock ─────────────────────────────────────────────────────────────
+// storyboard/.no-regen means this module's slides are the source of truth. This
+// script deletes every slide, VO clip and caption, and it runs BEFORE
+// generate-slides in the dashboard's full-compile path — so without this guard a
+// locked module would be gutted before the compile step could refuse.
+{
+  const lock = path.join('storyboard', '.no-regen');
+  if (fs.existsSync(lock) && !process.argv.includes('--unlock')) {
+    console.error(`\nREFUSING to clean — ${lock} is present.`);
+    console.error('This module is locked: deleting its slides, narration and captions');
+    console.error('would destroy hand-edited work that cannot be regenerated.');
+    console.error('Read that file for the reason, then pass --unlock if you are certain.\n');
+    process.exit(1);
+  }
+}
+
 function log(action, target) {
   const prefix = dryRun ? '  WOULD ' : '  ';
   console.log(`${prefix}${action.padEnd(7)} ${target}`);

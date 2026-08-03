@@ -85,8 +85,10 @@
       min-height: 0;
       gap: 0;
     }
+    /* Locked during the INTRO narration: block interaction outright rather than
+       relying only on the JS guards, so no drag path can slip through. */
     .match-zone.is-locked {
-      pointer-events: auto;
+      pointer-events: none;
       cursor: default;
     }
 
@@ -580,11 +582,31 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     if (!e.data.locked) unlockZone();
   });
 
-  // Fallback: the current player never emits 'player-intro-state', so unlock
-  // shortly after load. Next stays gated via sandbox-lock-next until complete.
-  setTimeout(function () { if (!introMsg) unlockZone(); }, 300);
+  // The player never emits 'player-intro-state'. The old fallback unlocked 300ms
+  // after load, which let learners drag straight over the top of the INTRO clip.
+  // Watch the player's own audio state instead — start, then stop — mirroring how
+  // step-sequence waits on its VO 'ended' event.
+  var CR = null;
+  try { CR = (window.parent && window.parent.CourseRuntime) || null; } catch (_) { CR = null; }
+  var preview = false;
+  try { preview = !!(CR && CR.isDashboardPreview); } catch (_) { preview = false; }
 
-  try { if (!window.parent || !window.parent.CourseRuntime) unlockZone(); } catch (_) { unlockZone(); }
+  if (!CR || preview) {
+    // Opened standalone or in the authoring preview: no narration to wait on.
+    unlockZone();
+  } else {
+    var voStarted = false;
+    (function waitForIntro() {
+      if (!matchLocked || introMsg) return;
+      var playing = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+      var at = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+      if (playing || at > 0) voStarted = true;
+      if (voStarted && !playing) { unlockZone(); return; }
+      requestAnimationFrame(waitForIntro);
+    }());
+    // Safety net: if no INTRO clip ever starts, don't strand the learner.
+    setTimeout(function () { if (!voStarted) unlockZone(); }, 4000);
+  }
 
   window.parent.postMessage({
     type: 'sandbox-configure-interactions',

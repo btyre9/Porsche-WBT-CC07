@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Porsche WBT Module</title>
+  <title>Customer Communications 7 - Digital Communication Excellence</title>
   <style>
     @font-face {
       font-family: 'Porsche Next TT';
@@ -659,6 +659,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+      .cc-overlay:empty { display: none; }
   </style>
 </head>
 <body>
@@ -670,7 +671,7 @@
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m18 16v1h-12v-1zm0-5v1h-12v-1zm0-5v1h-12v-1z"/></svg>
         <span>Menu</span>
       </button>
-      <span class="top-title" id="course-title">Porsche WBT Module</span>
+      <span class="top-title" id="course-title">Customer Communications 7 - Digital Communication Excellence</span>
     </div>
     <div class="top-right">
       <button class="top-icon-btn" id="btn-resources" title="Resources">
@@ -862,5 +863,33 @@
   </div>
 
   <script src="./runtime.js"></script>
+  <script src="../assets/js/audio-governor.js?v=1784946094"></script>
+<!-- build-stamp:start -->
+<script>
+(function () {
+  var B = {"module":"porsche-CC07-001","sha":"804885e","branch":"main","dirty":true,"built":"2026-08-01T17:14:13.432Z","builtBy":"home"};
+  window.__BUILD__ = B;
+  try {
+    console.info('%c[build]%c ' + "porsche-CC07-001 804885e-dirty 2026-08-01 17:14Z (main)",
+                 'color:#cc1922;font-weight:bold', 'color:inherit');
+  } catch (_e) {}
+  function show() {
+    var panel = document.getElementById('menu-panel');
+    if (!panel || panel.querySelector('.build-stamp')) return;
+    var el = document.createElement('div');
+    el.className = 'build-stamp';
+    el.textContent = "porsche-CC07-001 804885e-dirty 2026-08-01 17:14Z (main)";
+    el.style.cssText = 'margin-top:auto;padding:14px 20px;font-size:11px;line-height:1.5;' +
+                       'opacity:.45;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;' +
+                       'word-break:break-all;user-select:text;';
+    el.title = 'Build identifier — quote this when reporting an issue';
+    panel.appendChild(el);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', show);
+  } else { show(); }
+})();
+</script>
+<!-- build-stamp:end -->
 </body>
 </html>

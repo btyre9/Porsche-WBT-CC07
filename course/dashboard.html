@@ -89,6 +89,11 @@
             <option value="">Select compiled slide…</option>
           </select>
           <button class="btn btn-secondary btn-xs" id="btn-preview-mode" title="Toggle Slide / Player Shell Mode" disabled><i class="pi pi-document"></i><span class="btn-label">Slide Mode</span></button>
+          <!-- Score-slide result fakes. Hidden unless the selected slide is the
+               final-quiz score slide; see updateScoreTestButtons() in dashboard.js. -->
+          <span class="stage-controls-sep" id="score-test-sep" hidden></span>
+          <button class="btn btn-secondary btn-xs" id="btn-score-pass" title="Reload the score slide with a passing result (100%) — plays Congratulations.mp3 and shows the certificate. No need to answer the quiz." hidden>Test Pass</button>
+          <button class="btn btn-secondary btn-xs" id="btn-score-fail" title="Reload the score slide with a failing result (0%) — plays FailResponse.mp3 and shows the retry panel. No need to answer the quiz." hidden>Test Fail</button>
           <span class="preview-timer-display" id="preview-timer">0.00s / 0.00s</span>
         </div>
         <div class="stage-controls-right">
@@ -98,19 +103,13 @@
           <button class="btn btn-secondary btn-xs" id="btn-img-adjust" title="Position, scale, matte/haze, color overlay & vignette — all in one tool. Saves to the storyboard"><i class="pi pi-adjust"></i><span class="btn-label">Adjust Image</span></button>
           <button class="btn btn-secondary btn-xs" id="btn-hotspot-drag" title="Hotspot slides only: drag markers (callout + line follow) to reposition them so callouts don't block the image. Saves marker positions to the storyboard."><i class="pi pi-adjust"></i><span class="btn-label">Drag Markers</span></button>
           <span class="stage-controls-sep"></span>
-          <button class="btn btn-secondary btn-xs" id="btn-update-slide" title="Recompile just this slide's HTML — fast, no audio regeneration" disabled><i class="pi pi-refresh"></i><span class="btn-label">Update Slide</span></button>
-          <button class="btn btn-secondary btn-xs" id="btn-update-slide-voice" title="Regenerate this slide's audio + captions + cues, then recompile (hits the TTS API — use when narration changed)" disabled><i class="pi pi-microphone"></i><span class="btn-label">+ Voice</span></button>
+          <button class="btn btn-secondary btn-xs" id="btn-update-slide" title="Recompile just this slide's HTML — fast, no audio regeneration" aria-disabled="true"><i class="pi pi-refresh"></i><span class="btn-label">Update Slide</span></button>
+          <button class="btn btn-secondary btn-xs" id="btn-update-slide-voice" title="Regenerate this slide's audio + captions + cues, then recompile (hits the TTS API — use when narration changed)" aria-disabled="true"><i class="pi pi-microphone"></i><span class="btn-label">+ Voice</span></button>
           <label class="auto-compile-toggle" title="Auto-compile after saving the storyboard">
             <input type="checkbox" id="chk-auto-compile">
             <span class="toggle-label">Auto-Compile</span>
           </label>
         </div>
-      </div>
-      <div class="stage-hints">
-        <span class="shortcut-hint"><kbd>Space</kbd> Play/Pause</span>
-        <span class="shortcut-hint"><kbd>←</kbd> Prev</span>
-        <span class="shortcut-hint"><kbd>→</kbd> Next</span>
-        <span class="shortcut-hint"><kbd>⌘S</kbd> Save</span>
       </div>
     </section>
 

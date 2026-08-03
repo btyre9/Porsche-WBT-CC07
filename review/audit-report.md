@@ -1,12 +1,10 @@
 # Module Audit — Porsche-WBT-CC07
 
-_7/8/2026, 5:10:22 PM_ — **2 error(s), 33 warning(s)**
+_7/27/2026, 4:11:57 PM_ — **0 error(s), 34 warning(s)**
 
 ## (module)
 
-- ⚠ **LMS** — course.data.json meta.id is still "module-id-here" — run init-module
-- ✖ **LMS** — imsmanifest.xml still contains XXXX — run init-module
-- ✖ **LMS** — imsmanifest.xml still has the placeholder "Module Title"
+- ⚠ **SYNC** — ffprobe not installed — caption/audio drift not checked
 
 ## (package)
 
@@ -33,7 +31,7 @@ _7/8/2026, 5:10:22 PM_ — **2 error(s), 33 warning(s)**
 ## 1S05
 
 - ⚠ **DRAFT** — still marked Status: Draft ("Your Three Digital Channels")
-- ⚠ **FIELD** — no Image-File (template card-explore)
+- ⚠ **STORY** — slide shows 1S05-Video.webp but the storyboard block has no Image-File — regenerating would replace the art with a placeholder
 
 ## 1S06
 
@@ -58,7 +56,7 @@ _7/8/2026, 5:10:22 PM_ — **2 error(s), 33 warning(s)**
 ## 1S11
 
 - ⚠ **DRAFT** — still marked Status: Draft ("Four Mistakes That Quietly Erode Trust")
-- ⚠ **FIELD** — no Image-File (template card-explore)
+- ⚠ **STORY** — slide shows 1S11-AllCaps.webp but the storyboard block has no Image-File — regenerating would replace the art with a placeholder
 
 ## 1S12
 
@@ -83,6 +81,7 @@ _7/8/2026, 5:10:22 PM_ — **2 error(s), 33 warning(s)**
 ## 3FQ-SCORE
 
 - ⚠ **DRAFT** — still marked Status: Draft ("Quiz Score")
+- ⚠ **STORY** — slide shows certificate-template.jpg but the storyboard block has no Image-File — regenerating would replace the art with a placeholder
 
 ## 3FQ01
 

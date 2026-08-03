@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPreviewPlayPause = null;
   const previewTimer = document.getElementById('preview-timer');
   const btnPreviewMode = document.getElementById('btn-preview-mode');
+  const btnScorePass = document.getElementById('btn-score-pass');
+  const btnScoreFail = document.getElementById('btn-score-fail');
+  const scoreTestSep = document.getElementById('score-test-sep');
   const btnSlidePrev = null;
   const btnSlideNext = null;
   const chkAutoCompile = document.getElementById('chk-auto-compile');
@@ -587,11 +590,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnScormTest) btnScormTest.addEventListener('click', () => window.open('/scorm-test', 'scorm-harness'));
 
   // Single-slide updates — scoped to the slide selected in the preview drawer.
+  /* The slide-scoped pipeline buttons are unavailable until a slide is chosen.
+     They are marked aria-disabled rather than disabled on purpose: a natively
+     disabled button swallows the click with no event at all, which reads to the
+     user as "the button is broken". Left clickable, the guard in
+     updateSelectedSlide() can explain why nothing happened. */
+  function setSlideActionsAvailable(available) {
+    [btnUpdateSlide, btnUpdateSlideVoice].forEach(function (btn) {
+      if (!btn) return;
+      btn.disabled = false;
+      btn.setAttribute('aria-disabled', available ? 'false' : 'true');
+    });
+  }
+
   function updateSelectedSlide(withVoice, buttonEl) {
     const slideId = slideSelector.value;
     if (!slideId) {
-      appendConsole('[UPDATE] Select a slide in the preview first.\n');
-      showToast('Select a slide to update first.', 'error');
+      appendConsole('[UPDATE] No slide selected — pick one in the preview dropdown first.\n');
+      showToast('Select a slide in the preview first, then click again.', 'error');
       return;
     }
     appendConsole(`>>> Updating ${slideId}${withVoice ? ' (with voice regeneration)' : ' (layout only)'}...\n`);
@@ -708,20 +724,42 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${seconds.toFixed(2)}s`;
   }
 
+  // Which faked final-quiz result the score slide is previewing: null (real
+  // state, i.e. 0% because nothing was answered), 100 (pass), or 0 (fail).
+  let scoreOverride = null;
+
+  // Matches the runtime's own convention, so this works whether the module
+  // names its slide 3FQ-SCORE, FQ-CC01-SCORE or FQ_CC08_SCORE.
+  function isScoreSlide(slideId) {
+    return /[_-]SCORE$/i.test(String(slideId || ''));
+  }
+
+  // Show the Test Pass / Test Fail buttons only on the score slide, and mark
+  // whichever result is currently on screen.
+  function updateScoreTestButtons(slideId) {
+    const show = isScoreSlide(slideId);
+    [btnScorePass, btnScoreFail, scoreTestSep].forEach(el => {
+      if (el) el.hidden = !show;
+    });
+    if (!show) return;
+    if (btnScorePass) btnScorePass.classList.toggle('btn-primary', scoreOverride === 100);
+    if (btnScoreFail) btnScoreFail.classList.toggle('btn-primary', scoreOverride === 0);
+  }
+
   function updateIframeSrc(slideId) {
+    updateScoreTestButtons(slideId);
+
     if (!slideId) {
       previewIframe.src = 'about:blank';
       stopSlideIntroAudio();
-      if (btnUpdateSlide) btnUpdateSlide.disabled = true;
-      if (btnUpdateSlideVoice) btnUpdateSlideVoice.disabled = true;
+      setSlideActionsAvailable(false);
       if (btnSetImage) btnSetImage.disabled = true;
       return;
     }
 
     btnPreviewMode.disabled = false;
     btnPreviewEdit.disabled = false;
-    if (btnUpdateSlide) btnUpdateSlide.disabled = false;
-    if (btnUpdateSlideVoice) btnUpdateSlideVoice.disabled = false;
+    setSlideActionsAvailable(true);
     // Image assets exist only for content slides — quiz/score slides have none.
     if (btnSetImage) btnSetImage.disabled = !slideSupportsImage(slideId);
     
@@ -737,7 +775,16 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPreviewPlayPause.disabled = true;
         btnPreviewPlayPause.textContent = '⏸️';
       }
-      previewIframe.src = `index.html?slide=${slideId}&dev=1`;
+      // A faked score only makes sense on the score slide, and only in player
+      // mode — the param is read by the player, not the slide itself.
+      const fakingScore = isScoreSlide(slideId) && scoreOverride !== null;
+      // dev=1 pops the TOC menu open on load, which covers the score panel we
+      // just asked to look at. ?score= already sets quizCompleted and unlocks
+      // every slide, so dev=1 is redundant while faking a result — drop it.
+      const params = fakingScore
+        ? `slide=${slideId}&score=${scoreOverride}`
+        : `slide=${slideId}&dev=1`;
+      previewIframe.src = `index.html?${params}`;
     }
   }
 
@@ -891,11 +938,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function cardFromEl(el) {
     const label = el.getAttribute('data-card');
     if (!label) return null;
+    // card-explore reads Card-Image-<Label>; tile-explore reads Image-<Label>.
+    // Both emit data-card, so writing the card-explore name on a tile-explore
+    // slide saved the image to a field the template never reads — the tile just
+    // stayed empty. The grid container's id tells the two templates apart.
+    const isTile = !!(el.closest && el.closest('#tile-row'));
+    const prefix = isTile ? 'Image' : 'Card-Image';
     return {
-      el, label,
-      field:      `Card-Image-${label}`,
-      posField:   `Card-Image-Position-${label}`,
-      scaleField: `Card-Image-Scale-${label}`,
+      el, label, isTile,
+      field:      `${prefix}-${label}`,
+      posField:   `${prefix}-Position-${label}`,
+      scaleField: `${prefix}-Scale-${label}`,
     };
   }
   function getPreviewCards() {
@@ -1192,8 +1245,39 @@ document.addEventListener('DOMContentLoaded', () => {
     updateIframeSrc(slideId);
   });
 
+  // Test Pass / Test Fail — fake a completed final quiz so the score slide's
+  // two states can be checked without answering questions. Clicking either
+  // forces Player Mode, since the score param is read by the player shell.
+  function previewScore(pct) {
+    const slideId = slideSelector.value;
+    if (!slideId || !isScoreSlide(slideId)) return;
+
+    // Toggle off if the same result is already showing.
+    scoreOverride = (scoreOverride === pct) ? null : pct;
+
+    if (previewMode !== 'player') {
+      previewMode = 'player';
+      const modeIcon = btnPreviewMode.querySelector('.pi');
+      const modeLabel = btnPreviewMode.querySelector('.btn-label');
+      if (modeLabel) modeLabel.textContent = 'Slide Mode';
+      if (modeIcon) { modeIcon.classList.remove('pi-screen'); modeIcon.classList.add('pi-document'); }
+      btnPreviewMode.classList.add('btn-primary');
+    }
+
+    appendConsole(scoreOverride === null
+      ? `[SCORE] Cleared faked result on ${slideId} — showing real quiz state.\n`
+      : `[SCORE] Previewing ${slideId} as ${scoreOverride === 100 ? 'PASS' : 'FAIL'} (${scoreOverride}%).\n`);
+
+    updateIframeSrc(slideId);
+  }
+
+  if (btnScorePass) btnScorePass.addEventListener('click', () => previewScore(100));
+  if (btnScoreFail) btnScoreFail.addEventListener('click', () => previewScore(0));
+
   slideSelector.addEventListener('change', () => {
     const slideId = slideSelector.value;
+    // Don't carry a faked result across to a different slide.
+    scoreOverride = null;
     updateIframeSrc(slideId);
     updateNavButtons();
     jumpToSlideInStoryboard(slideId);   // storyboard follows the selected slide
@@ -1993,7 +2077,15 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
         appendConsole(`>>> Saved ${slideId}${card ? ' · ' + card.label : ''}: ${posField} ${posVal}, ${scaleField} ${scaleVal}${fxLog}. Recompiling...\n`);
       } catch (err) { appendConsole(`[ADJUST] Save error: ${err.message}\n`); return; }
       teardown();
-      await triggerPipeline('/api/compile', btnImgAdjust);
+      // Recompile ONLY this slide. The global /api/compile runs an unscoped
+      // `generate-slides.js --force`, which is refused outright on modules
+      // carrying storyboard/.no-regen — so framing saved fine but never reached
+      // the HTML. Per-slide is also faster and can't touch other slides.
+      await triggerPipeline('/api/compile-single', btnImgAdjust, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slideId }),
+      });
       updateIframeSrc(slideId);
     }
 

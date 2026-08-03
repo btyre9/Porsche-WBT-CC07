@@ -2,10 +2,15 @@
   "Porsche": "Porsha",
   "Taycan":  "Tie-kahn",
   "Macan":   "Mah-kahn",
-  "Cayenne": "Kai-yen",
+  "Cayenne": "Kai-enn",
   "DiSC":    "disc",
   "WBT":     "W B T",
   "PPE":     "P P E",
   "HV":      "high voltage",
-  "SCORM":   "score-m"
+  "SCORM":   "score-m",
+
+  "hit record":       "hit rih-cord",
+  "hitting record":   "hitting rih-cord",
+  "you record":       "you rih-cord",
+  "record a video":   "rih-cord a video"
 }

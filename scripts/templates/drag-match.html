@@ -53,8 +53,10 @@
       min-height: 0;
       gap: 0;
     }
+    /* Locked during the INTRO narration: block interaction outright rather than
+       relying only on the JS guards, so no drag path can slip through. */
     .match-zone.is-locked {
-      pointer-events: auto;
+      pointer-events: none;
       cursor: default;
     }
 
@@ -587,7 +589,28 @@ var TOTAL_PAIRS = {{TOTAL_PAIRS}};
     if (e.data.type === 'player-intro-state' && !e.data.locked) unlockZone();
   });
 
-  try { if (!window.parent || !window.parent.CourseRuntime) unlockZone(); } catch (_) { unlockZone(); }
+  // Wait for the INTRO narration to finish before allowing drags. Previously this
+  // unlocked as soon as a CourseRuntime was absent and never waited otherwise, so
+  // the zone was live while the intro clip was still playing.
+  var CR = null;
+  try { CR = (window.parent && window.parent.CourseRuntime) || null; } catch (_) { CR = null; }
+  var preview = false;
+  try { preview = !!(CR && CR.isDashboardPreview); } catch (_) { preview = false; }
+
+  if (!CR || preview) {
+    unlockZone();
+  } else {
+    var voStarted = false;
+    (function waitForIntro() {
+      if (!matchLocked) return;
+      var playing = CR.isAudioPlaying ? CR.isAudioPlaying() : false;
+      var at = CR.getAudioCurrentTime ? CR.getAudioCurrentTime() : 0;
+      if (playing || at > 0) voStarted = true;
+      if (voStarted && !playing) { unlockZone(); return; }
+      requestAnimationFrame(waitForIntro);
+    }());
+    setTimeout(function () { if (!voStarted) unlockZone(); }, 4000);
+  }
 
   /* ── Register interaction IDs with player ───────────────────────────────── */
   window.parent.postMessage({

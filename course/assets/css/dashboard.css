@@ -830,3 +830,6 @@ kbd {
 .sb-line .sb-key  { color: var(--pds-accent, #c39a6b); }
 .sb-line.sb-flash { animation: sbFlash 1.6s ease-out 1; }
 @keyframes sbFlash { 0% { background: rgba(195,154,107,.45); } 100% { background: rgba(195,154,107,.10); } }
+
+/* Unavailable pipeline buttons stay clickable so they can explain why. */
+.btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }

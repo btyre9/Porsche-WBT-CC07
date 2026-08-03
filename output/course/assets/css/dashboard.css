@@ -776,3 +776,60 @@ kbd {
   .toolbar-title, .toolbar-btn-label { display: none; }
   .sidepanel { flex-basis: 340px; }
 }
+
+/* ── Storyboard editor: syntax-highlighted mirror backdrop ─────────────────
+   The <textarea> keeps all editing behavior but renders its text transparent;
+   an exactly-metric-matched mirror behind it draws the same text with colors,
+   slide separators, and tinted bands for VO / animation-cue / image fields.
+   Both layers share one font stack so they can never drift apart. */
+.sb-editor-wrap {
+  position: relative; flex: 1; min-height: 220px; display: flex;
+  background: var(--pds-bg-base);
+  border: 1px solid var(--pds-hairline);
+  border-radius: var(--pds-radius-md, 8px);
+  overflow: hidden;
+}
+.storyboard-textarea, .sb-backdrop-inner {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px; line-height: 1.65; font-weight: 400;
+  letter-spacing: normal; tab-size: 4;
+  padding: var(--pds-space-md, 16px);
+  white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;
+}
+.sb-editor-wrap .storyboard-textarea {
+  position: relative; z-index: 1; flex: 1; width: 100%;
+  background: transparent; border: none; border-radius: 0;
+  color: transparent; caret-color: var(--pds-text-primary);
+  min-height: 0;
+}
+.sb-editor-wrap .storyboard-textarea::placeholder { color: var(--pds-text-secondary, #9a9aa5); }
+.sb-editor-wrap .storyboard-textarea::selection { background: rgba(100, 149, 237, .30); }
+.sb-backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.sb-backdrop-inner { position: absolute; top: 0; left: 0; color: var(--pds-text-primary); will-change: transform; }
+.sb-backdrop-inner .sb-line { min-height: 1.65em; }
+
+/* Slide boundary: heavy rule + gold heading band (gradient = zero layout shift) */
+.sb-line.sb-head {
+  color: var(--pds-accent, #c39a6b); 
+  background:
+    linear-gradient(to bottom, var(--pds-border-strong, #555) 0 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(195,154,107,.10), rgba(195,154,107,.04));
+  margin-top: 0;
+}
+.sb-line.sb-id    { color: var(--pds-text-secondary, #9a9aa5); background: rgba(195,154,107,.05); }
+/* Voiceover fields — blue band */
+.sb-line.sb-vo    { background: rgba( 80,140,255,.10); box-shadow: inset 3px 0 0 rgba( 80,140,255,.55); }
+.sb-line.sb-vo    .sb-key { color: #7fb0ff; }
+/* Animation cues / pause questions — purple band */
+.sb-line.sb-cue   { background: rgba(170,110,255,.10); box-shadow: inset 3px 0 0 rgba(170,110,255,.55); }
+.sb-line.sb-cue   .sb-key { color: #c9a2ff; }
+/* Image / media fields — green band */
+.sb-line.sb-img   { background: rgba( 70,200,140,.09); box-shadow: inset 3px 0 0 rgba( 70,200,140,.5); }
+.sb-line.sb-img   .sb-key { color: #6fd9a6; }
+/* Any other Field: — subtle key tint only */
+.sb-line .sb-key  { color: var(--pds-accent, #c39a6b); }
+.sb-line.sb-flash { animation: sbFlash 1.6s ease-out 1; }
+@keyframes sbFlash { 0% { background: rgba(195,154,107,.45); } 100% { background: rgba(195,154,107,.10); } }
+
+/* Unavailable pipeline buttons stay clickable so they can explain why. */
+.btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }

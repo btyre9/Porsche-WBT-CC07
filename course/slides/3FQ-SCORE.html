@@ -147,6 +147,29 @@
       line-height: 1.2;
       color: #5a4a1c;
     }
+    /* Course title + module code (+ PALMS course number when present), centered
+       in the open space below the printed "Porsche Training Course" line.
+       Tune top:% / font cqw if the certificate art changes. */
+    .cert-course {
+      position: absolute;
+      left: 8%; right: 8%; top: 45%;
+      text-align: center;
+      font-family: var(--pds-font-family);
+      color: #1d1d1f;
+    }
+    .cert-course .cert-title {
+      font-weight: var(--pds-font-weight-semibold);
+      font-size: 2.6cqw;
+      line-height: 1.25;
+    }
+    .cert-course .cert-code,
+    .cert-course .cert-palms {
+      margin-top: 0.5em;
+      font-size: 1.55cqw;
+      letter-spacing: 0.04em;
+      color: #6b6b70;
+    }
+    .cert-course .cert-palms { margin-top: 0.15em; }
     @media print {
       body * { visibility: hidden; }
       #cert-stage, #cert-stage * { visibility: visible; }
@@ -175,7 +198,7 @@
       <div class="score-detail" id="score-detail">Loading results…</div>
 
       <!-- PASS panel -->
-      <div class="score-panel score-panel--pass" style="display:contents;">
+      <div class="score-panel score-panel--pass">
         <p class="score-message" id="pass-message">
           Congratulations! You have passed this module.
         </p>
@@ -193,7 +216,7 @@
       </div>
 
       <!-- FAIL panel -->
-      <div class="score-panel score-panel--fail" style="display:contents;">
+      <div class="score-panel score-panel--fail">
         <p class="score-message" id="fail-message">
           Practice makes perfect! Review the module and try the Final Quiz again when you're ready.
         </p>
@@ -220,6 +243,11 @@
     <div class="certificate" id="certificate">
       <img src="../assets/images/certificate-template.jpg" alt="Porsche Web-Based Training Certificate">
       <div class="cert-name" id="cert-name">Porsche Technician</div>
+      <div class="cert-course" id="cert-course">
+        <div class="cert-title" id="cert-title"></div>
+        <div class="cert-code" id="cert-code"></div>
+        <div class="cert-palms" id="cert-palms"></div>
+      </div>
       <div class="cert-date" id="cert-date"></div>
     </div>
   </div>
@@ -373,6 +401,42 @@ var SandboxRuntime = (function () {
       year: 'numeric', month: 'long', day: 'numeric'
     });
   }
+  // Course title + module code + PALMS course number. Prefer the runtime getters;
+  // fall back to reading course.data.json directly so these still appear on older
+  // runtimes. Each line stays empty (hidden) until its value is available.
+  var certTitleEl = document.getElementById('cert-title');
+  var certCodeEl  = document.getElementById('cert-code');
+  var certPalmsEl = document.getElementById('cert-palms');
+  function setCourseMeta(title, code, palms) {
+    if (certTitleEl && title) certTitleEl.textContent = title;
+    if (certCodeEl  && code)  certCodeEl.textContent  = 'Course Code: ' + code;
+    if (certPalmsEl && palms) certPalmsEl.textContent = 'PALMS Course No. ' + palms;
+  }
+  function codeFromId(id) {
+    var mm = String(id || '').match(/cc(\d+)/i);
+    return mm ? ('CC' + mm[1]) : '';
+  }
+  var gotMeta = false;
+  try {
+    var CRmeta = window.parent && window.parent.CourseRuntime;
+    if (CRmeta && CRmeta.getCourseTitle) {
+      var ct = CRmeta.getCourseTitle() || '';
+      var cc = (CRmeta.getCourseCode && CRmeta.getCourseCode()) || '';
+      var cp = (CRmeta.getPalmsId && CRmeta.getPalmsId()) || '';
+      if (ct || cc || cp) { setCourseMeta(ct, cc, cp); gotMeta = true; }
+    }
+  } catch (_) {}
+  if (!gotMeta && window.fetch) {
+    fetch('../data/course.data.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var m = (d && d.meta) || {};
+        var title = (m.title && !/^\[?Module Title Here\]?$/.test(m.title)) ? m.title : '';
+        setCourseMeta(title, m.course_code || codeFromId(m.id), m.palms_id || '');
+      })
+      .catch(function () {});
+  }
+
   var goCertBtn = document.getElementById('go-cert');
   if (goCertBtn) goCertBtn.addEventListener('click', function () { if (certStage) certStage.hidden = false; });
   var certBackBtn = document.getElementById('cert-back');

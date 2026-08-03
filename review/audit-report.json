@@ -1,8 +1,8 @@
 {
-  "generated": "2026-07-08T21:10:22.494Z",
+  "generated": "2026-07-27T20:11:40.250Z",
   "module": "Porsche-WBT-CC07",
-  "errors": 2,
-  "warnings": 33,
+  "errors": 0,
+  "warnings": 34,
   "flags": [
     {
       "slide": "1S01",
@@ -33,12 +33,6 @@
       "check": "DRAFT",
       "severity": "warn",
       "msg": "still marked Status: Draft (\"Your Three Digital Channels\")"
-    },
-    {
-      "slide": "1S05",
-      "check": "FIELD",
-      "severity": "warn",
-      "msg": "no Image-File (template card-explore)"
     },
     {
       "slide": "1S06",
@@ -87,12 +81,6 @@
       "check": "DRAFT",
       "severity": "warn",
       "msg": "still marked Status: Draft (\"Four Mistakes That Quietly Erode Trust\")"
-    },
-    {
-      "slide": "1S11",
-      "check": "FIELD",
-      "severity": "warn",
-      "msg": "no Image-File (template card-explore)"
     },
     {
       "slide": "2KC03",
@@ -179,12 +167,6 @@
       "msg": "still marked Status: Draft (\"Quiz Score\")"
     },
     {
-      "slide": "(module)",
-      "check": "LMS",
-      "severity": "warn",
-      "msg": "course.data.json meta.id is still \"module-id-here\" — run init-module"
-    },
-    {
       "slide": "1S04",
       "check": "LINT",
       "severity": "warn",
@@ -197,22 +179,34 @@
       "msg": "[S11] 1S01 (line 3) 4 passive slides within 12 consecutive content slides (max 2). Window starts here."
     },
     {
-      "slide": "(module)",
-      "check": "LMS",
-      "severity": "error",
-      "msg": "imsmanifest.xml still contains XXXX — run init-module"
-    },
-    {
-      "slide": "(module)",
-      "check": "LMS",
-      "severity": "error",
-      "msg": "imsmanifest.xml still has the placeholder \"Module Title\""
-    },
-    {
       "slide": "(package)",
       "check": "LMS",
       "severity": "warn",
       "msg": "output/ is older than course/ — re-run Package before uploading"
+    },
+    {
+      "slide": "(module)",
+      "check": "SYNC",
+      "severity": "warn",
+      "msg": "ffprobe not installed — caption/audio drift not checked"
+    },
+    {
+      "slide": "1S05",
+      "check": "STORY",
+      "severity": "warn",
+      "msg": "slide shows 1S05-Video.webp but the storyboard block has no Image-File — regenerating would replace the art with a placeholder"
+    },
+    {
+      "slide": "1S11",
+      "check": "STORY",
+      "severity": "warn",
+      "msg": "slide shows 1S11-AllCaps.webp but the storyboard block has no Image-File — regenerating would replace the art with a placeholder"
+    },
+    {
+      "slide": "3FQ-SCORE",
+      "check": "STORY",
+      "severity": "warn",
+      "msg": "slide shows certificate-template.jpg but the storyboard block has no Image-File — regenerating would replace the art with a placeholder"
     }
   ]
 }

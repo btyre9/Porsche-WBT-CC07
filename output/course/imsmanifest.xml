@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<manifest identifier="porsche-XXXX-001" version="1.0"
+<manifest identifier="porsche-CC07-001" version="1.0"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
   xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -13,18 +13,18 @@
     <schemaversion>1.2</schemaversion>
   </metadata>
 
-  <organizations default="org-porsche-XXXX">
-    <organization identifier="org-porsche-XXXX">
-      <title>Module Title</title>
-      <item identifier="item-porsche-XXXX" identifierref="res-porsche-XXXX">
-        <title>Module Title</title>
+  <organizations default="org-porsche-CC07">
+    <organization identifier="org-porsche-CC07">
+      <title>Customer Communications 7 - Digital Communication Excellence</title>
+      <item identifier="item-porsche-CC07" identifierref="res-porsche-CC07">
+        <title>Customer Communications 7 - Digital Communication Excellence</title>
         <adlcp:masteryscore>80</adlcp:masteryscore>
       </item>
     </organization>
   </organizations>
 
   <resources>
-    <resource identifier="res-porsche-XXXX"
+    <resource identifier="res-porsche-CC07"
               type="webcontent"
               adlcp:scormtype="sco"
               href="player/index.html">

@@ -29,12 +29,17 @@ function parseArgs(argv) {
     templatesDir: path.join('scripts', 'templates'),
     slide: null,
     force: false,
+    // Bespoke slides are owned by their HTML. Overwriting one needs an explicit
+    // opt-in that the dashboard never sends.
+    allowHandbuilt: false,
   };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--storyboard') args.storyboard  = argv[++i];
     if (argv[i] === '--slides-dir') args.slidesDir   = argv[++i];
     if (argv[i] === '--slide')      args.slide        = argv[++i];
     if (argv[i] === '--force')      args.force        = true;
+    if (argv[i] === '--allow-handbuilt') args.allowHandbuilt = true;
+    if (argv[i] === '--unlock')     args.unlock       = true;
   }
   return args;
 }
@@ -96,8 +101,8 @@ const TEMPLATE_PREFERRED_RATIO = {
   'video-scenario':                 16/9,
   'content-stat':                   16/9,
   'closing':                        16/9,
-  'accordion-content':              4/5,
-  'accordion-content-image-left':   4/5,
+  'accordion-content':              3/4,
+  'accordion-content-image-left':   3/4,
   'tab-panel':                      4/3,
   'card-explore':                   4/3,
   'tile-explore':                   4/3,
@@ -106,8 +111,8 @@ const TEMPLATE_PREFERRED_RATIO = {
   'learning-objectives':            3/4,
   'step-sequence':                  4/3,
   'bar-chart-modal':                4/3,
-  'drag-match-left':                4/5,
-  'drag-match-right':               4/5,
+  'drag-match-left':                3/4,
+  'drag-match-right':               3/4,
 };
 
 const MAIN_IMAGE_TEMPLATES = new Set([
@@ -559,17 +564,22 @@ function buildStepsHtml(slide, slideId) {
     const title = slide[`Step-Title-${i}`];
     if (!title) break;
     const body = slide[`Step-Body-${i}`] || '';
-    const audioPath = `../assets/audio/vo/${slideId}${sep}STEP${sep}${i}.mp3`;
+    const audioPath = `../assets/audio/vo/${slideId}${sep}STEP${sep}${String(i).padStart(2, '0')}.mp3`;
     items.push({ n: i, title, body, audioPath });
   }
   if (!items.length) return '<!-- no steps -->';
   const total = items.length;
-  return items.map((s) =>
+  return items.map((s) =>    // .step-panel is the frosted-glass container the step-sequence stylesheet
+    // styles (simulated glass, since backdrop-filter is disabled under the
+    // slide's transform-scale). Without this wrapper the step copy sits directly
+    // on the background image and the frosted effect never appears.
     `      <div class="step-item" data-step="${s.n}" data-audio="${escAttr(s.audioPath)}" data-total="${total}">\n` +
-    `        <div class="step-number">${String(s.n).padStart(2, '0')}</div>\n` +
-    `        <div class="step-content">\n` +
-    `          <div class="step-title">${escHtml(s.title)}</div>\n` +
-    `          <ul class="bullet-list">\n${buildBulletListHtml(s.body)}\n          </ul>\n` +
+    `        <div class="step-panel">\n` +
+    `          <div class="step-number">${String(s.n).padStart(2, '0')}</div>\n` +
+    `          <div class="step-content">\n` +
+    `            <div class="step-title">${escHtml(s.title)}</div>\n` +
+    `            <ul class="bullet-list">\n${buildBulletListHtml(s.body)}\n            </ul>\n` +
+    `          </div>\n` +
     `        </div>\n` +
     `      </div>`
   ).join('\n');
@@ -582,8 +592,11 @@ function buildStepNavHtml(slide) {
     total++;
   }
   if (!total) return '';
+  // No dot starts active — the first card (and its dot) only appears once the
+  // learner clicks the Next arrow after the intro VO. The slide script also
+  // clears any stale is-active on init.
   const dots = Array.from({length: total}, (_, i) =>
-    `      <button class="step-nav-dot${i === 0 ? ' is-active' : ''}" data-step="${i + 1}" aria-label="Step ${i + 1}"></button>`
+    `      <button class="step-nav-dot" data-step="${i + 1}" aria-label="Step ${i + 1}"></button>`
   ).join('\n');
   return `    <div class="step-nav" role="tablist" aria-label="Steps">\n${dots}\n    </div>`;
 }
@@ -592,6 +605,17 @@ function buildStepNavHtml(slide) {
 // Pause questions (video-scenario template) — ported from CC03.
 // Optional pause-point quiz cards keyed by Pause-Question-N / Pause-Choice-N-X.
 // ---------------------------------------------------------------------------
+
+// Numbered video clips: Video-File-1..8 with optional Video-Label-N.
+function buildVideoClipsJson(slide) {
+  const clips = [];
+  for (let i = 1; i <= 8; i++) {
+    const src = slide[`Video-File-${i}`];
+    if (!src) break;
+    clips.push({ src: `../assets/video/${src}`, label: slide[`Video-Label-${i}`] || '' });
+  }
+  return JSON.stringify(clips);
+}
 
 function buildPauseQuestionsJson(slide, slideId) {
   const sep       = slideId.includes('_') ? '_' : '-';
@@ -602,6 +626,9 @@ function buildPauseQuestionsJson(slide, slideId) {
     questions.push({
       n:               i,
       question:        q,
+      // Optional pause timecode (seconds into the clip). Without it the question
+      // fires when the clip ends — the original behaviour.
+      at:              Number(slide[`Pause-At-${i}`]),
       choices: [
         slide[`Pause-Choice-${i}-A`] || '',
         slide[`Pause-Choice-${i}-B`] || '',
@@ -830,6 +857,8 @@ function buildTabPanelPanelsHtml(triggers, slide) {
     const title = slide[`Tab-Title-${t.label}`] || camelToWords(t.label);
     const bodyField    = slide[`Item-${t.label}-Body`];
     const bulletsField = slide[`Tab-Bullets-${t.label}`];
+    const tabBodyField = slide[`Tab-Body-${t.label}`];
+    const voFallback   = slide[`Voiceover-TAB-${t.label}`];
     let body;
     if (bodyField) {
       body = bodyField;
@@ -840,8 +869,16 @@ function buildTabPanelPanelsHtml(triggers, slide) {
         return `            <li>${inner}</li>`;
       }).join('\n');
       body = `<ul class="acc-bullets">\n${lis}\n          </ul>`;
+    } else if (tabBodyField) {
+      // Documented tab-panel field (see TEMPLATE-REFERENCE.md): a concise
+      // on-screen summary. Blank-line-separated text becomes paragraphs.
+      body = tabBodyField.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean)
+        .map(p => `<p>${escHtml(p)}</p>`).join('\n          ');
+    } else if (voFallback) {
+      // Documented last resort — the VO is long, but better than an empty panel.
+      body = `<p>${escHtml(voFallback)}</p>`;
     } else {
-      body = `<p><!-- Body for ${camelToWords(t.label)}: add Tab-Bullets-${t.label} (or Item-${t.label}-Body) to course.md. --></p>`;
+      body = `<p><!-- Body for ${camelToWords(t.label)}: add Tab-Body-${t.label} to course.md. --></p>`;
     }
     return (
       `        <div class="tp-modal" data-modal="${escAttr(t.label)}" role="dialog" aria-modal="true" aria-label="${escAttr(title)}" hidden>\n` +
@@ -961,8 +998,9 @@ function buildMatchData(slide) {
 
 function splitStat(onScreenText, slideTitle) {
   if (!onScreenText) return { value: slideTitle, label: '' };
-  const m = onScreenText.match(/^(\d[\d,.%×x]*)\s+(.+)$/);
-  if (m) return { value: m[1], label: m[2] };
+  // Value may carry a leading currency symbol ($, €, £, ¥) before the number.
+  const m = onScreenText.match(/^([$€£¥]?\s?\d[\d,.%×x]*)\s+(.+)$/);
+  if (m) return { value: m[1].trim(), label: m[2] };
   return { value: onScreenText, label: '' };
 }
 
@@ -1005,6 +1043,59 @@ function makeFqBgPicker(fqImagesDir) {
       if (pool.length > 1 && pool[0] === last) pool.push(pool.shift());
     }
     last = pool.shift();
+    return last;
+  };
+}
+
+// KC background picker — knowledge-check slides get a random full-bleed photo
+// behind the dimmed modal, assigned per slide at build time (mirrors
+// makeFqBgPicker). Pool = the module's image-repo folder, filtered to
+// photographs: extension + a name blocklist + a min file-size gate drop UI
+// icons and small graphic assets (photos here are >1MB; icons are <10KB). The
+// chosen file is copied into course/assets/images so it resolves at
+// ../assets/images/<file> and ships in the SCORM package. Returns a closure
+// yielding the next filename from a freshly shuffled pool (no adjacent
+// repeats); '' when no photographic candidates exist.
+function makeKcBgPicker(repoDir, courseImagesDir) {
+  const isImg     = f => /\.(jpe?g|png|webp)$/i.test(f);
+  const BLOCK     = /(icon|template|placeholder|logo|wordmark|crest|graduate|-mark|silhouette)/i;
+  const MIN_BYTES = 200 * 1024;
+  const scan = dir => {
+    if (!dir || !fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir).filter(f => {
+      if (!isImg(f) || BLOCK.test(f)) return false;
+      try { return fs.statSync(path.join(dir, f)).size >= MIN_BYTES; }
+      catch (_) { return false; }
+    });
+  };
+  let sourceDir = repoDir;
+  let files     = scan(repoDir);
+  // Fallback: if the module image-repo folder can't be located, draw from the
+  // photos already synced into the course (same images, minus the icons).
+  if (!files.length) {
+    sourceDir = courseImagesDir;
+    files     = scan(courseImagesDir);
+  }
+  let pool = [];
+  let last = null;
+  return function next() {
+    if (!files.length) return '';
+    if (!pool.length) {
+      pool = files.slice();
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      if (pool.length > 1 && pool[0] === last) pool.push(pool.shift());
+    }
+    last = pool.shift();
+    // Ensure the picked file ships inside the course package.
+    try {
+      const dest = path.join(courseImagesDir, last);
+      if (!fs.existsSync(dest) && sourceDir && sourceDir !== courseImagesDir) {
+        fs.copyFileSync(path.join(sourceDir, last), dest);
+      }
+    } catch (_) { /* copy failed — resolveImagePath falls back to placeholder */ }
     return last;
   };
 }
@@ -1171,9 +1262,17 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
   const rawStatVal  = String(slide['Stat-Value'] || statParsed.value || '').trim();
   const statNumMatch = rawStatVal.match(/-?\d[\d,.]*/);
   const statValueNum = statNumMatch ? statNumMatch[0].replace(/,/g, '') : rawStatVal;
+  // A currency/symbol that PRECEDES the number ($, €, …) renders in the red
+  // readout, not as the unit. Explicit Stat-Prefix wins; else auto-detect the
+  // leading run before the number.
+  const autoStatPrefix = statNumMatch ? rawStatVal.slice(0, statNumMatch.index).trim() : '';
+  const statPrefix  = (slide['Stat-Prefix'] !== undefined && String(slide['Stat-Prefix']).trim() !== '')
+    ? String(slide['Stat-Prefix']).trim()
+    : autoStatPrefix;
+  // Unit is only what FOLLOWS the number (e.g. "%", "×") — never the prefix.
   const statUnit    = (slide['Stat-Unit'] !== undefined && String(slide['Stat-Unit']).trim() !== '')
     ? String(slide['Stat-Unit']).trim()
-    : (statNumMatch ? rawStatVal.replace(statNumMatch[0], '').trim() : '');
+    : (statNumMatch ? rawStatVal.slice(statNumMatch.index + statNumMatch[0].length).trim() : '');
   const statSub     = String(slide['Stat-Sub'] || slide['Stat-Label'] || statParsed.label || '').trim();
   const statMode    = String(slide['Stat-Mode'] || 'count').trim();
   const statFrom    = String(slide['Stat-From'] || '0').trim();
@@ -1235,6 +1334,10 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     VIDEO_LABEL_A:       escHtml(slide['Video-Label-A'] || 'Clip A'),
     VIDEO_LABEL_B:       escHtml(slide['Video-Label-B'] || 'Clip B'),
     VIDEO_IS_DUAL:       (slide['Video-File-A'] && slide['Video-File-B']) ? 'true' : 'false',
+    // Numbered clips (Video-File-1..8 / Video-Label-1..8) for scenarios that need
+    // more than two — e.g. one clip per pause question. Empty when unused, in
+    // which case the template falls back to Video-File-A/B or Video-File.
+    VIDEO_CLIPS_JSON:    buildVideoClipsJson(slide),
     VOICEOVER_SUMMARY_SRC: (slide['Voiceover-Summary'] || slide['Voiceover-SUMMARY'])
       ? `../assets/audio/vo/${slideId}${slideId.includes('_') ? '_' : '-'}SUMMARY.mp3`
       : '',
@@ -1250,6 +1353,7 @@ function buildTokens(slide, allSlides, courseTitle, templateHtml, imageCatalog) 
     IMG_SCALE:      String(slide['Image-Scale'] || '1').replace(/[^0-9.]/g, '') || '1',
     // Stat template
     STAT_VALUE:      escAttr(statValueNum),
+    STAT_PREFIX:     escAttr(statPrefix),
     STAT_UNIT:       escHtml(statUnit),
     STAT_SUB:        escHtml(statSub),
     STAT_MODE:       escAttr(statMode),
@@ -1338,6 +1442,23 @@ function camelToWords(str) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
+  // ── Module lock ───────────────────────────────────────────────────────────
+  // storyboard/.no-regen means the compiled slides and course.data.json are the
+  // source of truth for this module: its slides are hand-edited, and/or its
+  // storyboard Slide-IDs have drifted from the build. Compiling would overwrite
+  // the hand work and, where the ids differ, rewrite course.data.json to ids
+  // that orphan every live slide. Refuse before anything is written.
+  {
+    const lock = path.join(path.dirname(args.storyboard), '.no-regen');
+    if (fs.existsSync(lock) && !args.unlock) {
+      console.error(`\nREFUSING to compile — ${lock} is present.`);
+      console.error('This module is locked: its slides are the source of truth, so');
+      console.error('regenerating them would destroy hand-edited work.');
+      console.error('Read that file for the reason, then pass --unlock if you are certain.\n');
+      process.exit(1);
+    }
+  }
+
   // Validate storyboard
   const sbPath = path.resolve(args.storyboard);
   if (!fs.existsSync(sbPath)) {
@@ -1364,6 +1485,15 @@ async function main() {
 
   // Random background photo assigned to each FQ question slide (build-time).
   const fqBgPicker = makeFqBgPicker(path.join(imagesDir, 'FQ-images'));
+
+  // Random full-bleed background photo assigned to each KC slide (build-time),
+  // drawn from the module's image-repo folder (e.g. <projects>/image-repo/CC04).
+  // Falls back to the course's synced photos if that folder can't be located.
+  const moduleName = (path.basename(process.cwd()).match(/cc\d+(?:_\d+)?/i) || [])[0];
+  const kcRepoDir  = moduleName
+    ? path.resolve(imagesDir, '..', '..', '..', '..', 'image-repo', moduleName.toUpperCase())
+    : null;
+  const kcBgPicker = makeKcBgPicker(kcRepoDir, imagesDir);
 
   // Ensure output directories exist
   fs.mkdirSync(path.resolve(args.slidesDir), { recursive: true });
@@ -1393,9 +1523,28 @@ async function main() {
       slide._fqBgImage = fqBgPicker();
     }
 
+    // Assign each knowledge-check slide a random full-bleed background photo
+    // (unless the storyboard authored an explicit Image-File). The picked
+    // filename is copied into course/assets/images, so resolveImagePath then
+    // yields ../assets/images/<file> for the template's {{IMAGE_PATH}} slot.
+    if ((/^\d*KC[_-]?\d+$/i.test(slideId) || /^KC[_-]/i.test(slideId)) && !slide['Image-File']) {
+      const kcBg = kcBgPicker();
+      if (kcBg) slide['Image-File'] = kcBg;
+    }
+
     // Single-slide mode (--slide): keep iterating so the aggregate data files
     // below still cover every slide, but only (re)render the targeted slide.
     if (args.slide && slideId !== args.slide) {
+      continue;
+    }
+
+    // Slides declared "Source: hand-built" are owned by their HTML, not the
+    // storyboard: a bespoke design the templates cannot reproduce. --force must
+    // not silently replace one with template output (this is how slides were
+    // lost and how real art was swapped for placeholders).
+    if (/^hand-?built$/i.test(String(slide['Source'] || '').trim()) && !args.allowHandbuilt) {
+      console.log(`  PROTECT ${slideId}.html  (Source: hand-built — pass --allow-handbuilt to overwrite)`);
+      skipped++;
       continue;
     }
 

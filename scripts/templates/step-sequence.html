@@ -200,6 +200,20 @@
       cursor: default;
     }
 
+    /* ── Attention pulse on the Next arrow (shown after the intro VO) ─────── */
+    @keyframes navArrowPulse {
+      0%   { transform: scale(1);   box-shadow: 0 0 0 0    rgba(213,0,28,0.55); }
+      70%  { transform: scale(1.2); box-shadow: 0 0 0 28px rgba(213,0,28,0);    }
+      100% { transform: scale(1);   box-shadow: 0 0 0 0    rgba(213,0,28,0);    }
+    }
+    .nav-arrow.pulse-attention {
+      border-color: var(--pds-accent);
+      background: rgba(213,0,28,0.22);
+      color: var(--pds-text-primary);
+      animation: navArrowPulse 1.2s cubic-bezier(0.66, 0, 0, 1) infinite;
+    }
+
+
     /* ── Step dots ───────────────────────────────────────────────────────── */
     .step-nav {
       display: flex;
@@ -294,6 +308,9 @@
     var prev = current;
     current  = idx;
 
+
+    /* The first arrow click stops the attention pulse */
+    if (btnNext) btnNext.classList.remove('pulse-attention');
     /* Exit previous */
     if (stepItems[prev]) {
       stepItems[prev].classList.remove('is-active');
