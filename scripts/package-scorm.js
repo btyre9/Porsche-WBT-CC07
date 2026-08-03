@@ -114,6 +114,11 @@ if (!fs.existsSync(SRC)) {
 execSync('node "' + path.join(__dirname, 'inline-svgs.js') + '" "' + SRC + '"', { stdio: 'inherit' });
 console.log('');
 
+// Stamp the staged tree with the build it came from, so the running package can
+// be identified from inside the LMS. See scripts/stamp-build.js.
+execSync('node "' + path.join(__dirname, 'stamp-build.js') + '" "' + SRC + '"', { stdio: 'inherit' });
+console.log('');
+
 if (tryNodeZip()) {
   zipWithAdmZip();
 } else {
