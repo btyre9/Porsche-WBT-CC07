@@ -50,6 +50,7 @@ window.__REVIEW_BUILD__ = false;
       if (!found) return false;
       this.api = found.api;
       this.version = found.version;
+      this._sessionStart = Date.now();
       try {
         var ok = this.version === "2004"
           ? this.api.Initialize("") === "true"
@@ -91,6 +92,61 @@ window.__REVIEW_BUILD__ = false;
         if (!ok) this._logError("Terminate");
         return ok;
       } catch (_e) { return false; }
+    },
+
+    // ── Session close ────────────────────────────────────────────────────────
+    // The LMS throws away suspend_data / lesson_location unless it is told the
+    // exit was a suspend, and it records zero time-on-task unless session_time
+    // is reported. Neither was ever set: every learner's bookmark was discarded
+    // on exit and their time always logged as 0.
+    //
+    // Both MUST be written before Terminate/LMSFinish — once the session is
+    // terminated the API rejects further SetValue calls.
+    _sessionStart: null,
+
+    _pad: function (n, width) {
+      var s = String(Math.floor(n));
+      while (s.length < width) s = "0" + s;
+      return s;
+    },
+
+    // SCORM 1.2 wants a CMITimespan (HHHH:MM:SS.SS); 2004 wants an ISO 8601
+    // duration. Worked in whole hundredths so a fractional carry can never
+    // produce "60" seconds or a 3-digit hundredths field.
+    _sessionTime: function (ms) {
+      var cs    = Math.max(0, Math.floor(ms / 10));   // total hundredths
+      var whole = Math.floor(cs / 100);
+      if (this.version === "2004") {
+        return "PT" + Math.floor(whole / 3600) + "H" +
+               Math.floor((whole % 3600) / 60) + "M" + (whole % 60) + "S";
+      }
+      return this._pad(Math.floor(whole / 3600), 2) + ":" +
+             this._pad(Math.floor((whole % 3600) / 60), 2) + ":" +
+             this._pad(whole % 60, 2) + "." + this._pad(cs % 100, 2);
+    },
+
+    closeSession: function () {
+      if (!this.api || this.terminated) return false;
+
+      if (this._sessionStart) {
+        this.setValue(
+          this.version === "2004" ? "cmi.session_time" : "cmi.core.session_time",
+          this._sessionTime(Date.now() - this._sessionStart)
+        );
+      }
+
+      // Suspend so the bookmark survives a relaunch — but not once the learner
+      // has finished, since resuming a completed course into its middle is
+      // worse than starting it again.
+      var status = this.version === "2004"
+        ? this.getValue("cmi.completion_status")
+        : this.getValue("cmi.core.lesson_status");
+      var finished = /^(completed|passed|failed)$/i.test(String(status || "").trim());
+      this.setValue(this.version === "2004" ? "cmi.exit" : "cmi.core.exit",
+                    finished ? "" : "suspend");
+
+      this.commit();
+      return this.terminate();
     },
 
     reportFinal: function (scorePercent, threshold) {
@@ -2162,7 +2218,7 @@ window.__REVIEW_BUILD__ = false;
 
   async function init() {
     scorm.init();
-    window.addEventListener("beforeunload", function () { scorm.terminate(); });
+    window.addEventListener("beforeunload", function () { scorm.closeSession(); });
 
     var res = await fetch("../data/course.data.json", { cache: "no-store" });
     if (!res.ok) throw new Error("Could not load course.data.json");
