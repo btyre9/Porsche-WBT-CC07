@@ -469,9 +469,23 @@ async function main() {
   }
 
   // ── 2. Write markdown ─────────────────────────────────────────────────────
-  fs.mkdirSync(path.dirname(args.output), { recursive: true });
-  fs.writeFileSync(args.output, renderMarkdown(courseTitle, slides), 'utf8');
-  console.log(`\n✓ Markdown        ${args.output}  (${slides.length} slides)`);
+  // Never write back over the file we just read. renderMarkdown only re-emits
+  // the fields this parser models, so a course.md -> course.md round-trip
+  // silently deletes everything it does not (Player-Title, Hero-Subtitle,
+  // Image-File, Slide-Subtitle …). The dashboard calls
+  // `--md storyboard/course.md` with the default output, which is exactly that
+  // round-trip: it cost CC09 its storyboard on 2026-08-03. Converting a .docx
+  // into course.md is the case this write exists for, and it still runs.
+  const writingOverInput =
+    args.md && path.resolve(args.md) === path.resolve(args.output);
+
+  if (writingOverInput) {
+    console.log(`\n○ Markdown        ${args.output}  (unchanged — input is the output)`);
+  } else {
+    fs.mkdirSync(path.dirname(args.output), { recursive: true });
+    fs.writeFileSync(args.output, renderMarkdown(courseTitle, slides), 'utf8');
+    console.log(`\n✓ Markdown        ${args.output}  (${slides.length} slides)`);
+  }
 
   // ── 3. Build VO manifest ──────────────────────────────────────────────────
   const allSegments = [];

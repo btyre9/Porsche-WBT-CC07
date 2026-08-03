@@ -947,7 +947,7 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ error: 'Missing or invalid slideId parameter' }));
           return;
         }
-        runCommandStream(`node scripts/generate-slides.js --slide ${slideId} --force --unlock`, res);
+        runCommandStream(`node scripts/generate-slides.js --slide ${slideId} --force`, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
@@ -978,11 +978,11 @@ const server = http.createServer((req, res) => {
             `node scripts/generate-vo.js --slide ${slideId} --force && ` +
             `node scripts/generate-vtt.js --slide ${slideId} && ` +
             `node scripts/extract-vo-cues.js --slide ${slideId} && ` +
-            `node scripts/generate-slides.js --slide ${slideId} --force --unlock`,
+            `node scripts/generate-slides.js --slide ${slideId} --force`,
             res
           );
         } else {
-          runCommandStream(`node scripts/generate-slides.js --slide ${slideId} --force --unlock`, res);
+          runCommandStream(`node scripts/generate-slides.js --slide ${slideId} --force`, res);
         }
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
