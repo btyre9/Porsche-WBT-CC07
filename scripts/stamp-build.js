@@ -46,7 +46,11 @@ function git(cmd, cwd) {
 function collect(moduleRoot, staged) {
   const sha    = git('rev-parse --short HEAD', moduleRoot);
   const branch = git('rev-parse --abbrev-ref HEAD', moduleRoot);
-  const dirty  = git('status --porcelain', moduleRoot).length > 0;
+  // Ignore the generated tree. sync-output rewrites output/ immediately before
+  // packaging, and in modules where those files are tracked that made every
+  // build stamp itself -dirty even from a clean checkout. What matters is
+  // whether the SOURCE the package was built from matches a commit.
+  const dirty  = git("status --porcelain -- . ':(exclude)output'", moduleRoot).length > 0;
 
   // Module id: prefer the manifest identifier, fall back to the folder name.
   let moduleId = path.basename(moduleRoot);
