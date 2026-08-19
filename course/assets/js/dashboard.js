@@ -3057,3 +3057,161 @@ Final quiz questions (slides "3FQ01" to "3FQ10") form a SILENT assessment. Do NO
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+
+/* =========================================================================
+   Embedded "Assistant" chat — self-contained module.
+   One turn = POST /api/assistant/message { message, selectedSlideId }, which
+   spawns the claude CLI headless (Read/Edit/Write only, scoped to
+   storyboard/course.md) and streams back newline-delimited JSON: each line is
+   either { type:'event', event:<raw claude stream-json object> },
+   { type:'error', error }, or { type:'done' }. The transcript lives only in
+   this tab's DOM — refreshing the dashboard loses it — but the CLI session id
+   persists server-side (review/assistant/session.json) so "New chat" is the
+   only thing that truly starts over.
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  function init() {
+    var messages = document.getElementById('assistant-messages');
+    var empty = document.getElementById('assistant-empty');
+    var ta = document.getElementById('assistant-textarea');
+    var sendBtn = document.getElementById('btn-assistant-send');
+    var resetBtn = document.getElementById('btn-assistant-reset');
+    var hint = document.getElementById('assistant-selected-hint');
+    var selector = document.getElementById('preview-slide-selector');
+    if (!messages || !ta || !sendBtn) return;
+
+    var sending = false;
+    var currentTextEl = null;   // growing assistant bubble for the in-progress turn
+    var controller = null;      // AbortController for the in-flight fetch
+
+    function scrollToBottom() { messages.scrollTop = messages.scrollHeight; }
+
+    function appendMsg(role, text) {
+      if (empty) empty.hidden = true;
+      var el = document.createElement('div');
+      el.className = 'assistant-msg assistant-msg-' + role;
+      el.textContent = text;
+      messages.appendChild(el);
+      scrollToBottom();
+      return el;
+    }
+
+    function updateSendState() {
+      ta.disabled = sending;
+      sendBtn.disabled = sending;
+      sendBtn.textContent = sending ? 'Sending…' : 'Send';
+    }
+
+    function updateHint() {
+      if (!hint) return;
+      var id = selector ? selector.value : '';
+      hint.textContent = id ? ('→ context: ' + id) : '';
+    }
+    if (selector) selector.addEventListener('change', updateHint);
+    updateHint();
+
+    // Summarize a tool_use content block as a short one-line status, e.g.
+    // "→ Edit (storyboard/course.md)". Falls back to just the tool name for
+    // tools with no obvious path-like input field.
+    function describeTool(block) {
+      var input = block.input || {};
+      var target = input.file_path || input.path || '';
+      return '→ ' + block.name + (target ? ' (' + target + ')' : '');
+    }
+
+    function handleClaudeEvent(e) {
+      if (e.type === 'assistant' && e.message && Array.isArray(e.message.content)) {
+        e.message.content.forEach(function (block) {
+          if (block.type === 'text' && block.text) {
+            if (!currentTextEl) currentTextEl = appendMsg('assistant', block.text);
+            else { currentTextEl.textContent += '\n' + block.text; scrollToBottom(); }
+          } else if (block.type === 'tool_use') {
+            appendMsg('tool', describeTool(block));
+            currentTextEl = null; // next text block starts a fresh bubble after a tool call
+          }
+        });
+      } else if (e.type === 'result' && e.is_error) {
+        appendMsg('error', typeof e.result === 'string' ? e.result : 'The assistant reported an error.');
+      }
+    }
+
+    function sendMessage() {
+      var text = ta.value.trim();
+      if (!text || sending) return;
+
+      appendMsg('user', text);
+      ta.value = '';
+      currentTextEl = null;
+      sending = true;
+      updateSendState();
+      controller = new AbortController();
+
+      fetch('/api/assistant/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, selectedSlideId: selector ? selector.value : '' }),
+        signal: controller.signal
+      }).then(function (res) {
+        if (!res.ok) {
+          return res.json().catch(function () { return {}; }).then(function (body) {
+            throw new Error(body.error || ('Request failed (' + res.status + ')'));
+          });
+        }
+        var reader = res.body.getReader();
+        var decoder = new TextDecoder();
+        var buf = '';
+        function pump() {
+          return reader.read().then(function (r) {
+            if (r.done) return;
+            buf += decoder.decode(r.value, { stream: true });
+            var lines = buf.split('\n');
+            buf = lines.pop(); // keep the (possibly incomplete) last line for next chunk
+            lines.forEach(function (line) {
+              line = line.trim();
+              if (!line) return;
+              var evt;
+              try { evt = JSON.parse(line); } catch (_) { return; }
+              if (evt.type === 'error') appendMsg('error', evt.error);
+              else if (evt.type === 'event') handleClaudeEvent(evt.event);
+              // 'done' needs no UI action here — the finally() below always re-enables input.
+            });
+            return pump();
+          });
+        }
+        return pump();
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        appendMsg('error', (err && err.message) || 'Connection to the assistant failed.');
+      }).finally(function () {
+        sending = false;
+        currentTextEl = null;
+        controller = null;
+        updateSendState();
+      });
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        if (controller) controller.abort();
+        fetch('/api/assistant/reset', { method: 'POST' }).catch(function () {});
+        messages.querySelectorAll('.assistant-msg').forEach(function (el) { el.remove(); });
+        if (empty) empty.hidden = false;
+        sending = false;
+        currentTextEl = null;
+        updateSendState();
+      });
+    }
+
+    updateSendState();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

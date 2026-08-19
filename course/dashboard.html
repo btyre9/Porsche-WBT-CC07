@@ -122,6 +122,7 @@
         <button class="tab active" id="tab-btn-storyboard" data-tab="storyboard" role="tab" aria-selected="true">Storyboard</button>
         <button class="tab" id="tab-btn-animations" data-tab="animations" role="tab" aria-selected="false">Animations</button>
         <button class="tab" id="tab-btn-build" data-tab="build" role="tab" aria-selected="false">Build</button>
+        <button class="tab" id="tab-btn-assistant" data-tab="assistant" role="tab" aria-selected="false">Assistant</button>
       </div>
 
       <!-- Storyboard tab -->
@@ -276,6 +277,32 @@
           <ul class="anim-list" id="anim-list"></ul>
         </div>
       </section>
+      <!-- Assistant tab — embedded Claude Code chat, scoped to editing
+           storyboard/course.md. Backed by /api/assistant/message (spawns the
+           claude CLI headless with Read/Edit/Write only). Transcript lives only
+           in this tab's DOM and is lost on refresh; the CLI session itself
+           persists server-side so context survives across turns. -->
+      <section class="tabpanel" id="tab-assistant" data-tab="assistant" role="tabpanel">
+        <div class="panel-head">
+          <div class="editor-eyebrow">
+            <span>Assistant</span>
+            <span class="assistant-hint" id="assistant-selected-hint"></span>
+          </div>
+          <div class="panel-head-actions">
+            <button class="btn btn-secondary btn-xs" id="btn-assistant-reset">New chat</button>
+          </div>
+        </div>
+
+        <div class="assistant-wrap">
+          <div class="assistant-messages" id="assistant-messages">
+            <p class="assistant-empty" id="assistant-empty">Ask for a change to this module's storyboard — e.g. "Tighten the VO on 1S05" or "Add a knowledge check after the listening section." Select a slide in the preview first to point the assistant at it.</p>
+          </div>
+          <div class="assistant-input-row">
+            <textarea class="assistant-textarea" id="assistant-textarea" rows="2" placeholder="Message the assistant…"></textarea>
+            <button class="btn btn-primary btn-xs" id="btn-assistant-send">Send</button>
+          </div>
+        </div>
+      </section>
     </aside>
   </main>
 
@@ -381,6 +408,59 @@
 
   <!-- Toasts -->
   <div class="toast-container" id="toast-container"></div>
+
+  <style>
+    /* Assistant tab (see #tab-assistant) */
+    .assistant-hint {
+      margin-left: 8px; font-size: 12px; color: var(--pds-accent, #D5001C);
+    }
+    .assistant-wrap {
+      display: flex; flex-direction: column; flex: 1; min-height: 0;
+    }
+    .assistant-messages {
+      flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+      gap: 10px; padding: 4px 2px 10px;
+    }
+    .assistant-empty {
+      font-size: 13px; line-height: 1.5; color: var(--pds-text-secondary, rgba(255,255,255,0.5));
+    }
+    .assistant-msg {
+      max-width: 92%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+      padding: 8px 12px; border-radius: 10px; border: 1px solid var(--pds-border, rgba(255,255,255,0.14));
+    }
+    .assistant-msg-user {
+      align-self: flex-end; background: var(--pds-accent, #D5001C); color: #fff; border-color: transparent;
+    }
+    .assistant-msg-assistant {
+      align-self: flex-start; background: var(--pds-surface-2, rgba(255,255,255,0.03)); color: var(--pds-text-primary, #fff);
+    }
+    .assistant-msg-tool {
+      align-self: flex-start; font-family: monospace; font-size: 12px;
+      color: var(--pds-text-secondary, rgba(255,255,255,0.55)); background: transparent;
+      border-style: dashed; padding: 6px 10px;
+    }
+    .assistant-msg-error {
+      align-self: stretch; color: var(--pds-danger, #F26A6A);
+      background: rgba(242,106,106,0.08); border-color: rgba(242,106,106,0.35);
+    }
+    .assistant-msg-pending::after {
+      content: '▍'; opacity: 0.6; animation: assistant-blink 1s step-start infinite;
+    }
+    @keyframes assistant-blink { 50% { opacity: 0; } }
+    .assistant-input-row {
+      display: flex; gap: 8px; align-items: flex-end; border-top: 1px solid var(--pds-border, rgba(255,255,255,0.14));
+      padding-top: 10px;
+    }
+    .assistant-textarea {
+      flex: 1; resize: vertical; min-height: 40px; max-height: 160px; box-sizing: border-box;
+      font: inherit; font-size: 13px; line-height: 1.4; color: var(--pds-text-primary, #fff);
+      background: var(--pds-surface, rgba(0,0,0,0.25));
+      border: 1px solid var(--pds-border, rgba(255,255,255,0.14)); border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .assistant-textarea:focus { outline: none; border-color: var(--pds-accent, #D5001C); }
+    .assistant-textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
 
   <script src="assets/js/dashboard.js"></script>
 </body>

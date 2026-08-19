@@ -18,6 +18,7 @@ const net  = require('net');
 const fs   = require('fs');
 const path = require('path');
 const { exec, spawn } = require('child_process');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 8085;
 const MODULE_ROOT = path.resolve(__dirname, '..');          // this module's root
@@ -32,6 +33,11 @@ const MATERIALS_DIR = path.join(COURSE_DIR, 'assets', 'materials');
 const REVIEW_DIR = path.join(MODULE_ROOT, 'review');
 const REVIEW_INBOX = path.join(REVIEW_DIR, 'inbox');
 const REVIEW_RESOLVED = path.join(REVIEW_DIR, 'resolved.json');
+// Embedded Claude Code chat ("Assistant" tab) -- persists only the CLI session
+// id so a conversation can be resumed across turns; the transcript itself
+// lives in the browser only (see dashboard.js) and is lost on refresh.
+const ASSISTANT_DIR = path.join(REVIEW_DIR, 'assistant');
+const ASSISTANT_SESSION_FILE = path.join(ASSISTANT_DIR, 'session.json');
 
 // Ensure materials directory exists
 if (!fs.existsSync(MATERIALS_DIR)) {
@@ -299,6 +305,54 @@ function readReviewNotes() {
     }
   }
   return order.map((id) => byId.get(id));
+}
+
+// Assistant chat session state: { claudeSessionId, started }. `started` tracks
+// whether that id has actually been used yet (--session-id vs --resume -- see
+// the /api/assistant/message handler).
+function readAssistantSession() {
+  try {
+    const data = JSON.parse(fs.readFileSync(ASSISTANT_SESSION_FILE, 'utf8'));
+    if (data && typeof data === 'object' && typeof data.claudeSessionId === 'string') return data;
+  } catch (_) { /* fall through */ }
+  return { claudeSessionId: null, started: false };
+}
+
+function writeAssistantSession(session) {
+  fs.mkdirSync(ASSISTANT_DIR, { recursive: true });
+  fs.writeFileSync(ASSISTANT_SESSION_FILE, JSON.stringify(session, null, 2), 'utf8');
+}
+
+// Short, path-specific directives for the embedded assistant -- mirrors the
+// agent_directives style already used for /api/generate-storyboard. Deliberately
+// does not re-teach the whole storyboard DSL: the agent can Read the project's
+// own docs once pointed at storyboard/course.md.
+const ASSISTANT_SYSTEM_PROMPT = [
+  'storyboard/course.md is the single source of truth for this module\'s content: one "## Slide N — Title" block per slide, each a flat list of "Key: Value" fields, delimited by "Slide-ID:" lines. Before non-trivial edits, Read storyboard/STORYBOARD-FORMAT-v1.md and TEMPLATE-REFERENCE.md (or storyboard/SLIDE-REFERENCE.md) for the field-formatting rules and the required fields of the slide\'s Template-ID, so your edit stays parser-compliant.',
+  'You have Read, Edit, and Write tools only -- no Bash, no other tools. You cannot run scripts, recompile slides, use git, or fetch URLs. Make the requested edit directly in storyboard/course.md, then stop; the dashboard recompiles and refreshes the preview for you afterward.',
+  'Never edit anything under course/slides/ or scripts/templates/ -- both are regenerated from storyboard/course.md by the compiler, and any edit there is silently discarded on the next compile.',
+  'If the user\'s message starts with a line like "Selected: <Slide-ID> (<family>: <label>)", that names what they most likely clicked in the live preview immediately before typing -- a strong hint about WHERE to look. It only ever identifies a slide (and sometimes one item within it, e.g. a card or hotspot), never the exact field, so you still need to read that slide\'s block yourself to find the right one to change.',
+].join('\n\n');
+
+let assistantTurnInFlight = false;
+
+// Resolve an absolute path to the claude binary. child_process.spawn() (no
+// shell) does its own PATH lookup using this process's inherited environment
+// -- fine when dashboard-server.js is launched from a terminal, but apps
+// launched by double-click (WBT Hub.app) get macOS's bare default PATH, which
+// doesn't include ~/.local/bin or /opt/homebrew/bin, so a bare 'claude' fails
+// with ENOENT. CLAUDE_BIN is an escape hatch for unusual installs.
+function resolveClaudeBin() {
+  const candidates = [
+    process.env.CLAUDE_BIN,
+    path.join(process.env.HOME || '', '.local', 'bin', 'claude'),
+    '/opt/homebrew/bin/claude',
+    '/usr/local/bin/claude',
+  ].filter(Boolean);
+  for (const c of candidates) {
+    try { if (fs.existsSync(c)) return c; } catch (_) { /* keep looking */ }
+  }
+  return 'claude'; // last resort: hope it's on PATH
 }
 
 function readResolvedIds() {
@@ -929,6 +983,162 @@ const server = http.createServer((req, res) => {
       // If the browser disconnects, stop watching.
       req.on('close', () => { settled = true; cleanup(); });
     });
+    return;
+  }
+
+  // POST /api/assistant/message -> One turn of the embedded "Assistant" chat.
+  // Spawns the Claude Code CLI headless (-p), scoped to Read/Edit/Write only,
+  // and streams its stream-json events back to the browser as one JSON object
+  // per line. Session continuity across turns is via --session-id (first turn)
+  // / --resume (later turns), persisted in review/assistant/session.json.
+  if (pathname === '/api/assistant/message' && req.method === 'POST') {
+    if (assistantTurnInFlight) {
+      res.writeHead(409, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'A turn is already in progress. Wait for it to finish.' }));
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      let payload;
+      try {
+        payload = JSON.parse(body);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        return;
+      }
+      const message = typeof payload.message === 'string' ? payload.message.trim() : '';
+      if (!message) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing message' }));
+        return;
+      }
+      const selected = typeof payload.selectedSlideId === 'string' ? payload.selectedSlideId.trim() : '';
+      const prompt = selected ? `Selected: ${selected}\n\n${message}` : message;
+
+      const session = readAssistantSession();
+      const sessionId = session.claudeSessionId || crypto.randomUUID();
+      const args = [
+        '-p', prompt,
+        '--output-format', 'stream-json',
+        '--verbose',
+        '--include-partial-messages',
+        '--allowedTools', 'Read Write Edit',
+        '--disallowedTools', 'Bash WebFetch WebSearch',
+        '--permission-mode', 'acceptEdits',
+        '--setting-sources', 'user',
+        '--append-system-prompt', ASSISTANT_SYSTEM_PROMPT,
+        session.started ? '--resume' : '--session-id', sessionId,
+      ];
+
+      // Strip only the specific vars that identify THIS process as a nested
+      // Claude Code session -- not every CLAUDE*-prefixed var. Stripping the
+      // SDK feature-flag vars too (CLAUDE_CODE_ENABLE_TASKS,
+      // CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING, CLAUDE_AGENT_SDK_VERSION)
+      // makes the spawned CLI hang forever with zero stdout/stderr -- it's
+      // waiting on a checkpointing/task handshake that never arrives without
+      // its counterpart.
+      const NESTED_SESSION_VARS = new Set([
+        'CLAUDECODE', 'CLAUDE_CODE_CHILD_SESSION', 'CLAUDE_CODE_ENTRYPOINT',
+        'CLAUDE_CODE_SESSION_ID', 'CLAUDE_CODE_MESSAGING_SOCKET',
+        'CLAUDE_CODE_MESSAGING_TOKEN', 'CLAUDE_CODE_EXECPATH',
+        'AI_AGENT', 'CLAUDE_PID',
+      ]);
+      const childEnv = {};
+      for (const k of Object.keys(process.env)) {
+        if (NESTED_SESSION_VARS.has(k)) continue;
+        childEnv[k] = process.env[k];
+      }
+
+      assistantTurnInFlight = true;
+      res.writeHead(200, {
+        'Content-Type': 'application/x-ndjson',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      });
+      const send = (obj) => { try { res.write(JSON.stringify(obj) + '\n'); } catch (_) {} };
+
+      let proc;
+      try {
+        // stdin must be closed (not left open as a pipe) or the CLI blocks
+        // waiting for piped input that will never arrive.
+        proc = spawn(resolveClaudeBin(), args, { cwd: MODULE_ROOT, env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
+      } catch (err) {
+        assistantTurnInFlight = false;
+        send({ type: 'error', error: 'Failed to start claude CLI: ' + err.message });
+        res.end();
+        return;
+      }
+
+      let settled = false;
+      let stdoutBuf = '';
+      let stderrBuf = '';
+      let sessionConfirmed = false;
+
+      const finish = (errMsg) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(hangTimer);
+        assistantTurnInFlight = false;
+        if (errMsg) send({ type: 'error', error: errMsg });
+        send({ type: 'done' });
+        try { res.end(); } catch (_) {}
+      };
+
+      // A turn that never produces a byte of output or exits would otherwise
+      // wedge assistantTurnInFlight forever, locking out every future message
+      // until the dashboard server itself is restarted.
+      const hangTimer = setTimeout(() => {
+        if (proc && !proc.killed) proc.kill();
+        finish('Timed out waiting for the assistant (5 min) with no response.');
+      }, 5 * 60 * 1000);
+
+      proc.stdout.on('data', (chunk) => {
+        stdoutBuf += chunk.toString('utf8');
+        const lines = stdoutBuf.split('\n');
+        stdoutBuf = lines.pop(); // keep the (possibly incomplete) last line for next chunk
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          let evt;
+          try { evt = JSON.parse(trimmed); } catch (_) { continue; } // ignore non-JSON stdout noise
+          if (evt.type === 'system' && evt.subtype === 'init' && evt.session_id && !sessionConfirmed) {
+            sessionConfirmed = true;
+            writeAssistantSession({ claudeSessionId: evt.session_id, started: true });
+          }
+          send({ type: 'event', event: evt });
+        }
+      });
+      proc.stderr.on('data', (chunk) => { stderrBuf += chunk.toString('utf8'); });
+      proc.on('error', (err) => finish('claude CLI failed to launch: ' + err.message));
+      proc.on('close', (code) => {
+        finish(code !== 0 ? `claude CLI exited with code ${code}` + (stderrBuf.trim() ? ': ' + stderrBuf.trim().slice(-2000) : '') : null);
+      });
+
+      // If the browser disconnects, stop the CLI turn and free the lock.
+      // res.on('close') (the response/connection), NOT req.on('close') -- the
+      // request stream fires 'close' as soon as its body is fully read, which
+      // is milliseconds after this handler starts, killing the CLI instantly
+      // on every turn regardless of whether the client is still connected.
+      res.on('close', () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(hangTimer);
+        assistantTurnInFlight = false;
+        if (proc && !proc.killed) proc.kill();
+      });
+    });
+    return;
+  }
+
+  // POST /api/assistant/reset -> Clears the persisted session id, so the next
+  // message starts a brand-new Claude Code conversation instead of resuming.
+  if (pathname === '/api/assistant/reset' && req.method === 'POST') {
+    try { fs.rmSync(ASSISTANT_SESSION_FILE, { force: true }); } catch (_) {}
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
     return;
   }
 
