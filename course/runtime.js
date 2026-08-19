@@ -21,21 +21,36 @@
      SCORM API
      ================================================================ */
 
+  // Reading any property of a cross-origin window throws SecurityError. PALMS
+  // does not guarantee the player frame and the content frame share an origin,
+  // and an unguarded read here throws out of init() and replaces the whole page
+  // with the error state. Every read is guarded individually, and the walk is
+  // depth-capped so a malformed frame tree cannot spin.
+  function _probe(w) {
+    try { if (w.API_1484_11) return { api: w.API_1484_11, version: "2004" }; } catch (_e) {}
+    try { if (w.API)         return { api: w.API,         version: "1.2"  }; } catch (_e) {}
+    return null;
+  }
+
   function _scanChain(win) {
-    var w = win;
-    while (w) {
-      if (w.API_1484_11) return { api: w.API_1484_11, version: "2004" };
-      if (w.API) return { api: w.API, version: "1.2" };
-      if (w === w.parent) break;
-      w = w.parent;
+    var w = win, depth = 0;
+    while (w && depth++ < 12) {
+      var hit = _probe(w);
+      if (hit) return hit;
+      var up;
+      try { up = w.parent; } catch (_e) { return null; }   // cross-origin ceiling
+      if (!up || up === w) break;
+      w = up;
     }
     return null;
   }
 
   function findApi(win) {
-    var found = _scanChain(win);
+    var found = null;
+    try { found = _scanChain(win); } catch (_e) { found = null; }
     if (found) return found;
-    if (win.opener) found = _scanChain(win.opener);
+    // PALMS may launch the SCO in a popup; the API then lives up the opener chain.
+    try { if (win.opener) found = _scanChain(win.opener); } catch (_e) { found = null; }
     return found || null;
   }
 
@@ -45,7 +60,8 @@
     terminated: false,
 
     init: function () {
-      var found = findApi(window);
+      var found = null;
+      try { found = findApi(window); } catch (_e) { found = null; }
       if (!found) return false;
       this.api = found.api;
       this.version = found.version;
@@ -2217,7 +2233,16 @@
 
   async function init() {
     scorm.init();
+    // beforeunload does not fire reliably on mobile Safari or when the page
+    // enters the bfcache; the attempt is then left open and untimed. pagehide is
+    // the dependable signal, and the visibilitychange commit flushes progress so
+    // a killed tab still leaves good data behind. closeSession() is idempotent
+    // via scorm.terminated, so firing on both events is safe.
+    window.addEventListener("pagehide",     function () { scorm.closeSession(); });
     window.addEventListener("beforeunload", function () { scorm.closeSession(); });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden" && !scorm.terminated) scorm.commit();
+    });
 
     var res = await fetch("./data/course.data.json", { cache: "no-store" });
     if (!res.ok) throw new Error("Could not load course.data.json");
