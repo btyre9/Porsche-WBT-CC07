@@ -1,16 +1,17 @@
 {
   "Porsche": "Porsha",
-  "Taycan":  "Tie-kahn",
-  "Macan":   "Mah-kahn",
+  "Taycan": "Tie-kahn",
+  "Macan": "Mah-kahn",
   "Cayenne": "Kai-enn",
-  "DiSC":    "disc",
-  "WBT":     "W B T",
-  "PPE":     "P P E",
-  "HV":      "high voltage",
-  "SCORM":   "score-m",
-
-  "hit record":       "hit rih-cord",
-  "hitting record":   "hitting rih-cord",
-  "you record":       "you rih-cord",
-  "record a video":   "rih-cord a video"
+  "DiSC": "disc",
+  "WBT": "W B T",
+  "PPE": "P P E",
+  "HV": "high voltage",
+  "SCORM": "score-m",
+  "hit record": "hit ruh-KORD",
+  "hitting record": "hitting ruh-KORD",
+  "you record": "you ruh-KORD",
+  "record a video": "ruh-KORD a video",
+  "gimbal": "GHIM-bull",
+  "gimbals": "GHIM-bulls"
 }
