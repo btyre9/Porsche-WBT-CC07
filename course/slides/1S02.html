@@ -147,6 +147,15 @@
       inset: 0;
       background: radial-gradient(var(--vig-size) var(--vig-size) at var(--vig-x) var(--vig-y), transparent calc(100% - var(--vig-feather)), rgba(14,14,18,var(--vig-tint)) 100%);
     }
+    /* Typewriter caret for the objective text. The markup has always carried
+       .kt-caret spans; the rule that makes them visible was missing. */
+    .kt-caret {
+      display: inline-block; width: 2px; height: 1em; margin-left: 2px;
+      vertical-align: -0.14em; background: #D5001C;
+      animation: kt-blink 0.7s steps(1) infinite;
+    }
+    .kt-caret.is-hidden { display: none; }
+    @keyframes kt-blink { 50% { opacity: 0; } }
   </style>
 </head>
 
@@ -297,6 +306,29 @@
       var objectives   = ['obj-1S02-01', 'obj-1S02-02', 'obj-1S02-03', 'obj-1S02-04', 'obj-1S02-05']
                            .map(function (id) { return document.getElementById(id); });
 
+      /* Each objective's wording lives in data-text and is typed into its
+         .obj-body at the objective's VO cue. Nothing ever did that typing, so
+         every .obj-body stayed empty and the slide showed five numbered
+         circles and no words at all. */
+      var CPS = 62;   // characters/second
+      var typed = objectives.map(function (el) {
+        if (!el) return null;
+        var text = el.getAttribute('data-text') || '';
+        el.setAttribute('aria-label', text);   // screen readers get it whole
+        return {
+          text: text, total: text.length, lastShown: -1,
+          bodyEl: el.querySelector('.obj-body'),
+          caret:  el.querySelector('.kt-caret')
+        };
+      });
+
+      function renderTyped(o, shown) {
+        if (!o || !o.bodyEl || shown === o.lastShown) return;
+        o.lastShown = shown;
+        o.bodyEl.textContent = o.text.slice(0, shown);
+        if (o.caret) o.caret.classList.toggle('is-hidden', shown >= o.total);
+      }
+
       if (headerAccent) setTimeout(function () { headerAccent.classList.add('is-visible'); }, 0);
       if (headerTitle)  setTimeout(function () { headerTitle.classList.add('is-visible'); }, 180);
       if (introText)    setTimeout(function () { introText.classList.add('is-visible'); }, 350);
@@ -363,6 +395,14 @@
             if (!voFired[i] && voTimes[i] > 0 && virtualTime >= voTimes[i]) {
               voFired[i] = true;
               activateObjective(i);
+            }
+            // Type the wording in from the same cue. Guarded the same way, so a
+            // placeholder 0.0 cue cannot dump all five lines out on frame one.
+            if (voTimes[i] > 0 && virtualTime >= voTimes[i]) {
+              renderTyped(typed[i], Math.max(0, Math.min(
+                typed[i] ? typed[i].total : 0,
+                Math.floor((virtualTime - voTimes[i]) * CPS)
+              )));
             }
           });
         }
